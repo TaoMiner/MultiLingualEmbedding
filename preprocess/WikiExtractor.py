@@ -2398,7 +2398,7 @@ def makeInternalLink(title, label):
         if title == label:
             return '[[%s]]' % label
         else:
-            return '[[%s|%s]]' % (title.encode('utf-8'), label)
+            return '[[%s|%s]]' % (title, label)
     else:
         return label
 
