@@ -569,13 +569,13 @@ class Extractor(object):
             footer = "\n</doc>\n"
             if out == sys.stdout:  # option -a or -o -
                 header = header.encode('utf-8')
-            out.write(header)
+            #out.write(header)
             for line in text:
                 if out == sys.stdout:  # option -a or -o -
                     line = line.encode('utf-8')
                 out.write(line)
                 out.write('\n')
-            out.write(footer)
+            #out.write(footer)
 
     def extract(self, out):
         """
@@ -2395,7 +2395,10 @@ def makeInternalLink(title, label):
         if colon2 > 1 and title[colon + 1:colon2] not in options.acceptedNamespaces:
             return ''
     if options.keepLinks:
-        return '<a href="%s">%s</a>' % (quote(title.encode('utf-8')), label)
+        if title == label:
+            return '[[%s]]' % label
+        else:
+            return '[[%s|%s]]' % (title.encode('utf-8'), label)
     else:
         return label
 
@@ -2471,6 +2474,7 @@ def replaceExternalLinks(text):
 
 
 def makeExternalLink(url, anchor):
+    return anchor
     """Function applied to wikiLinks"""
     if options.keepLinks:
         return '<a href="%s">%s</a>' % (quote(url.encode('utf-8')), anchor)
@@ -2479,6 +2483,7 @@ def makeExternalLink(url, anchor):
 
 
 def makeExternalImage(url, alt=''):
+    return alt
     if options.keepLinks:
         return '<img src="%s" alt="%s">' % (url, alt)
     else:
@@ -2757,7 +2762,8 @@ def load_templates(file, output_file=None):
         output.close()
         logging.info("Saved %d templates to '%s'", len(options.templates), output_file)
 
-
+out_redirects = {}
+quotaRE = re.compile(r'redirect title=\"(.*?)\"')
 def pages_from(input):
     """
     Scans input extracting pages.
@@ -2773,6 +2779,7 @@ def pages_from(input):
     inText = False
     redirect = False
     title = None
+    redirect_title = None
     for line in input:
         if not isinstance(line, text_type): line = line.decode('utf-8')
         if '<' not in line:  # faster than doing re.search()
@@ -2796,6 +2803,7 @@ def pages_from(input):
             ns = m.group(3)
         elif tag == 'redirect':
             redirect = True
+            redirect_title = quotaRE.search(line).group(1)
         elif tag == 'text':
             if m.lastindex == 3 and line[m.start(3) - 2] == '/':  # self closing
                 # <text xml:space="preserve" />
@@ -2816,10 +2824,13 @@ def pages_from(input):
                 yield (id, revid, title, ns, page)
                 last_id = id
                 ns = '0'
+            elif redirect_title != None:
+                out_redirects[title] = redirect_title
             id = None
             revid = None
             title = None
             page = []
+            redirect_title = None
 
 
 def process_dump(input_file, template_file, out_file, file_size, file_compress,
@@ -3085,7 +3096,7 @@ def main():
     groupO = parser.add_argument_group('Output')
     groupO.add_argument("-o", "--output", default="text",
                         help="directory for extracted files (or '-' for dumping to stdout)")
-    groupO.add_argument("-b", "--bytes", default="1M",
+    groupO.add_argument("-b", "--bytes", default="13G",
                         help="maximum bytes per output file (default %(default)s)",
                         metavar="n[KMG]")
     groupO.add_argument("-c", "--compress", action="store_true",
@@ -3221,6 +3232,11 @@ def main():
 
     process_dump(input_file, args.templates, output_path, file_size,
                  args.compress, args.processes)
+    # output the redirected page
+    out_redirect = codecs.open(output_path + '/redirect_title', 'w', 'utf-8')
+    for t in out_redirects:
+        out_redirect.write('%s\t%s\n' % (t, out_redirects[t]))
+    out_redirect.close()
 
 
 def createLogger(quiet, debug):
