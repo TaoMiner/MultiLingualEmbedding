@@ -2477,7 +2477,7 @@ def makeExternalLink(url, anchor):
     return anchor
     """Function applied to wikiLinks"""
     if options.keepLinks:
-        return '<a href="%s">%s</a>' % (quote(url.encode('utf-8')), anchor)
+        return '<a href="%s">%s</a>' % (quote(url), anchor)
     else:
         return anchor
 
