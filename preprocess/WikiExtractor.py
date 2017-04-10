@@ -2763,6 +2763,7 @@ def load_templates(file, output_file=None):
         logging.info("Saved %d templates to '%s'", len(options.templates), output_file)
 
 out_redirects = {}
+out_titles = set()
 quotaRE = re.compile(r'redirect title=\"(.*?)\"')
 def pages_from(input):
     """
@@ -2822,6 +2823,7 @@ def pages_from(input):
         elif tag == '/page':
             if id != last_id and not redirect:
                 yield (id, revid, title, ns, page)
+                out_titles.add(title)
                 last_id = id
                 ns = '0'
             elif redirect_title != None:
@@ -3232,6 +3234,11 @@ def main():
 
     process_dump(input_file, args.templates, output_path, file_size,
                  args.compress, args.processes)
+    # output all titles
+    out_t = codecs.open(output_path + '/wiki_title', 'w', 'utf-8')
+    for t in out_titles:
+        out_t.write('%s\n' % t)
+        out_t.close()
     # output the redirected page
     out_redirect = codecs.open(output_path + '/redirect_title', 'w', 'utf-8')
     for t in out_redirects:
