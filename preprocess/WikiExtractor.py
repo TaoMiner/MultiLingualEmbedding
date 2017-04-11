@@ -3238,7 +3238,7 @@ def main():
     out_t = codecs.open(output_path + '/wiki_title', 'w', 'utf-8')
     for t in out_titles:
         out_t.write('%s\n' % t)
-        out_t.close()
+    out_t.close()
     # output the redirected page
     out_redirect = codecs.open(output_path + '/redirect_title', 'w', 'utf-8')
     for t in out_redirects:
