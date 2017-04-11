@@ -15,7 +15,7 @@ class Preprocessor():
         with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 title = line.strip()
-                if title.startswith('Anexo:') or title.startswith('Categoría:') or title.startswith('Wikipedia:') :
+                if title.startswith('Anexo:') or title.startswith('Categor') or title.startswith('Wikipedia:') :
                     continue
                 if title.startswith('Category:') or title.startswith('Template:') or title.startswith('File:') or title.startswith('Wikipedia') or title.startswith('Portal'):
                     continue
