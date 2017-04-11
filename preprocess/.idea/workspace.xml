@@ -21,8 +21,8 @@
       <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="296">
-              <caret line="3240" column="17" lean-forward="true" selection-start-line="3240" selection-start-column="17" selection-end-line="3240" selection-end-column="17" />
+            <state relative-caret-position="480">
+              <caret line="3252" column="12" lean-forward="false" selection-start-line="3252" selection-start-column="12" selection-end-line="3252" selection-end-column="12" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -33,8 +33,8 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="324">
-              <caret line="24" column="0" lean-forward="true" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+            <state relative-caret-position="24">
+              <caret line="5" column="3" lean-forward="false" selection-start-line="5" selection-start-column="3" selection-end-line="5" selection-end-column="3" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -481,8 +481,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
-          <caret line="24" column="0" lean-forward="true" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+        <state relative-caret-position="24">
+          <caret line="5" column="3" lean-forward="false" selection-start-line="5" selection-start-column="3" selection-end-line="5" selection-end-column="3" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
@@ -491,8 +491,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="296">
-          <caret line="3240" column="17" lean-forward="true" selection-start-line="3240" selection-start-column="17" selection-end-line="3240" selection-end-column="17" />
+        <state relative-caret-position="480">
+          <caret line="3252" column="12" lean-forward="false" selection-start-line="3252" selection-start-column="12" selection-end-line="3252" selection-end-column="12" />
           <folding>
             <element signature="e#2093#2142#0" expanded="true" />
           </folding>

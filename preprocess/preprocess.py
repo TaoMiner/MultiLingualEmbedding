@@ -22,3 +22,7 @@ class Preprocessor():
                 if m.group(3) in self.titles:
                     self.entity_id[m.group(3)] = m.group(2)
         print "successfully build %d entities!" % len(self.entity_id)
+
+    def loadRedirects(self, filename):
+        with codecs.open(filename, 'r', 'utf-8') as fin:
+            for line in fin:
