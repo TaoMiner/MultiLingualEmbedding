@@ -5,6 +5,22 @@ sys.setdefaultencoding('utf8')
 import codecs
 import re
 
+class SqlParser():
+
+    def __init__(self):
+        # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
+        self.redirectRE = re.compile(r'\((\d{1,}),(\d{1,}),\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
+
+    def parseRedirects(self, filename):
+        with codecs.open(filename, 'rb') as fin:
+            isValue = False
+            for line in fin:
+                if line.startswith('INSERT INTO'):
+                    isValue = True
+                if isValue:
+                    for m in self.redirectRE.finditer(line.strip()):
+                        print '%s\t%s\t%s\n' % (m.group(1),m.group(2),m.group(3))
+
 class Preprocessor():
 
     def __init__(self):
@@ -94,6 +110,7 @@ class Preprocessor():
                 fout.write('%s\t%s\n' % (t, self.entity_id[t]))
 
 def main():
+    '''
     dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
     lang = 'eswiki'
     redirect_file = dump_path + lang + '/redirect_title'
@@ -113,7 +130,9 @@ def main():
     preprocessor.linkExtract(pagelink_file)
     preprocessor.saveOutlinks(mono_outlink_file)
     preprocessor.saveLinkedEntity(vocab_entity_file)
-
+    '''
+    sp = SqlParser()
+    sp.parseRedirects('/data/m1/cyx/MultiMPME/data/dumps20170401/zhwiki/zhwiki-20170401-redirect.sql')
 if __name__ == '__main__':
     main()
 
