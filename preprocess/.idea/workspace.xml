@@ -21,8 +21,8 @@
       <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="321">
-              <caret line="2821" column="28" lean-forward="true" selection-start-line="2821" selection-start-column="28" selection-end-line="2821" selection-end-column="28" />
+            <state relative-caret-position="-5498">
+              <caret line="2829" column="53" lean-forward="true" selection-start-line="2829" selection-start-column="53" selection-end-line="2829" selection-end-column="53" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -33,8 +33,8 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="322">
-              <caret line="42" column="55" lean-forward="true" selection-start-line="42" selection-start-column="55" selection-end-line="42" selection-end-column="55" />
+            <state relative-caret-position="391">
+              <caret line="34" column="53" lean-forward="false" selection-start-line="34" selection-start-column="53" selection-end-line="34" selection-end-column="53" />
               <folding />
             </state>
           </provider>
@@ -505,8 +505,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="321">
-          <caret line="2821" column="28" lean-forward="true" selection-start-line="2821" selection-start-column="28" selection-end-line="2821" selection-end-column="28" />
+        <state relative-caret-position="-5498">
+          <caret line="2829" column="53" lean-forward="true" selection-start-line="2829" selection-start-column="53" selection-end-line="2829" selection-end-column="53" />
           <folding>
             <element signature="e#2093#2142#0" expanded="true" />
           </folding>
@@ -515,8 +515,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="322">
-          <caret line="42" column="55" lean-forward="true" selection-start-line="42" selection-start-column="55" selection-end-line="42" selection-end-column="55" />
+        <state relative-caret-position="391">
+          <caret line="34" column="53" lean-forward="false" selection-start-line="34" selection-start-column="53" selection-end-line="34" selection-end-column="53" />
           <folding />
         </state>
       </provider>

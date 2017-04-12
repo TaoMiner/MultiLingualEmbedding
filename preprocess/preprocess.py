@@ -10,6 +10,7 @@ class Preprocessor():
     def __init__(self):
         self.titles = set()
         self.entity_id = {}
+        self.id_entity = {}
         self.redirects = {}
         self.outlinks = {}
         self.nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
@@ -32,6 +33,7 @@ class Preprocessor():
                 m = self.nsidRE.search(line.strip())
                 if m.group(3) in self.titles:
                     self.entity_id[m.group(3)] = m.group(2)
+                    self.id_entity[m.group(2)] = m.group(3)
         print "successfully build %d entities!" % len(self.entity_id)
 
     def loadRedirects(self, filename):
@@ -49,7 +51,7 @@ class Preprocessor():
                 fout.write('%s\t%s\n' % (self.entity_id[ent], ent))
 
     def linkExtract(self, filename):
-        with codecs.open(filename, 'r', 'utf-8') as fin:
+        with codecs.open(filename, 'rb') as fin:
             isValue = False
             for line in fin:
                 if line.startswith('INSERT INTO'):
@@ -58,14 +60,14 @@ class Preprocessor():
                     for m in self.linkRE.finditer(line.strip()):
                         title = None
                         outlink = None
-                        if m.group(2) in self.redirects:
-                            title = self.redirects[m.group(2)]
-                        elif m.group(2) in self.entity_id:
-                            title = m.group(2)
-                        if m.group(1) in self.redirects:
-                            outlink = self.redirects[m.group(1)]
-                        elif m.group(1) in self.entity_id:
-                            outlink = m.group(1)
+                        tmp_title = m.group(2).decode('ISO-8859-1')
+                        tmp_outlink = m.group(1).decode('ISO-8859-1')
+                        if tmp_title in self.redirects:
+                            title = self.redirects[tmp_title]
+                        elif tmp_title in self.entity_id:
+                            title = tmp_title
+                        if tmp_outlink in self.id_entity:
+                            outlink = self.id_entity[tmp_outlink]
                         if title and outlink:
                             tmp_set = set() if title not in self.outlinks else self.outlinks[title]
                             tmp_set.add(outlink)

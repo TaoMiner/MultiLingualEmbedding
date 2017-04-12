@@ -2827,7 +2827,7 @@ def pages_from(input):
                 last_id = id
                 ns = '0'
             if redirect and redirect_title != None:
-                out_redirects[redirect_title] = title
+                out_redirects[title] = redirect_title
             id = None
             revid = None
             title = None
