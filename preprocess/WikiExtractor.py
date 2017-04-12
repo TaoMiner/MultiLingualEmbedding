@@ -3235,12 +3235,12 @@ def main():
     process_dump(input_file, args.templates, output_path, file_size,
                  args.compress, args.processes)
     # output all titles
-    out_t = codecs.open(output_path + '/wiki_title', 'w', 'utf-8')
+    out_t = codecs.open(output_path + '/wiki_article_title', 'w', 'utf-8')
     for t in out_titles:
         out_t.write('%s\n' % t)
     out_t.close()
     # output the redirected page
-    out_redirect = codecs.open(output_path + '/redirect_title', 'w', 'utf-8')
+    out_redirect = codecs.open(output_path + '/redirect_article_title', 'w', 'utf-8')
     for t in out_redirects:
         out_redirect.write('%s\t%s\n' % (t, out_redirects[t]))
     out_redirect.close()

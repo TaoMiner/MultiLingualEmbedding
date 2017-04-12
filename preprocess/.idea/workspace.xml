@@ -18,11 +18,11 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-5498">
-              <caret line="2829" column="53" lean-forward="true" selection-start-line="2829" selection-start-column="53" selection-end-line="2829" selection-end-column="53" />
+            <state relative-caret-position="251">
+              <caret line="3244" column="62" lean-forward="true" selection-start-line="3244" selection-start-column="62" selection-end-line="3244" selection-end-column="62" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -30,11 +30,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="34" column="53" lean-forward="false" selection-start-line="34" selection-start-column="53" selection-end-line="34" selection-end-column="53" />
+            <state relative-caret-position="573">
+              <caret line="106" column="0" lean-forward="true" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -74,8 +74,8 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/tt.py" />
-        <option value="$PROJECT_DIR$/WikiExtractor.py" />
         <option value="$PROJECT_DIR$/preprocess.py" />
+        <option value="$PROJECT_DIR$/WikiExtractor.py" />
       </list>
     </option>
   </component>
@@ -503,21 +503,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
+    <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-5498">
-          <caret line="2829" column="53" lean-forward="true" selection-start-line="2829" selection-start-column="53" selection-end-line="2829" selection-end-column="53" />
-          <folding>
-            <element signature="e#2093#2142#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="573">
+          <caret line="106" column="0" lean-forward="true" selection-start-line="106" selection-start-column="0" selection-end-line="106" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess.py">
+    <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="34" column="53" lean-forward="false" selection-start-line="34" selection-start-column="53" selection-end-line="34" selection-end-column="53" />
-          <folding />
+        <state relative-caret-position="251">
+          <caret line="3244" column="62" lean-forward="true" selection-start-line="3244" selection-start-column="62" selection-end-line="3244" selection-end-column="62" />
+          <folding>
+            <element signature="e#2093#2142#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

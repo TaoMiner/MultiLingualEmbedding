@@ -91,7 +91,7 @@ class Preprocessor():
         print "totally %d linked entities!" % len(linked_entities)
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for t in linked_entities:
-                fout.write('%s\t%s\n' % (t, self.entity_id(t)))
+                fout.write('%s\t%s\n' % (t, self.entity_id[t]))
 
 def main():
     dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
