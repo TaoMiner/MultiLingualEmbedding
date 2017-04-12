@@ -9,17 +9,21 @@ class SqlParser():
 
     def __init__(self):
         # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
-        self.redirectRE = re.compile(r'\((\d{1,}),(\d{1,}),\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
+        # only for main namespace 0
+        self.redirectRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
 
-    def parseRedirects(self, filename):
+    def parseRedirects(self, filename, output_file):
         with codecs.open(filename, 'rb') as fin:
-            isValue = False
-            for line in fin:
-                if line.startswith('INSERT INTO'):
-                    isValue = True
-                if isValue:
-                    for m in self.redirectRE.finditer(line.strip()):
-                        print '%s\t%s\t%s\n' % (m.group(1),m.group(2),m.group(3))
+            with codecs.open(output_file, 'w') as fout:
+                isValue = False
+                for line in fin:
+                    if line.startswith('INSERT INTO'):
+                        isValue = True
+                    if isValue:
+                        for m in self.redirectRE.finditer(line.strip()):
+                            rd_id = m.group(1).decode('ISO-8859-1')
+                            rd_title = m.group(2).decode('ISO-8859-1')
+                            fout.write('%s\t%s\n' % (rd_id.encode('utf-8'), rd_title.encode('utf-8')))
 
 class Preprocessor():
 
