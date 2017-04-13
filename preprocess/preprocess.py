@@ -82,23 +82,26 @@ class Preprocessor():
                 if line.startswith('INSERT INTO'):
                     isValue = True
                 if isValue:
-                    for m in self.linkRE.finditer(line.strip()):
-                        count += 1
-                        if count % 100000 == 0: print '%d redirects has parsed!' % count
-                        title = None
-                        outlink = None
-                        tmp_title = m.group(2).decode(ENCODE)
-                        tmp_outlink_id = m.group(1).decode(ENCODE)
-                        if tmp_title in self.redirects:
-                            title = self.redirects[tmp_title]
-                        elif tmp_title in self.entity_id:
-                            title = tmp_title
-                        if tmp_outlink_id in self.id_entity:
-                            outlink = self.id_entity[tmp_outlink_id]
-                        if title and outlink:
-                            tmp_set = set() if title not in self.outlinks else self.outlinks[title]
-                            tmp_set.add(outlink)
-                            self.outlinks[title] = tmp_set
+                    line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
+                    for i in line.strip().split('),('):
+                        m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
+                        if m != None:
+                            count += 1
+                            if count % 1000000 == 0: print '%d links has parsed!' % count
+                            title = None
+                            outlink = None
+                            tmp_title = m.group(2).decode(ENCODE)
+                            tmp_outlink_id = m.group(1).decode(ENCODE)
+                            if tmp_title in self.redirects:
+                                title = self.redirects[tmp_title]
+                            elif tmp_title in self.entity_id:
+                                title = tmp_title
+                            if tmp_outlink_id in self.id_entity:
+                                outlink = self.id_entity[tmp_outlink_id]
+                            if title and outlink:
+                                tmp_set = set() if title not in self.outlinks else self.outlinks[title]
+                                tmp_set.add(outlink)
+                                self.outlinks[title] = tmp_set
         outlink_num = 0
         for t in self.outlinks:
             outlink_num += len(self.outlinks[t])

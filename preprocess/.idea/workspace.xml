@@ -33,9 +33,11 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="326">
-              <caret line="84" column="64" lean-forward="true" selection-start-line="84" selection-start-column="64" selection-end-line="84" selection-end-column="64" />
-              <folding />
+            <state relative-caret-position="119">
+              <caret line="89" column="46" lean-forward="false" selection-start-line="89" selection-start-column="46" selection-end-line="89" selection-end-column="46" />
+              <folding>
+                <marker date="1492111457000" expanded="true" signature="3364:3396" ph="INSERT INTO `pagelinks`... " />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -440,7 +442,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1492111457000" expanded="true" signature="3364:3396" ph="INSERT INTO `pagelinks`... " />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -515,9 +519,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="326">
-          <caret line="84" column="64" lean-forward="true" selection-start-line="84" selection-start-column="64" selection-end-line="84" selection-end-column="64" />
-          <folding />
+        <state relative-caret-position="119">
+          <caret line="89" column="46" lean-forward="false" selection-start-line="89" selection-start-column="46" selection-end-line="89" selection-end-column="46" />
+          <folding>
+            <marker date="1492111457000" expanded="true" signature="3364:3396" ph="INSERT INTO `pagelinks`... " />
+          </folding>
         </state>
       </provider>
     </entry>
