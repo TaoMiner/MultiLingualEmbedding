@@ -19,17 +19,17 @@ class Preprocessor():
         self.nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
         # (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
         # only for main namespace 0
-        self.linkRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',0\)')
+        self.linkRE = re.compile(r'(\d{1,}),0,\'(.*?)\',0')
         # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
         # only for main namespace 0
         self.redirectRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
 
+    # title : separated by '_'
     def loadTitles(self, filename):
         with codecs.open(filename, 'rb') as fin:
             for line in fin:
                 title = line.strip().decode(ENCODE)
                 if title.startswith(u'page_title'): continue
-                title = title.replace('_', ' ')
                 self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
@@ -39,6 +39,7 @@ class Preprocessor():
                 m = self.nsidRE.search(line.strip())
                 id = m.group(2).decode(ENCODE)
                 title = m.group(3).decode(ENCODE)
+                title = title.replace(u' ', u'_')
                 if title in self.titles:
                     self.entity_id[title] = id
                     self.id_entity[id] = title
@@ -59,7 +60,6 @@ class Preprocessor():
                         rd_id = m.group(1).decode(ENCODE)
                         rd_title = m.group(2).decode(ENCODE)
                         rd_title = rd_title.replace('\\', '')
-                        rd_title = rd_title.replace('_', ' ')
                         self.tmp_redirects[rd_id] = rd_title
         print "successfully parse %d redirects!" % len(self.tmp_redirects)
 
@@ -91,6 +91,7 @@ class Preprocessor():
                             title = None
                             outlink = None
                             tmp_title = m.group(2).decode(ENCODE)
+                            tmp_title = tmp_title.replace(u'\\', u'')
                             tmp_outlink_id = m.group(1).decode(ENCODE)
                             if tmp_title in self.redirects:
                                 title = self.redirects[tmp_title]
