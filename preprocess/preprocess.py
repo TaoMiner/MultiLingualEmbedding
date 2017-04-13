@@ -26,13 +26,12 @@ class Preprocessor():
         # only for main namespace 0
         self.redirectRE = re.compile(r'(\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'')
 
-    # title : separated by '_'
     def loadTitles(self, filename):
         with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
                 title = line.strip()
                 if title.startswith('page_title'): continue
-                print type(title)
+                title = title.replace('_', ' ')
                 self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
@@ -42,7 +41,6 @@ class Preprocessor():
                 m = self.nsidRE.search(line.strip())
                 id = m.group(2)
                 title = m.group(3)
-                title = title.replace(' ', '_')
                 if title in self.titles:
                     self.entity_id[title] = id
                     self.id_entity[id] = title
@@ -62,58 +60,57 @@ class Preprocessor():
                         rd_id = m.group(1)
                         rd_title = m.group(2)
                         rd_title = rd_title.replace('\\', '')
+                        rd_title = rd_title.replace('_', ' ')
                         self.tmp_redirects[rd_id] = rd_title
         print "successfully parse %d redirects!" % len(self.tmp_redirects)
 
     def saveEntityDic(self, filename):
-        with codecs.open(filename, 'w') as fout:
+        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for ent in self.entity_id:
-                fout.write('%s\t%s\n' % (self.entity_id[ent], ent))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent)))
 
     def saveRedirects(self, filename):
         with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for r in self.redirects:
-                fout.write('%s\t%s\n' % (htmlparser.unescape(r), self.redirects[r]))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
 
     def parseLinks(self, filename):
-        with codecs.open(filename, 'rb') as fin:
+        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
             isValue = False
             count = 0
             for line in fin:
-                if line.startswith('INSERT INTO'):
-                    isValue = True
-                if isValue:
-                    line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
-                    for i in line.strip().split('),('):
-                        m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
-                        if m != None:
-                            count += 1
-                            if count % 1000000 == 0: print '%d links has parsed!' % count
-                            title = None
-                            outlink = None
-                            tmp_title = m.group(2).decode(ENCODE)
-                            tmp_title = tmp_title.replace(u'\\', u'')
-                            tmp_outlink_id = m.group(1).decode(ENCODE)
-                            if tmp_title in self.redirects:
-                                title = self.redirects[tmp_title]
-                            elif tmp_title in self.entity_id:
-                                title = tmp_title
-                            if tmp_outlink_id in self.id_entity:
-                                outlink = self.id_entity[tmp_outlink_id]
-                            if title and outlink:
-                                tmp_set = set() if title not in self.outlinks else self.outlinks[title]
-                                tmp_set.add(outlink)
-                                self.outlinks[title] = tmp_set
+                line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
+                for i in line.strip().split('),('):
+                    m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
+                    if m != None:
+                        count += 1
+                        if count % 1000000 == 0: print '%d links has parsed!' % count
+                        title = None
+                        outlink = None
+                        tmp_title = m.group(2)
+                        tmp_title = tmp_title.replace('\\', '')
+                        tmp_title = tmp_title.replace('_', ' ')
+                        tmp_outlink_id = m.group(1).decode(ENCODE)
+                        if tmp_title in self.redirects:
+                            title = self.redirects[tmp_title]
+                        elif tmp_title in self.entity_id:
+                            title = tmp_title
+                        if tmp_outlink_id in self.id_entity:
+                            outlink = self.id_entity[tmp_outlink_id]
+                        if title and outlink:
+                            tmp_set = set() if title not in self.outlinks else self.outlinks[title]
+                            tmp_set.add(outlink)
+                            self.outlinks[title] = tmp_set
         outlink_num = 0
         for t in self.outlinks:
             outlink_num += len(self.outlinks[t])
         print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
 
     def saveOutlinks(self,filename):
-        with codecs.open(filename, 'w') as fout:
+        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for t in self.outlinks:
-                fout.write('%s\t%s\n' % (t.encode(ENCODE), '\t'.join(self.outlinks[t]).encode(ENCODE)))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
 
     def saveLinkedEntity(self, filename):
         linked_entities = set()
@@ -122,9 +119,9 @@ class Preprocessor():
             for lt in self.outlinks[t]:
                 linked_entities.add(lt)
         print "totally %d linked entities!" % len(linked_entities)
-        with codecs.open(filename, 'w') as fout:
+        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for t in linked_entities:
-                fout.write('%s\t%s\n' % (self.entity_id[t].encode(ENCODE), t.encode(ENCODE)))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[t]), htmlparser.unescape(t)))
 
 def main():
     dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
