@@ -28,15 +28,16 @@ class Preprocessor():
 
     # title : separated by '_'
     def loadTitles(self, filename):
-        with codecs.open(filename, 'rb') as fin:
+        with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
                 title = line.strip()
                 if title.startswith('page_title'): continue
+                print type(title)
                 self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
     def buildEntityDic(self, filename):
-        with codecs.open(filename, 'rb') as fin:
+        with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
                 m = self.nsidRE.search(line.strip())
                 id = m.group(2)
