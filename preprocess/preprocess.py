@@ -51,11 +51,14 @@ class Preprocessor():
     def parseRedirects(self, filename):
         with codecs.open(filename, 'rb') as fin:
             isValue = False
+            count = 0
             for line in fin:
                 if line.startswith('INSERT INTO'):
                     isValue = True
                 if isValue:
                     for m in self.redirectRE.finditer(line.strip()):
+                        count += 1
+                        if count % 10000 == 0: print '%d redirects has parsed!\n' % count
                         rd_id = m.group(1).decode(ENCODE)
                         rd_title = m.group(2).decode(ENCODE)
                         rd_title = rd_title.replace('\\', '')
