@@ -33,10 +33,10 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="257">
-              <caret line="93" column="66" lean-forward="false" selection-start-line="93" selection-start-column="66" selection-end-line="93" selection-end-column="66" />
+            <state relative-caret-position="621">
+              <caret line="80" column="28" lean-forward="true" selection-start-line="80" selection-start-column="28" selection-end-line="80" selection-end-column="28" />
               <folding>
-                <marker date="1492111894000" expanded="true" signature="3331:3363" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1492113379000" expanded="true" signature="3187:3219" ph="INSERT INTO `pagelinks`... " />
               </folding>
             </state>
           </provider>
@@ -443,7 +443,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1492111894000" expanded="true" signature="3331:3363" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492113379000" expanded="true" signature="3187:3219" ph="INSERT INTO `pagelinks`... " />
           </folding>
         </state>
       </provider>
@@ -519,10 +519,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="257">
-          <caret line="93" column="66" lean-forward="false" selection-start-line="93" selection-start-column="66" selection-end-line="93" selection-end-column="66" />
+        <state relative-caret-position="621">
+          <caret line="80" column="28" lean-forward="true" selection-start-line="80" selection-start-column="28" selection-end-line="80" selection-end-column="28" />
           <folding>
-            <marker date="1492111894000" expanded="true" signature="3331:3363" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492113379000" expanded="true" signature="3187:3219" ph="INSERT INTO `pagelinks`... " />
           </folding>
         </state>
       </provider>

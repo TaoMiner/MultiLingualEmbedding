@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 import sys
 reload(sys)
-sys.setdefaultencoding('ISO-8859-1')
+sys.setdefaultencoding('utf8')
 import codecs
 import re
 
@@ -28,8 +28,8 @@ class Preprocessor():
     def loadTitles(self, filename):
         with codecs.open(filename, 'rb') as fin:
             for line in fin:
-                title = line.strip().decode(ENCODE)
-                if title.startswith(u'page_title'): continue
+                title = line.strip()
+                if title.startswith('page_title'): continue
                 self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
@@ -37,9 +37,9 @@ class Preprocessor():
         with codecs.open(filename, 'rb') as fin:
             for line in fin:
                 m = self.nsidRE.search(line.strip())
-                id = m.group(2).decode(ENCODE)
-                title = m.group(3).decode(ENCODE)
-                title = title.replace(u' ', u'_')
+                id = m.group(2)
+                title = m.group(3)
+                title = title.replace(' ', '_')
                 if title in self.titles:
                     self.entity_id[title] = id
                     self.id_entity[id] = title
@@ -57,8 +57,8 @@ class Preprocessor():
                     isValue = True
                 if isValue:
                     for m in self.redirectRE.finditer(line.strip()):
-                        rd_id = m.group(1).decode(ENCODE)
-                        rd_title = m.group(2).decode(ENCODE)
+                        rd_id = m.group(1)
+                        rd_title = m.group(2)
                         rd_title = rd_title.replace('\\', '')
                         self.tmp_redirects[rd_id] = rd_title
         print "successfully parse %d redirects!" % len(self.tmp_redirects)
@@ -66,12 +66,12 @@ class Preprocessor():
     def saveEntityDic(self, filename):
         with codecs.open(filename, 'w') as fout:
             for ent in self.entity_id:
-                fout.write('%s\t%s\n' % (self.entity_id[ent].encode(ENCODE), ent.encode(ENCODE)))
+                fout.write('%s\t%s\n' % (self.entity_id[ent], ent))
 
     def saveRedirects(self, filename):
         with codecs.open(filename, 'w') as fout:
             for r in self.redirects:
-                fout.write('%s\t%s\n' % (r.encode(ENCODE), self.redirects[r].encode(ENCODE)))
+                fout.write('%s\t%s\n' % (r, self.redirects[r]))
 
 
     def parseLinks(self, filename):
@@ -111,7 +111,7 @@ class Preprocessor():
     def saveOutlinks(self,filename):
         with codecs.open(filename, 'w') as fout:
             for t in self.outlinks:
-                fout.write('%s\t%s\n' % (t.encode(ENCODE), '\t'.join(self.outlinks[t].encode(ENCODE))))
+                fout.write('%s\t%s\n' % (t.encode(ENCODE), '\t'.join(self.outlinks[t]).encode(ENCODE)))
 
     def saveLinkedEntity(self, filename):
         linked_entities = set()
