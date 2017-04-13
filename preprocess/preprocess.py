@@ -38,14 +38,15 @@ class Preprocessor():
     def buildEntityDic(self, filename):
         with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
-                m = self.nsidRE.search(line.strip())
-                id = m.group(2)
-                title = m.group(3)
-                if title in self.titles:
-                    self.entity_id[title] = id
-                    self.id_entity[id] = title
-                elif id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
-                    self.redirects[title] = self.tmp_redirects[id]
+                m = self.nsidRE.match(line.strip())
+                if m!=None:
+                    id = m.group(2)
+                    title = m.group(3)
+                    if title in self.titles:
+                        self.entity_id[title] = id
+                        self.id_entity[id] = title
+                    elif id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
+                        self.redirects[title] = self.tmp_redirects[id]
         self.tmp_redirects.clear()
         self.titles.clear()
         print "successfully build %d entities and %d redirects!" % (len(self.entity_id), len(self.redirects))
