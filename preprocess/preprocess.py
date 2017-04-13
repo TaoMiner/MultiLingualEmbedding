@@ -1,29 +1,11 @@
 #-*- coding: utf-8 -*-
 import sys
 reload(sys)
-sys.setdefaultencoding('utf8')
+sys.setdefaultencoding('ISO-8859-1')
 import codecs
 import re
 
-class SqlParser():
-
-    def __init__(self):
-        # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
-        # only for main namespace 0
-        self.redirectRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
-
-    def parseRedirects(self, filename, output_file):
-        with codecs.open(filename, 'rb') as fin:
-            with codecs.open(output_file, 'w') as fout:
-                isValue = False
-                for line in fin:
-                    if line.startswith('INSERT INTO'):
-                        isValue = True
-                    if isValue:
-                        for m in self.redirectRE.finditer(line.strip()):
-                            rd_id = m.group(1).decode('ISO-8859-1')
-                            rd_title = m.group(2).decode('ISO-8859-1')
-                            fout.write('%s\t%s\n' % (rd_id.encode('utf-8'), rd_title.encode('utf-8')))
+ENCODE = 'ISO-8859-1'
 
 class Preprocessor():
 
@@ -32,45 +14,67 @@ class Preprocessor():
         self.entity_id = {}
         self.id_entity = {}
         self.redirects = {}
+        self.tmp_redirects = {}
         self.outlinks = {}
         self.nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
-        self.linkRE = re.compile(r'\((\d{1,}),\d{1,},\'(.*?)\',\d{1,}\)')
+        # (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
+        # only for main namespace 0
+        self.linkRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',0\)')
+        # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
+        # only for main namespace 0
+        self.redirectRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
 
     def loadTitles(self, filename):
-        with codecs.open(filename, 'r', 'utf-8') as fin:
+        with codecs.open(filename, 'rb') as fin:
             for line in fin:
-                title = line.strip()
-                if title.startswith('Anexo:') or title.startswith('Categor') or title.startswith('Wikipedia:') :
-                    continue
-                if title.startswith('Category:') or title.startswith('Template:') or title.startswith('File:') or title.startswith('Wikipedia') or title.startswith('Portal'):
-                    continue
-                self.titles.add(line.strip())
+                title = line.strip().decode(ENCODE)
+                if title.startswith(u'page_title'): continue
+                title = title.replace('_', ' ')
+                self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
     def buildEntityDic(self, filename):
-        with codecs.open(filename, 'r', 'utf-8') as fin:
+        with codecs.open(filename, 'rb') as fin:
             for line in fin:
                 m = self.nsidRE.search(line.strip())
-                if m.group(3) in self.titles:
-                    self.entity_id[m.group(3)] = m.group(2)
-                    self.id_entity[m.group(2)] = m.group(3)
-        print "successfully build %d entities!" % len(self.entity_id)
+                id = m.group(2).decode(ENCODE)
+                title = m.group(3).decode(ENCODE)
+                if title in self.titles:
+                    self.entity_id[title] = id
+                    self.id_entity[id] = title
+                elif id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
+                    self.redirects[title] = self.tmp_redirects[id]
+        self.tmp_redirects.clear()
+        self.titles.clear()
+        print "successfully build %d entities and %d redirects!" % (len(self.entity_id), len(self.redirects))
 
-    def loadRedirects(self, filename):
-        with codecs.open(filename, 'r', 'utf-8') as fin:
+    def parseRedirects(self, filename):
+        with codecs.open(filename, 'rb') as fin:
+            isValue = False
             for line in fin:
-                items = re.split(r'\t', line.strip())
-                if len(items) != 2: continue
-                if items[1] in self.titles:
-                    self.redirects[items[0]] = items[1]
-        print "successfully load %d redirects!" % len(self.redirects)
+                if line.startswith('INSERT INTO'):
+                    isValue = True
+                if isValue:
+                    for m in self.redirectRE.finditer(line.strip()):
+                        rd_id = m.group(1).decode(ENCODE)
+                        rd_title = m.group(2).decode(ENCODE)
+                        rd_title = rd_title.replace('\\', '')
+                        rd_title = rd_title.replace('_', ' ')
+                        self.tmp_redirects[rd_id] = rd_title
+        print "successfully parse %d redirects!" % len(self.tmp_redirects)
 
     def saveEntityDic(self, filename):
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w') as fout:
             for ent in self.entity_id:
-                fout.write('%s\t%s\n' % (self.entity_id[ent], ent))
+                fout.write('%s\t%s\n' % (self.entity_id[ent].encode(ENCODE), ent.encode(ENCODE)))
 
-    def linkExtract(self, filename):
+    def saveRedirects(self, filename):
+        with codecs.open(filename, 'w') as fout:
+            for r in self.redirects:
+                fout.write('%s\t%s\n' % (r.encode(ENCODE), self.redirects[r].encode(ENCODE)))
+
+
+    def parseLinks(self, filename):
         with codecs.open(filename, 'rb') as fin:
             isValue = False
             for line in fin:
@@ -80,14 +84,14 @@ class Preprocessor():
                     for m in self.linkRE.finditer(line.strip()):
                         title = None
                         outlink = None
-                        tmp_title = m.group(2).decode('ISO-8859-1')
-                        tmp_outlink = m.group(1).decode('ISO-8859-1')
+                        tmp_title = m.group(2).decode(ENCODE)
+                        tmp_outlink_id = m.group(1).decode(ENCODE)
                         if tmp_title in self.redirects:
                             title = self.redirects[tmp_title]
                         elif tmp_title in self.entity_id:
                             title = tmp_title
-                        if tmp_outlink in self.id_entity:
-                            outlink = self.id_entity[tmp_outlink]
+                        if tmp_outlink_id in self.id_entity:
+                            outlink = self.id_entity[tmp_outlink_id]
                         if title and outlink:
                             tmp_set = set() if title not in self.outlinks else self.outlinks[title]
                             tmp_set.add(outlink)
@@ -98,9 +102,9 @@ class Preprocessor():
         print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
 
     def saveOutlinks(self,filename):
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w') as fout:
             for t in self.outlinks:
-                fout.write('%s\t%s\n' % (t, '\t'.join(self.outlinks[t])))
+                fout.write('%s\t%s\n' % (t.encode(ENCODE), '\t'.join(self.outlinks[t].encode(ENCODE))))
 
     def saveLinkedEntity(self, filename):
         linked_entities = set()
@@ -109,34 +113,36 @@ class Preprocessor():
             for lt in self.outlinks[t]:
                 linked_entities.add(lt)
         print "totally %d linked entities!" % len(linked_entities)
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w') as fout:
             for t in linked_entities:
-                fout.write('%s\t%s\n' % (t, self.entity_id[t]))
+                fout.write('%s\t%s\n' % (self.entity_id[t].encode(ENCODE), t.encode(ENCODE)))
 
 def main():
-    '''
     dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
     lang = 'eswiki'
-    redirect_file = dump_path + lang + '/redirect_title'
-    title_file = dump_path + lang + '/wiki_title'
-    entity_index_file = dump_path + lang + '/' + lang + '-20170401-pages-articles-multistream-index.txt'
-    pagelink_file = dump_path + lang + '/' + lang + '-20170401-pagelinks.sql'
+    redirect_dump = dump_path + lang + '/' + lang + '-20170401-redirect.sql'
+    title_dump = dump_path + lang + '/' + lang + '-20170401-all-titles-in-ns0'
+    entity_index_dump = dump_path + lang + '/' + lang + '-20170401-pages-articles-multistream-index.txt'
+    pagelink_dump = dump_path + lang + '/' + lang + '-20170401-pagelinks.sql'
     # output
-    raw_vocab_entity_file = dump_path + lang + '/raw_vocab_entity.dat'
-    mono_outlink_file = dump_path + lang + '/mono_kg.dat'
-    vocab_entity_file = dump_path + lang + '/vocab_entity.dat'
+    output_path = lang + '_cl'
+    redirect_file = dump_path + output_path + '/vocab_redirects.dat'
+    raw_vocab_entity_file = dump_path + output_path + '/vocab_entity_all.dat'
+    mono_outlink_file = dump_path + output_path + '/mono_kg.dat'
+    vocab_entity_file = dump_path + output_path + '/vocab_entity.dat'
 
     preprocessor = Preprocessor()
-    preprocessor.loadTitles(title_file)
-    preprocessor.loadRedirects(redirect_file)
-    preprocessor.buildEntityDic(entity_index_file)
+    # build entity dic and redirect dic
+    preprocessor.loadTitles(title_dump)
+    preprocessor.parseRedirects(redirect_dump)
+    preprocessor.buildEntityDic(entity_index_dump)
     preprocessor.saveEntityDic(raw_vocab_entity_file)
-    preprocessor.linkExtract(pagelink_file)
+    preprocessor.saveRedirects(redirect_file)
+    # extract outlinks
+    preprocessor.parseLinks(pagelink_dump)
     preprocessor.saveOutlinks(mono_outlink_file)
     preprocessor.saveLinkedEntity(vocab_entity_file)
-    '''
-    sp = SqlParser()
-    sp.parseRedirects('/data/m1/cyx/MultiMPME/data/dumps20170401/zhwiki/zhwiki-20170401-redirect.sql')
+
 if __name__ == '__main__':
     main()
 
