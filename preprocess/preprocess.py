@@ -4,8 +4,9 @@ reload(sys)
 sys.setdefaultencoding('ISO-8859-1')
 import codecs
 import re
-import cgi
+import HTMLParser
 
+htmlparser = HTMLParser.HTMLParser()
 ENCODE = 'ISO-8859-1'
 
 class Preprocessor():
@@ -51,7 +52,7 @@ class Preprocessor():
         print "successfully build %d entities and %d redirects!" % (len(self.entity_id), len(self.redirects))
 
     def parseRedirects(self, filename):
-        with codecs.open(filename, 'rb') as fin:
+        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `redirect` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -69,9 +70,9 @@ class Preprocessor():
                 fout.write('%s\t%s\n' % (self.entity_id[ent], ent))
 
     def saveRedirects(self, filename):
-        with codecs.open(filename, 'w') as fout:
+        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for r in self.redirects:
-                fout.write('%s\t%s\n' % (cgi.escape(r), self.redirects[r]))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(r), self.redirects[r]))
 
 
     def parseLinks(self, filename):
