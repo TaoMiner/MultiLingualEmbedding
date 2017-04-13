@@ -52,7 +52,7 @@ class Preprocessor():
     def parseRedirects(self, filename):
         with codecs.open(filename, 'rb') as fin:
             for line in fin:
-                line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
+                line = line.replace('INSERT INTO `redirect` VALUES (', '')
                 for i in line.strip().split('),('):
                     m = self.redirectRE.match(i)  # Only select namespace 0 (Main/Article) pages
                     if m != None:
