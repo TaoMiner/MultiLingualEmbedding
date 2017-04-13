@@ -1,7 +1,7 @@
-#-*- coding: utf-8 -*-
+#-*- coding: ISO-8859-1 -*-
 import sys
 reload(sys)
-sys.setdefaultencoding('utf8')
+sys.setdefaultencoding('ISO-8859-1')
 import codecs
 import re
 
@@ -51,12 +51,11 @@ class Preprocessor():
 
     def parseRedirects(self, filename):
         with codecs.open(filename, 'rb') as fin:
-            isValue = False
             for line in fin:
-                if line.startswith('INSERT INTO'):
-                    isValue = True
-                if isValue:
-                    for m in self.redirectRE.finditer(line.strip()):
+                line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
+                for i in line.strip().split('),('):
+                    m = self.redirectRE.match(i)  # Only select namespace 0 (Main/Article) pages
+                    if m != None:
                         rd_id = m.group(1)
                         rd_title = m.group(2)
                         rd_title = rd_title.replace('\\', '')
