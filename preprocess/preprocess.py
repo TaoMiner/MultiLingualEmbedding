@@ -22,7 +22,7 @@ class Preprocessor():
         self.linkRE = re.compile(r'(\d{1,}),0,\'(.*?)\',0')
         # (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
         # only for main namespace 0
-        self.redirectRE = re.compile(r'\((\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'\)')
+        self.redirectRE = re.compile(r'(\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'')
 
     # title : separated by '_'
     def loadTitles(self, filename):
