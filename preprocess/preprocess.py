@@ -4,6 +4,7 @@ reload(sys)
 sys.setdefaultencoding('ISO-8859-1')
 import codecs
 import re
+import cgi
 
 ENCODE = 'ISO-8859-1'
 
@@ -70,7 +71,7 @@ class Preprocessor():
     def saveRedirects(self, filename):
         with codecs.open(filename, 'w') as fout:
             for r in self.redirects:
-                fout.write('%s\t%s\n' % (r, self.redirects[r]))
+                fout.write('%s\t%s\n' % (cgi.escape(r), self.redirects[r]))
 
 
     def parseLinks(self, filename):
