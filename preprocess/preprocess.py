@@ -169,7 +169,7 @@ class Preprocessor():
             self.cur_lang = 'es'
         elif lang == 'zhwiki':
             self.cur_lang = 'zh'
-        print "processing %d language!" % self.cur_lang
+        print "processing %s language!" % self.cur_lang
 
     def parseLangLinks(self, filename):
         with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
@@ -195,14 +195,15 @@ class Preprocessor():
 
     def addLangLink(self, cur_title, tar_lang, tar_title):
         if tar_lang == self.cur_lang : return
+
         if self.lang1_label == '':
             self.lang1_label = tar_lang
-        elif self.lang2_label == '':
-            self.lang2_label = tar_lang
-
         if tar_lang == self.lang1_label:
             self.lang1[cur_title] = tar_title
-        elif tar_lang == self.lang2_label:
+            return
+        if self.lang2_label == '':
+            self.lang2_label = tar_lang
+        if tar_lang == self.lang2_label:
             self.lang2[cur_title] = tar_title
 
     def saveLangLink(self, filename):
