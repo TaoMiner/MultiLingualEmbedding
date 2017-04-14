@@ -61,7 +61,7 @@ class Preprocessor():
 
                         if rd_id not in self.tmp_id_entity or rd_title not in self.entity_id or self.tmp_id_entity[rd_id] == rd_title:
                             continue
-                        self.id_redirects[rd_id] = self.tmp_id_entity[rd_id]
+                        self.id_redirects[rd_id] = rd_title
                         self.redirects[self.tmp_id_entity[rd_id]] = rd_title
                         # remove redirect title in entity dic
                         if rd_id in self.id_entity:
@@ -126,7 +126,7 @@ class Preprocessor():
         with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for t in linked_entities:
                 if t not in self.entity_id:
-                    print "error!%s" % t
+                    print "error!%s" % t.encode('ISO-8859-1')
                     continue
                 fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[t]), htmlparser.unescape(t)))
 
