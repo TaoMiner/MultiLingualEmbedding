@@ -99,6 +99,7 @@ class Preprocessor():
                 if len(items) != 2 : continue
                 self.entity_id[items[1]] = items[0]
                 self.id_entity[items[0]] = items[1]
+        print "successfully load %d entities!" % len(self.entity_id)
 
     def loadRedirects(self, filename):
         with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
@@ -108,6 +109,7 @@ class Preprocessor():
                 self.redirects_id[items[1]] = items[0]
                 self.id_redirects[items[0]] = items[1]
                 self.redirects[items[1]] = items[2]
+        print "successfully load %d redirects!" % len(self.redirects)
 
     def parseLinks(self, filename):
         with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
@@ -167,6 +169,7 @@ class Preprocessor():
             self.cur_lang = 'es'
         elif lang == 'zhwiki':
             self.cur_lang = 'zh'
+        print "processing %d language!" % self.cur_lang
 
     def parseLangLinks(self, filename):
         with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
@@ -188,6 +191,7 @@ class Preprocessor():
                             cur_title = self.id_entity[cur_id]
                         # not redirect target title
                         self.addLangLink(cur_title, target_lang, target_title)
+        print "successfully parsed %d links to %s lang, %d links to %s lang!" % (len(self.lang1), self.lang1_label, len(self.lang2), self.lang2_label)
 
     def addLangLink(self, cur_title, tar_lang, tar_title):
         if tar_lang == self.cur_lang : return
@@ -238,7 +242,7 @@ class Preprocessor():
             mergedlinks[2] = title
 
 dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
-lang = 'zhwiki'
+lang = 'eswiki'
 redirect_dump = dump_path + lang + '/' + lang + '-20170401-redirect.sql'
 title_dump = dump_path + lang + '/' + lang + '-20170401-all-titles-in-ns0'
 entity_index_dump = dump_path + lang + '/' + lang + '-20170401-pages-articles-multistream-index.txt'
