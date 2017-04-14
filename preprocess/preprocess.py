@@ -100,7 +100,7 @@ class Preprocessor():
                             target_title = tmp_target_title
                         if tmp_from_id in self.id_redirects:
                             from_title = self.id_redirects[tmp_from_id]
-                        elif tmp_from_id in self.entity_id:
+                        elif tmp_from_id in self.id_entity:
                             from_title = self.id_entity[tmp_from_id]
                         if from_title and target_title:
                             tmp_set = set() if from_title not in self.outlinks else self.outlinks[from_title]
