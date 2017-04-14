@@ -1,12 +1,10 @@
-#-*- coding: ISO-8859-1 -*-
-import sys
-reload(sys)
-sys.setdefaultencoding('ISO-8859-1')
-import cgi
-import HTMLParser
-parser = HTMLParser.HTMLParser()
+import re
 
-s = 'Ernán_Jiménez_&amp;&quot;Makano&amp;&quot;'
-s = s.decode('ISO-8859-1')
+disRE = re.compile("{{disambig(uation)?(\|[^}]*)?}}")
 
-print parser.unescape(s)
+ss = 'ca:weo'
+
+if ':' in ss:
+    print 1
+else:
+    print 2

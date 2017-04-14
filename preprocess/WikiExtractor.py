@@ -2823,7 +2823,6 @@ def pages_from(input):
         elif tag == '/page':
             if id != last_id and not redirect:
                 yield (id, revid, title, ns, page)
-                out_titles.add(title)
                 last_id = id
                 ns = '0'
             if redirect and redirect_title != None:
@@ -2957,6 +2956,8 @@ def process_dump(input_file, template_file, out_file, file_size, file_compress,
                     delay += 10
             if delay:
                 logging.info('Delay %ds', delay)
+            # cyx: collect all titles
+            out_titles.add(title)
             job = (id, revid, title, page, page_num)
             jobs_queue.put(job)  # goes to any available extract_process
             page_num += 1

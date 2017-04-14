@@ -30,9 +30,9 @@ class Preprocessor():
         with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
                 title = line.strip()
-                if title.startswith('page_title'): continue
-                title = title.replace('_', ' ')
-                self.titles.add(title)
+                # filter non title such as Category:xxx
+                if ':' not in title:
+                    self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
     def buildEntityDic(self, filename):
@@ -45,7 +45,7 @@ class Preprocessor():
                     if title in self.titles:
                         self.entity_id[title] = id
                         self.id_entity[id] = title
-                    elif id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
+                    if id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
                         self.redirects[title] = self.tmp_redirects[id]
         self.tmp_redirects.clear()
         self.titles.clear()
