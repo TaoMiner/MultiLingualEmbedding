@@ -17,6 +17,7 @@ class Preprocessor():
         self.entity_id = {}
         self.id_entity = {}
         self.redirects = {}
+        self.id_redirects = {}
         self.outlinks = {}
         self.nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
         # (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
@@ -60,14 +61,12 @@ class Preprocessor():
 
                         if rd_id not in self.tmp_id_entity or rd_title not in self.entity_id or self.tmp_id_entity[rd_id] == rd_title:
                             continue
-
+                        self.id_redirects[rd_id] = self.tmp_id_entity[rd_id]
+                        self.redirects[self.tmp_id_entity[rd_id]] = rd_title
                         # remove redirect title in entity dic
                         if rd_id in self.id_entity:
-                            self.redirects[self.id_entity[rd_id]] = rd_title
                             del self.entity_id[self.id_entity[rd_id]]
                             del self.id_entity[rd_id]
-                        else:
-                            self.redirects[self.tmp_id_entity[rd_id]] = rd_title
         print "successfully parse %d redirects for %d entities!" % (len(self.redirects), len(self.entity_id))
         del self.tmp_id_entity
         del self.tmp_entity_id
@@ -89,22 +88,24 @@ class Preprocessor():
                 for i in line.strip().split('),('):
                     m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
                     if m != None:
-                        title = None
-                        outlink = None
-                        tmp_title = m.group(2)
-                        tmp_title = tmp_title.replace('\\', '')
-                        tmp_title = tmp_title.replace('_', ' ')
-                        tmp_outlink_id = m.group(1)
-                        if tmp_title in self.redirects:
-                            title = self.redirects[tmp_title]
-                        elif tmp_title in self.entity_id:
-                            title = tmp_title
-                        if tmp_outlink_id in self.id_entity:
-                            outlink = self.id_entity[tmp_outlink_id]
-                        if title and outlink:
-                            tmp_set = set() if title not in self.outlinks else self.outlinks[title]
-                            tmp_set.add(outlink)
-                            self.outlinks[title] = tmp_set
+                        from_title = None
+                        target_title = None
+                        tmp_target_title = m.group(2)
+                        tmp_target_title = tmp_target_title.replace('\\', '')
+                        tmp_target_title = tmp_target_title.replace('_', ' ')
+                        tmp_from_id = m.group(1)
+                        if tmp_target_title in self.redirects:
+                            target_title = self.redirects[tmp_target_title]
+                        elif tmp_target_title in self.entity_id:
+                            target_title = tmp_target_title
+                        if tmp_from_id in self.id_redirects:
+                            from_title = self.id_redirects[tmp_from_id]
+                        elif tmp_from_id in self.entity_id:
+                            from_title = self.id_entity[tmp_from_id]
+                        if from_title and target_title:
+                            tmp_set = set() if from_title not in self.outlinks else self.outlinks[from_title]
+                            tmp_set.add(target_title)
+                            self.outlinks[from_title] = tmp_set
         outlink_num = 0
         for t in self.outlinks:
             outlink_num += len(self.outlinks[t])
@@ -131,7 +132,7 @@ class Preprocessor():
 
 def main():
     dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
-    lang = 'eswiki'
+    lang = 'zhwiki'
     redirect_dump = dump_path + lang + '/' + lang + '-20170401-redirect.sql'
     title_dump = dump_path + lang + '/' + lang + '-20170401-all-titles-in-ns0'
     entity_index_dump = dump_path + lang + '/' + lang + '-20170401-pages-articles-multistream-index.txt'
