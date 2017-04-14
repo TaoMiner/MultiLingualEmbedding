@@ -280,5 +280,5 @@ def extractLanglinks():
     preprocessor.saveLangLink(cross_link_file)
 
 if __name__ == '__main__':
-    buildMonoKG()
+    extractLanglinks()
 
