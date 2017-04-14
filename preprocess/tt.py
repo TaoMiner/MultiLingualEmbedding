@@ -1,10 +1,2 @@
-import re
-
-disRE = re.compile("{{disambig(uation)?(\|[^}]*)?}}")
-
-ss = 'ca:weo'
-
-if ':' in ss:
-    print 1
-else:
-    print 2
+for i in xrange(0, 6, 2):
+    print i
