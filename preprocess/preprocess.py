@@ -70,7 +70,7 @@ class Preprocessor():
 
                         if rd_id not in self.tmp_id_entity or rd_title not in self.entity_id or self.tmp_id_entity[rd_id] == rd_title:
                             continue
-                        self.id_redirects[rd_id] = rd_title
+                        self.id_redirects[rd_id] = self.tmp_id_entity[rd_id]
                         self.redirects_id[self.tmp_id_entity[rd_id]] = rd_id
                         self.redirects[self.tmp_id_entity[rd_id]] = rd_title
                         # remove redirect title in entity dic
@@ -127,7 +127,7 @@ class Preprocessor():
                         elif tmp_target_title in self.entity_id:
                             target_title = tmp_target_title
                         if tmp_from_id in self.id_redirects:
-                            from_title = self.id_redirects[tmp_from_id]
+                            from_title = self.redirects[self.id_redirects[tmp_from_id]]
                         elif tmp_from_id in self.id_entity:
                             from_title = self.id_entity[tmp_from_id]
                         if from_title and target_title:
@@ -151,12 +151,14 @@ class Preprocessor():
             for lt in self.outlinks[t]:
                 linked_entities.add(lt)
         print "totally %d linked entities!" % len(linked_entities)
+        error_count = 0
         with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
             for t in linked_entities:
                 if t not in self.entity_id:
-                    print "error!%s" % t.encode('ISO-8859-1')
+                    error_count += 1
                     continue
                 fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[t]), htmlparser.unescape(t)))
+        print "%d linked entities not in vocab!" % error_count
 
     def setCurLang(self, lang):
         if lang == 'enwiki':
