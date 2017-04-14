@@ -21,8 +21,8 @@
       <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="2956" column="21" lean-forward="true" selection-start-line="2956" selection-start-column="21" selection-end-line="2956" selection-end-column="21" />
+            <state relative-caret-position="187">
+              <caret line="3238" column="58" lean-forward="false" selection-start-line="3238" selection-start-column="40" selection-end-line="3238" selection-end-column="58" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -33,11 +33,11 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="506">
-              <caret line="43" column="38" lean-forward="true" selection-start-line="43" selection-start-column="38" selection-end-line="43" selection-end-column="38" />
+            <state relative-caret-position="293">
+              <caret line="125" column="45" lean-forward="false" selection-start-line="125" selection-start-column="45" selection-end-line="125" selection-end-column="45" />
               <folding>
-                <marker date="1492141394000" expanded="true" signature="2132:2163" ph="INSERT INTO `redirect`... " />
-                <marker date="1492141394000" expanded="true" signature="3417:3449" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1492145601000" expanded="true" signature="2134:2165" ph="INSERT INTO `redirect`... " />
+                <marker date="1492145601000" expanded="true" signature="3369:3401" ph="INSERT INTO `pagelinks`... " />
               </folding>
             </state>
           </provider>
@@ -446,8 +446,8 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1492141394000" expanded="true" signature="2132:2163" ph="INSERT INTO `redirect`... " />
-            <marker date="1492141394000" expanded="true" signature="3417:3449" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492145601000" expanded="true" signature="2134:2165" ph="INSERT INTO `redirect`... " />
+            <marker date="1492145601000" expanded="true" signature="3369:3401" ph="INSERT INTO `pagelinks`... " />
           </folding>
         </state>
       </provider>
@@ -503,16 +503,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="2956" column="21" lean-forward="true" selection-start-line="2956" selection-start-column="21" selection-end-line="2956" selection-end-column="21" />
-          <folding>
-            <element signature="e#2093#2142#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="230">
@@ -521,13 +511,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="3238" column="58" lean-forward="false" selection-start-line="3238" selection-start-column="40" selection-end-line="3238" selection-end-column="58" />
+          <folding>
+            <element signature="e#2093#2142#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="506">
-          <caret line="43" column="38" lean-forward="true" selection-start-line="43" selection-start-column="38" selection-end-line="43" selection-end-column="38" />
+        <state relative-caret-position="293">
+          <caret line="125" column="45" lean-forward="false" selection-start-line="125" selection-start-column="45" selection-end-line="125" selection-end-column="45" />
           <folding>
-            <marker date="1492141394000" expanded="true" signature="2132:2163" ph="INSERT INTO `redirect`... " />
-            <marker date="1492141394000" expanded="true" signature="3417:3449" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492145601000" expanded="true" signature="2134:2165" ph="INSERT INTO `redirect`... " />
+            <marker date="1492145601000" expanded="true" signature="3369:3401" ph="INSERT INTO `pagelinks`... " />
           </folding>
         </state>
       </provider>

@@ -45,7 +45,7 @@ class Preprocessor():
                     if title in self.titles:
                         self.entity_id[title] = id
                         self.id_entity[id] = title
-                    if id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
+                    elif id in self.tmp_redirects and self.tmp_redirects[id] in self.titles:
                         self.redirects[title] = self.tmp_redirects[id]
         self.tmp_redirects.clear()
         self.titles.clear()
@@ -78,15 +78,11 @@ class Preprocessor():
 
     def parseLinks(self, filename):
         with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
-            isValue = False
-            count = 0
             for line in fin:
                 line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
                 for i in line.strip().split('),('):
                     m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
                     if m != None:
-                        count += 1
-                        if count % 1000000 == 0: print '%d links has parsed!' % count
                         title = None
                         outlink = None
                         tmp_title = m.group(2)
@@ -133,6 +129,7 @@ def main():
     pagelink_dump = dump_path + lang + '/' + lang + '-20170401-pagelinks.sql'
     # output
     output_path = lang + '_cl'
+    title_file = dump_path + output_path + '/wiki_article_title'
     redirect_file = dump_path + output_path + '/vocab_redirects.dat'
     raw_vocab_entity_file = dump_path + output_path + '/vocab_entity_all.dat'
     mono_outlink_file = dump_path + output_path + '/mono_kg.dat'
@@ -140,7 +137,7 @@ def main():
 
     preprocessor = Preprocessor()
     # build entity dic and redirect dic
-    preprocessor.loadTitles(title_dump)
+    preprocessor.loadTitles(title_file)
     preprocessor.parseRedirects(redirect_dump)
     preprocessor.buildEntityDic(entity_index_dump)
     preprocessor.saveEntityDic(raw_vocab_entity_file)
