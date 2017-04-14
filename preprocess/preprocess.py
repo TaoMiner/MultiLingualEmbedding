@@ -30,9 +30,7 @@ class Preprocessor():
         with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
             for line in fin:
                 title = line.strip()
-                # filter non title such as Category:xxx
-                if ':' not in title:
-                    self.titles.add(title)
+                self.titles.add(title)
         print "successfully load %d titles!" % len(self.titles)
 
     def buildEntityDic(self, filename):
