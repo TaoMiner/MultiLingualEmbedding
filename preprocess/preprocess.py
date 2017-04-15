@@ -365,6 +365,7 @@ class cleaner():
                     # some chinese entities contain whitespace
                     seg_line = "_".join(seg_list)
                     for s, e in self.findBalanced(seg_line,  ['[_['], [']_]']):
+                        print seg_line.encode(ENCODE)
                         # remove postfix of an anchor
                         tmp_line = re.sub(r'_', ' ', line[cur:s])
                         tmp_line = self.regularize(tmp_line)
