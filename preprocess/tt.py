@@ -4,7 +4,11 @@ reload(sys)
 sys.setdefaultencoding('ISO-8859-1')
 import jieba
 import re
+import string
 
-s = ''
+s = 'awf, swer sefw. sdf'
+punc = re.compile('[%s]' % re.escape(string.punctuation))
+s1 = punc.sub('', s)
 
-print s.rfind(' ')
+print s
+print s1

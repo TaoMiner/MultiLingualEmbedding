@@ -431,11 +431,11 @@ class cleaner():
                         if len(res)>0:
                             tmp_pos = tmp_line.find(' ')
                             tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                        print line[cur:s].encode(ENCODE)
-                        print tmp_line.encode(ENCODE)
                         res += tmp_line
+                        print "res:%s" % res.encode(ENCODE)
 
                         tmp_anchor = line[s:e]
+                        print "anchor:%s" % tmp_anchor.encode(ENCODE)
                         # extract title and label
                         tmp_vbar = tmp_anchor.find('|')
                         tmp_title = ''
@@ -469,17 +469,13 @@ class cleaner():
                             self.mentions[tmp_title] = tmp_mention
                         # remove prefix of anchor
                         tmp_pos = res.rfind(' ')
-                        print res.encode(ENCODE)
                         res = res[:tmp_pos] if tmp_pos != -1 else ''
-                        print res.encode(ENCODE)
                         res += tmp_anchor
                         cur = e
                     tmp_line = self.regularize(line[cur:])
                     if len(res) > 0:
                         tmp_pos = tmp_line.find(' ')
                         tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                    print line[cur:].encode(ENCODE)
-                    print tmp_line.encode(ENCODE)
                     res += tmp_line + '\n'
                     if len(res) > 11:
                         return
