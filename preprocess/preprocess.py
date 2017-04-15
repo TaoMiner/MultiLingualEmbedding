@@ -210,15 +210,17 @@ class Preprocessor():
         if self.lang2_label == '' and self.lang1_label == '' : return
         # list: english \t chinese \t Spanish
         multilinguallinks = []
+        overlapped_set = set()
         for ct in self.lang1:
             if ct in self.lang2:
-                tmp_ml = self.mergeLangLinks([ct, self.cur_lang, self.lang1[ct], self.lang1_label, self.lang2, self.lang2_label])
-                del self.lang2[ct]
+                overlapped_set.add(ct)
+                tmp_ml = self.mergeLangLinks([ct, self.cur_lang, self.lang1[ct], self.lang1_label, self.lang2[ct], self.lang2_label])
             else:
                 tmp_ml = self.mergeLangLinks([ct, self.cur_lang, self.lang1[ct], self.lang1_label, '', self.lang2_label])
             if tmp_ml:
                 multilinguallinks.append(tmp_ml)
         for ct in self.lang2:
+            if ct in overlapped_set : continue
             tmp_ml = self.mergeLangLinks([ct, self.cur_lang, '', self.lang1_label, self.lang2[ct], self.lang2_label])
             if tmp_ml:
                 multilinguallinks.append(tmp_ml)
@@ -234,7 +236,7 @@ class Preprocessor():
             self.processLangs(mergedlinks, links[i], links[i+1])
         return mergedlinks
 
-    def processLangs(self, mergedlinks, lang, title):
+    def processLangs(self, mergedlinks, title, lang):
         if lang == 'en':
             mergedlinks[0] = title
         elif lang == 'zh':
