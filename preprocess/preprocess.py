@@ -467,7 +467,11 @@ class cleaner():
                         if len(tmp_anchor)>0:
                             res += tmp_anchor + ' '
                         cur = e
-                    res += line[cur:] + '\n'
+                    tmp_line = self.regularize(line[cur:])
+                    if len(tmp_line) > 0:
+                        res += self.regularize(line[cur:]) + '\n'
+                    else:
+                        res = res.strip() + '\n'
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
