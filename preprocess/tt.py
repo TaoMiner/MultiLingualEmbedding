@@ -1,3 +1,3 @@
-s = None
+s = ''
 
-print type(s)
+print s.isspace()

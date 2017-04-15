@@ -9,6 +9,26 @@ import HTMLParser
 htmlparser = HTMLParser.HTMLParser()
 ENCODE = 'ISO-8859-1'
 
+# parameters
+class options():
+    def __init__(self, lang):
+        self.dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
+        self.lang = lang
+        self.redirect_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-redirect.sql'
+        self.title_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-all-titles-in-ns0'
+        self.entity_index_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-pages-articles-multistream-index.txt'
+        self.pagelink_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-pagelinks.sql'
+        self.langlink_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-langlinks.sql'
+        # output
+        self.output_path = self.lang + '_cl'
+        self.title_file = self.dump_path + self.output_path + '/wiki_article_title'
+        self.redirect_file = self.dump_path + self.output_path + '/vocab_redirects.dat'
+        self.raw_vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity_all.dat'
+        self.mono_outlink_file = self.dump_path + self.output_path + '/mono_kg.dat'
+        self.vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity.dat'
+        self.cross_link_file = self.dump_path + self.output_path + '/cross_links.dat'
+
+
 class Preprocessor():
 
     def __init__(self):
@@ -245,44 +265,93 @@ class Preprocessor():
         elif lang == 'es':
             mergedlinks[2] = title
 
-dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
-lang = 'eswiki'
-redirect_dump = dump_path + lang + '/' + lang + '-20170401-redirect.sql'
-title_dump = dump_path + lang + '/' + lang + '-20170401-all-titles-in-ns0'
-entity_index_dump = dump_path + lang + '/' + lang + '-20170401-pages-articles-multistream-index.txt'
-pagelink_dump = dump_path + lang + '/' + lang + '-20170401-pagelinks.sql'
-langlink_dump = dump_path + lang + '/' + lang + '-20170401-langlinks.sql'
-# output
-output_path = lang + '_cl'
-title_file = dump_path + output_path + '/wiki_article_title'
-redirect_file = dump_path + output_path + '/vocab_redirects.dat'
-raw_vocab_entity_file = dump_path + output_path + '/vocab_entity_all.dat'
-mono_outlink_file = dump_path + output_path + '/mono_kg.dat'
-vocab_entity_file = dump_path + output_path + '/vocab_entity.dat'
-cross_link_file = dump_path + output_path + '/cross_links.dat'
-
-def buildMonoKG():
+def buildMonoKG(options):
     preprocessor = Preprocessor()
     # build entity dic and redirect dic
-    preprocessor.loadTitleIndex(entity_index_dump)
-    preprocessor.buildEntityDic(title_file)
-    preprocessor.parseRedirects(redirect_dump)
-    preprocessor.saveEntityDic(raw_vocab_entity_file)
-    preprocessor.saveRedirects(redirect_file)
+    preprocessor.loadTitleIndex(options.entity_index_dump)
+    preprocessor.buildEntityDic(options.title_file)
+    preprocessor.parseRedirects(options.redirect_dump)
+    preprocessor.saveEntityDic(options.raw_vocab_entity_file)
+    preprocessor.saveRedirects(options.redirect_file)
     # extract outlinks
-    preprocessor.parseLinks(pagelink_dump)
-    preprocessor.saveOutlinks(mono_outlink_file)
-    preprocessor.saveLinkedEntity(vocab_entity_file)
+    preprocessor.parseLinks(options.pagelink_dump)
+    preprocessor.saveOutlinks(options.mono_outlink_file)
+    preprocessor.saveLinkedEntity(options.vocab_entity_file)
 
-def extractLanglinks():
+def extractLanglinks(options):
     preprocessor = Preprocessor()
-    preprocessor.setCurLang(lang)
-    preprocessor.loadEntityDic(vocab_entity_file)
-    preprocessor.loadRedirects(redirect_file)
+    preprocessor.setCurLang(options.lang)
+    preprocessor.loadEntityDic(options.vocab_entity_file)
+    preprocessor.loadRedirects(options.redirect_file)
 
-    preprocessor.parseLangLinks(langlink_dump)
-    preprocessor.saveLangLink(cross_link_file)
+    preprocessor.parseLangLinks(options.langlink_dump)
+    preprocessor.saveLangLink(options.cross_link_file)
+
+# pre: [enpre, zhpre, espre]
+# en_dict: {'entitle':[zhtitle, estitle]}
+# non_en_dict: {zhtitle: estitle}
+def merge(pre, en_dict, non_en_dict, dict_file):
+    with codecs.open(dict_file, 'rb', 'ISO-8859-1') as fin:
+        for line in fin:
+            items = re.split(r'\t', line.strip())
+            if len(items) != 3 : continue
+            # en_title, zh_title, es_title
+            titles = [u'', u'', u'']
+            for i in xrange(3):
+                if items[i] in pre[i].redirects:
+                    items[i] = pre[i].redirects[items[i]]
+                if items[i] in pre[i].entity_id:
+                    titles[i] = items[i]
+            # differiate if there is english title
+            if len(titles[0]) > 0:
+                if titles[0] not in en_dict:
+                    en_dict[titles[0]] = titles[1:]
+                else:
+                    tmp_list = en_dict[titles[0]]
+                    for i in xrange(2):
+                        if len(tmp_list[i]) <= 0 and len(titles[i+1]) > 0:
+                            tmp_list[i] = titles[i+1]
+                    en_dict[titles[0]] = tmp_list
+            else:
+                if len(titles[1]) > 0 and len(titles[2]) > 0:
+                    non_en_dict[titles[1]] = titles[2]
+    print 'successfully merged %d enlink tuples and %d non-enlink tuples!' % (len(en_dict), len(non_en_dict))
+
+def mergeCrossLinks():
+    enOp = options('enwiki')
+    esOp = options('eswiki')
+    zhOp = options('zhwiki')
+
+    enPre = Preprocessor()
+    enPre.setCurLang(enOp.lang)
+    enPre.loadEntityDic(enOp.vocab_entity_file)
+    enPre.loadRedirects(enOp.redirect_file)
+
+    esPre = Preprocessor()
+    esPre.setCurLang(esOp.lang)
+    esPre.loadEntityDic(esOp.vocab_entity_file)
+    esPre.loadRedirects(esOp.redirect_file)
+
+    zhPre = Preprocessor()
+    zhPre.setCurLang(zhOp.lang)
+    zhPre.loadEntityDic(zhOp.vocab_entity_file)
+    zhPre.loadRedirects(zhOp.redirect_file)
+
+    en_dict = {}
+    non_en_dict = {}
+    merge([enPre, zhPre, esPre], en_dict, non_en_dict, enOp.cross_link_file)
+    merge([enPre, zhPre, esPre], en_dict, non_en_dict, zhOp.cross_link_file)
+    merge([enPre, zhPre, esPre], en_dict, non_en_dict, esOp.cross_link_file)
+
+    with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', 'ISO-8859-1') as fout:
+        fout.write("%d\n" % (len(en_dict) + len(non_en_dict)))
+        for et in en_dict:
+            fout.write("%s\t%s\n" % (et, '\t'.join(en_dict[et])))
+        for zt in non_en_dict:
+            fout.write("\t%s\t%s\n" % (zt, non_en_dict[zt]))
 
 if __name__ == '__main__':
-    extractLanglinks()
+    #op = options('eswiki')
+    #extractLanglinks(op)
+    mergeCrossLinks()
 
