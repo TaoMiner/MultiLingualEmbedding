@@ -481,8 +481,8 @@ class cleaner():
                     print line[cur:].encode(ENCODE)
                     print tmp_line.encode(ENCODE)
                     res += tmp_line + '\n'
-                    return
                     if len(res) > 11:
+                        return
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
         with codecs.open(mention_file, 'w', ENCODE) as fout:
