@@ -299,7 +299,7 @@ class cleaner():
         tmp_line = self.punc.sub('', str)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
-        tmp_line = self.numRE2.sub('dddddd', tmp_line).lower()
+        tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
         return tmp_line
 
     def findBalanced(self, text, openDelim=['[['], closeDelim=[']]']):
@@ -428,14 +428,10 @@ class cleaner():
                     for s, e in self.findBalanced(line):
                         # remove postfix of an anchor
                         tmp_line = self.regularize(line[cur:s])
-                        if len(res)>0:
-                            tmp_pos = tmp_line.find(' ')
-                            tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                        res += tmp_line
-                        print "res:%s" % res.encode(ENCODE)
+                        if len(tmp_line) > 0:
+                            res += tmp_line + ' '
 
                         tmp_anchor = line[s:e]
-                        print "anchor:%s" % tmp_anchor.encode(ENCODE)
                         # extract title and label
                         tmp_vbar = tmp_anchor.find('|')
                         tmp_title = ''
@@ -468,17 +464,11 @@ class cleaner():
                                 tmp_mention[tmp_label] = 1
                             self.mentions[tmp_title] = tmp_mention
                         # remove prefix of anchor
-                        tmp_pos = res.rfind(' ')
-                        res = res[:tmp_pos] if tmp_pos != -1 else ''
-                        res += tmp_anchor
+                        if len(tmp_anchor)>0:
+                            res += tmp_anchor + ' '
                         cur = e
-                    tmp_line = self.regularize(line[cur:])
-                    if len(res) > 0:
-                        tmp_pos = tmp_line.find(' ')
-                        tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                    res += tmp_line + '\n'
+                    res += line[cur:] + '\n'
                     if len(res) > 11:
-                        return
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
         with codecs.open(mention_file, 'w', ENCODE) as fout:
