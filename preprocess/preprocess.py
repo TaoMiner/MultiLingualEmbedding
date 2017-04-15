@@ -431,8 +431,8 @@ class cleaner():
                         if len(res)>0:
                             tmp_pos = tmp_line.find(' ')
                             tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                        print line[cur:s]
-                        print tmp_line
+                        print line[cur:s].encode(ENCODE)
+                        print tmp_line.encode(ENCODE)
                         res += tmp_line
 
                         tmp_anchor = line[s:e]
@@ -469,18 +469,19 @@ class cleaner():
                             self.mentions[tmp_title] = tmp_mention
                         # remove prefix of anchor
                         tmp_pos = res.rfind(' ')
-                        print res
+                        print res.encode(ENCODE)
                         res = res[:tmp_pos] if tmp_pos != -1 else ''
-                        print res
+                        print res.encode(ENCODE)
                         res += tmp_anchor
                         cur = e
                     tmp_line = self.regularize(line[cur:])
                     if len(res) > 0:
                         tmp_pos = tmp_line.find(' ')
                         tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
-                    print line[cur:]
-                    print tmp_line
+                    print line[cur:].encode(ENCODE)
+                    print tmp_line.encode(ENCODE)
                     res += tmp_line + '\n'
+                    return
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
