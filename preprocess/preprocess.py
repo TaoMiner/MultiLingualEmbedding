@@ -7,6 +7,7 @@ import re
 import HTMLParser
 from itertools import izip, izip_longest
 import string
+import jieba
 
 htmlparser = HTMLParser.HTMLParser()
 ENCODE = 'ISO-8859-1'
@@ -29,7 +30,7 @@ class options():
         self.mono_outlink_file = self.dump_path + self.output_path + '/mono_kg.dat'
         self.vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity.dat'
         self.cross_link_file = self.dump_path + self.output_path + '/cross_links.dat'
-        self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text.dat'
+        self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text'
         self.anchor_file = self.dump_path + self.output_path + '/anchor_text_cl.dat'
         self.mention_file = self.dump_path + self.output_path + '/mention_count.dat'
 
@@ -298,7 +299,7 @@ class cleaner():
         tmp_line = self.punc.sub(' ', str)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
-        tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
+        tmp_line = self.numRE2.sub('dddddd', tmp_line).lower()
         return tmp_line
 
     def findBalanced(self, text, openDelim=['[['], closeDelim=[']]']):
@@ -352,7 +353,7 @@ class cleaner():
         else:
             self.cleanOtherWiki(wiki_anchor_file, output_file, mention_file)
 
-    def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
+    def cleanZHWiki(self, wiki_anchor_file, output_file, mention_file):
         anchor_count = 0
         with codecs.open(wiki_anchor_file, 'rb', ENCODE) as fin:
             with codecs.open(output_file, 'w', ENCODE) as fout:
@@ -401,6 +402,82 @@ class cleaner():
                         cur = e
                     res += self.regularize(line[cur:]) + '\n'
                     if len(res) > 10:
+                        fout.write(res)
+        print 'process train text finished! start count %d anchors ...' % anchor_count
+        with codecs.open(mention_file, 'w', ENCODE) as fout:
+            fout.write("%d\n" % anchor_count)
+            out_list = []
+            for t in self.mentions:
+                out_list.append(self.entity_id[t] + '\t' + t + "\t" + "\t".join(
+                    ["%s::=%s" % (k, v) for k, v in self.mentions[t].items()]) + "\n")
+                if len(out_list) >= 10000:
+                    fout.writelines(out_list)
+                    del out_list[:]
+            if len(out_list) > 0:
+                fout.writelines(out_list)
+        print 'count mentions finished!'
+
+    def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
+        anchor_count = 0
+        with codecs.open(wiki_anchor_file, 'rb', ENCODE) as fin:
+            with codecs.open(output_file, 'w', ENCODE) as fout:
+                for line in fin:
+                    cur = 0
+                    res = ''
+                    res_anchor = ''
+                    line = line.strip()
+                    for s, e in self.findBalanced(line):
+                        # remove postfix of an anchor
+                        tmp_line = self.regularize(line[cur:s])
+                        if len(res)>0:
+                            tmp_pos = tmp_line.find(' ')
+                            tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
+                        res += tmp_line
+
+                        res_anchor += line[cur:s]
+                        tmp_anchor = line[s:e]
+                        # extract title and label
+                        tmp_vbar = tmp_anchor.find('|')
+                        tmp_title = ''
+                        tmp_label = ''
+                        if tmp_vbar > 0:
+                            tmp_title = tmp_anchor[2:tmp_vbar]
+                            tmp_label = tmp_anchor[tmp_vbar + 1:-2]
+                        else:
+                            tmp_title = tmp_anchor[2:-2]
+                            tmp_label = tmp_title
+                        # map the right title
+                        tmp_label = self.regularize(tmp_label)
+                        if tmp_title not in self.entity_id and tmp_title not in self.redirects:
+                            tmp_anchor = tmp_label
+                        else:
+                            if tmp_title in self.redirects:
+                                tmp_title = self.redirects[tmp_title]
+                            if tmp_title == tmp_label:
+                                tmp_anchor = '[[' + tmp_title + ']]'
+                            else:
+                                tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+                            anchor_count += 1
+                            if anchor_count % 100000 == 0:
+                                print 'has processed %d anchors!' % anchor_count
+                            # count the mentions
+                            tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
+                            if tmp_label in tmp_mention:
+                                tmp_mention[tmp_label] += 1
+                            else:
+                                tmp_mention[tmp_label] = 1
+                            self.mentions[tmp_title] = tmp_mention
+                        # remove prefix of anchor
+                        tmp_pos = res.rfind(' ')
+                        res = res[:tmp_pos] if tmp_pos != -1 else ''
+                        res += tmp_anchor
+                        cur = e
+                    tmp_line = self.regularize(line[cur:])
+                    if len(res) > 0:
+                        tmp_pos = tmp_line.find(' ')
+                        tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
+                    res += tmp_line + '\n'
+                    if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
         with codecs.open(mention_file, 'w', ENCODE) as fout:
