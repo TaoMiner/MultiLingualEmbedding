@@ -296,7 +296,7 @@ class cleaner():
         # possessive case 's
         # tmp_line = re.sub(r' s |\'s', ' ', str)
         # following clean wiki xml, punctuation, numbers, and lower case
-        tmp_line = self.punc.sub(' ', str)
+        tmp_line = self.punc.sub('', str)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
         tmp_line = self.numRE2.sub('dddddd', tmp_line).lower()
@@ -424,7 +424,6 @@ class cleaner():
                 for line in fin:
                     cur = 0
                     res = ''
-                    res_anchor = ''
                     line = line.strip()
                     for s, e in self.findBalanced(line):
                         # remove postfix of an anchor
@@ -432,9 +431,10 @@ class cleaner():
                         if len(res)>0:
                             tmp_pos = tmp_line.find(' ')
                             tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
+                        print line[cur:s]
+                        print tmp_line
                         res += tmp_line
 
-                        res_anchor += line[cur:s]
                         tmp_anchor = line[s:e]
                         # extract title and label
                         tmp_vbar = tmp_anchor.find('|')
@@ -469,13 +469,17 @@ class cleaner():
                             self.mentions[tmp_title] = tmp_mention
                         # remove prefix of anchor
                         tmp_pos = res.rfind(' ')
+                        print res
                         res = res[:tmp_pos] if tmp_pos != -1 else ''
+                        print res
                         res += tmp_anchor
                         cur = e
                     tmp_line = self.regularize(line[cur:])
                     if len(res) > 0:
                         tmp_pos = tmp_line.find(' ')
                         tmp_line = tmp_line[tmp_pos:] if tmp_pos != -1 else ''
+                    print line[cur:]
+                    print tmp_line
                     res += tmp_line + '\n'
                     if len(res) > 11:
                         fout.write(res)
