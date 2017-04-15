@@ -360,23 +360,33 @@ class cleaner():
                 for line in fin:
                     cur = 0
                     res = ''
-                    res_anchor = ''
                     line = line.strip()
-                    for s, e in self.findBalanced(line):
-                        res += self.regularize(line[cur:s])
-                        res_anchor += line[cur:s]
+                    seg_list = jieba.cut(line, cut_all=False)
+                    # some chinese entities contain whitespace
+                    seg_line = "_".join(seg_list)
+                    for s, e in self.findBalanced(seg_line,  ['[_['], [']_]']):
+                        # remove postfix of an anchor
+                        tmp_line = re.sub(r'_', ' ', line[cur:s])
+                        tmp_line = self.regularize(tmp_line)
+                        if len(tmp_line) > 0:
+                            res += tmp_line + ' '
+
                         tmp_anchor = line[s:e]
                         # extract title and label
+                        # [_[_word_word_|_word_word_]_] or [_[_word_word_]_]
                         tmp_vbar = tmp_anchor.find('|')
                         tmp_title = ''
                         tmp_label = ''
                         if tmp_vbar > 0:
-                            tmp_title = tmp_anchor[2:tmp_vbar]
-                            tmp_label = tmp_anchor[tmp_vbar + 1:-2]
+                            tmp_title = tmp_anchor[4:tmp_vbar]
+                            tmp_label = tmp_anchor[tmp_vbar + 2:-4]
                         else:
-                            tmp_title = tmp_anchor[2:-2]
+                            tmp_title = tmp_anchor[4:-4]
                             tmp_label = tmp_title
                         # map the right title
+                        tmp_title = re.sub(r'_', '', tmp_title)
+                        mention_label = tmp_label
+                        tmp_label = re.sub(r'_', ' ', tmp_label)
                         tmp_label = self.regularize(tmp_label)
                         if tmp_title not in self.entity_id and tmp_title not in self.redirects:
                             tmp_anchor = tmp_label
@@ -392,16 +402,22 @@ class cleaner():
                                 print 'has processed %d anchors!' % anchor_count
                             # count the mentions
                             tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
-                            if tmp_label in tmp_mention:
-                                tmp_mention[tmp_label] += 1
+                            if mention_label in tmp_mention:
+                                tmp_mention[mention_label] += 1
                             else:
-                                tmp_mention[tmp_label] = 1
+                                tmp_mention[mention_label] = 1
                             self.mentions[tmp_title] = tmp_mention
-
-                        res += tmp_anchor
+                        # remove prefix of anchor
+                        if len(tmp_anchor) > 0:
+                            res += tmp_anchor + ' '
                         cur = e
-                    res += self.regularize(line[cur:]) + '\n'
-                    if len(res) > 10:
+                    tmp_line = re.sub(r'_', ' ', line[cur:])
+                    tmp_line = self.regularize(tmp_line)
+                    if len(tmp_line) > 0:
+                        res += self.regularize(line[cur:]) + '\n'
+                    else:
+                        res = res.strip() + '\n'
+                    if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
         with codecs.open(mention_file, 'w', ENCODE) as fout:
@@ -576,7 +592,7 @@ def mergeCrossLinks():
 
 
 def clean():
-    op = options('eswiki')
+    op = options('zhwiki')
     pre = Preprocessor()
     pre.setCurLang(op.lang)
     pre.loadEntityDic(op.vocab_entity_file)

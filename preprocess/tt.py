@@ -1,14 +1,14 @@
-#-*- coding: ISO-8859-1 -*-
+#-*- coding: utf8 -*-
 import sys
 reload(sys)
-sys.setdefaultencoding('ISO-8859-1')
+sys.setdefaultencoding('utf8')
 import jieba
 import re
 import string
+from itertools import izip, izip_longest
 
-s = 'awf, swer sefw. sdf'
-punc = re.compile('[%s]' % re.escape(string.punctuation))
-s1 = punc.sub('', s)
-
-print s
-print s1
+ss = 'w_w_w'
+a = ss
+ss = re.sub(r'_', ' ', ss)
+print ss
+print a
