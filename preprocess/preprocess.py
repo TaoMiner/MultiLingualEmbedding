@@ -190,7 +190,8 @@ class Preprocessor():
                         elif cur_id in self.id_entity:
                             cur_title = self.id_entity[cur_id]
                         # not redirect target title
-                        self.addLangLink(cur_title, target_lang, target_title)
+                        if cur_title:
+                            self.addLangLink(cur_title, target_lang, target_title)
         print "successfully parsed %d links to %s lang, %d links to %s lang!" % (len(self.lang1), self.lang1_label, len(self.lang2), self.lang2_label)
 
     def addLangLink(self, cur_title, tar_lang, tar_title):
