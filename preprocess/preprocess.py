@@ -5,6 +5,8 @@ sys.setdefaultencoding('ISO-8859-1')
 import codecs
 import re
 import HTMLParser
+from itertools import izip, izip_longest
+import string
 
 htmlparser = HTMLParser.HTMLParser()
 ENCODE = 'ISO-8859-1'
@@ -27,7 +29,9 @@ class options():
         self.mono_outlink_file = self.dump_path + self.output_path + '/mono_kg.dat'
         self.vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity.dat'
         self.cross_link_file = self.dump_path + self.output_path + '/cross_links.dat'
-
+        self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text.dat'
+        self.anchor_file = self.dump_path + self.output_path + '/anchor_text_cl.dat'
+        self.mention_file = self.dump_path + self.output_path + '/mention_count.dat'
 
 class Preprocessor():
 
@@ -57,7 +61,7 @@ class Preprocessor():
         self.langlinkRE = re.compile(r'(\d{1,}),\'(en|zh|es)\',\'(.*?)\'')
 
     def loadTitleIndex(self, filename):
-        with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'r', ENCODE) as fin:
             for line in fin:
                 m = self.nsidRE.match(line.strip())
                 if m != None:
@@ -68,7 +72,7 @@ class Preprocessor():
         print "successfully load %d title index!" % len(self.tmp_entity_id)
 
     def buildEntityDic(self, filename):
-        with codecs.open(filename, 'r', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'r', ENCODE) as fin:
             for line in fin:
                 title = line.strip()
                 if title in self.tmp_entity_id:
@@ -77,7 +81,7 @@ class Preprocessor():
         print "successfully build %d entities!" % len(self.entity_id)
 
     def parseRedirects(self, filename):
-        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'rb', ENCODE) as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `redirect` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -102,18 +106,18 @@ class Preprocessor():
         del self.tmp_entity_id
 
     def saveEntityDic(self, filename):
-        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
+        with codecs.open(filename, 'w', ENCODE) as fout:
             for ent in self.entity_id:
                 fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent)))
 
     def saveRedirects(self, filename):
-        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
+        with codecs.open(filename, 'w', ENCODE) as fout:
             for r in self.redirects:
                 # r_id \t r_title \t title
                 fout.write('%s\t%s\t%s\n' % (self.redirects_id[r], htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
     def loadEntityDic(self, filename):
-        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'rb', ENCODE) as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
@@ -122,7 +126,7 @@ class Preprocessor():
         print "successfully load %d entities!" % len(self.entity_id)
 
     def loadRedirects(self, filename):
-        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'rb', ENCODE) as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) != 3 : continue
@@ -132,7 +136,7 @@ class Preprocessor():
         print "successfully load %d redirects!" % len(self.redirects)
 
     def parseLinks(self, filename):
-        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'rb', ENCODE) as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -162,7 +166,7 @@ class Preprocessor():
         print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
 
     def saveOutlinks(self,filename):
-        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
+        with codecs.open(filename, 'w', ENCODE) as fout:
             for t in self.outlinks:
                 fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
 
@@ -174,7 +178,7 @@ class Preprocessor():
                 linked_entities.add(lt)
         print "totally %d linked entities!" % len(linked_entities)
         error_count = 0
-        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
+        with codecs.open(filename, 'w', ENCODE) as fout:
             for t in linked_entities:
                 if t not in self.entity_id:
                     error_count += 1
@@ -192,7 +196,7 @@ class Preprocessor():
         print "processing %s language!" % self.cur_lang
 
     def parseLangLinks(self, filename):
-        with codecs.open(filename, 'rb', 'ISO-8859-1') as fin:
+        with codecs.open(filename, 'rb', ENCODE) as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `langlinks` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -245,7 +249,7 @@ class Preprocessor():
             tmp_ml = self.mergeLangLinks([ct, self.cur_lang, '', self.lang1_label, self.lang2[ct], self.lang2_label])
             if tmp_ml:
                 multilinguallinks.append(tmp_ml)
-        with codecs.open(filename, 'w', 'ISO-8859-1') as fout:
+        with codecs.open(filename, 'w', ENCODE) as fout:
             fout.write("%d\n" % len(multilinguallinks))
             for links in multilinguallinks:
                 fout.write("%s\n" % '\t'.join(links))
@@ -264,6 +268,153 @@ class Preprocessor():
             mergedlinks[1] = title
         elif lang == 'es':
             mergedlinks[2] = title
+
+class cleaner():
+
+    def __init__(self):
+        self.cur_lang = None
+        self.entity_id = {}
+        self.redirects = {}
+        self.mentions = {}
+
+        self.punc = re.compile('[%s]' % re.escape(string.punctuation))
+        self.numRE1 = re.compile(r'(?<=\s)[\d\s]+(?=($|\s))')
+        self.numRE2 = re.compile(r'(?<=^)[\d\s]+(?=($|\s))')
+        self.spaceRE = re.compile(r'[\s]+')
+
+    def setCurLang(self, lang):
+        if lang == 'enwiki':
+            self.cur_lang = 'en'
+        elif lang == 'eswiki':
+            self.cur_lang = 'es'
+        elif lang == 'zhwiki':
+            self.cur_lang = 'zh'
+        print "cleaning %s language!" % self.cur_lang
+
+    def regularize(self, str):
+        # possessive case 's
+        # tmp_line = re.sub(r' s |\'s', ' ', str)
+        # following clean wiki xml, punctuation, numbers, and lower case
+        tmp_line = self.punc.sub(' ', str)
+        tmp_line = self.spaceRE.sub(' ', tmp_line)
+        tmp_line = self.numRE1.sub('dddddd', tmp_line)
+        tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
+        return tmp_line
+
+    def findBalanced(self, text, openDelim=['[['], closeDelim=[']]']):
+        """
+        Assuming that text contains a properly balanced expression using
+        :param openDelim: as opening delimiters and
+        :param closeDelim: as closing delimiters.
+        :return: an iterator producing pairs (start, end) of start and end
+        positions in text containing a balanced expression.
+        """
+        openPat = '|'.join([re.escape(x) for x in openDelim])
+        afterPat = dict()
+        for o, c in izip(openDelim, closeDelim):
+            afterPat[o] = re.compile(openPat + '|' + c, re.DOTALL)
+        stack = []
+        start = 0
+        cur = 0
+        # end = len(text)
+        startSet = False
+        startPat = re.compile(openPat)
+        nextPat = startPat
+        while True:
+            next = nextPat.search(text, cur)
+            if not next:
+                return
+            if not startSet:
+                start = next.start()
+                startSet = True
+            delim = next.group(0)
+            if delim in openDelim:
+                stack.append(delim)
+                nextPat = afterPat[delim]
+            else:
+                opening = stack.pop()
+                # assert opening == openDelim[closeDelim.index(next.group(0))]
+                if stack:
+                    nextPat = afterPat[stack[-1]]
+                else:
+                    yield start, next.end()
+                    nextPat = startPat
+                    start = next.end()
+                    startSet = False
+            cur = next.end()
+
+    def clean(self, wiki_anchor_file, output_file, mention_file):
+        if isinstance(self.cur_lang, type(None)):
+            print "don't know what language!"
+            return
+        if self.cur_lang == 'zh':
+            self.cleanZHWiki(wiki_anchor_file, output_file, mention_file)
+        else:
+            self.cleanOtherWiki(wiki_anchor_file, output_file, mention_file)
+
+    def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
+        anchor_count = 0
+        with codecs.open(wiki_anchor_file, 'rb', ENCODE) as fin:
+            with codecs.open(output_file, 'w', ENCODE) as fout:
+                for line in fin:
+                    cur = 0
+                    res = ''
+                    res_anchor = ''
+                    line = line.strip()
+                    for s, e in self.findBalanced(line):
+                        res += self.regularize(line[cur:s])
+                        res_anchor += line[cur:s]
+                        tmp_anchor = line[s:e]
+                        # extract title and label
+                        tmp_vbar = tmp_anchor.find('|')
+                        tmp_title = ''
+                        tmp_label = ''
+                        if tmp_vbar > 0:
+                            tmp_title = tmp_anchor[2:tmp_vbar]
+                            tmp_label = tmp_anchor[tmp_vbar + 1:-2]
+                        else:
+                            tmp_title = tmp_anchor[2:-2]
+                            tmp_label = tmp_title
+                        # map the right title
+                        tmp_label = self.regularize(tmp_label)
+                        if tmp_title not in self.entity_id and tmp_title not in self.redirects:
+                            tmp_anchor = tmp_label
+                        else:
+                            if tmp_title in self.redirects:
+                                tmp_title = self.redirects[tmp_title]
+                            if tmp_title == tmp_label:
+                                tmp_anchor = '[[' + tmp_title + ']]'
+                            else:
+                                tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+                            anchor_count += 1
+                            if anchor_count % 100000 == 0:
+                                print 'has processed %d anchors!' % anchor_count
+                            # count the mentions
+                            tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
+                            if tmp_label in tmp_mention:
+                                tmp_mention[tmp_label] += 1
+                            else:
+                                tmp_mention[tmp_label] = 1
+                            self.mentions[tmp_title] = tmp_mention
+
+                        res += tmp_anchor
+                        cur = e
+                    res += self.regularize(line[cur:]) + '\n'
+                    if len(res) > 10:
+                        fout.write(res)
+        print 'process train text finished! start count %d anchors ...' % anchor_count
+        with codecs.open(mention_file, 'w', ENCODE) as fout:
+            fout.write("%d\n" % anchor_count)
+            out_list = []
+            for t in self.mentions:
+                out_list.append(self.entity_id[t] + '\t' + t + "\t" + "\t".join(
+                    ["%s::=%s" % (k, v) for k, v in self.mentions[t].items()]) + "\n")
+                if len(out_list) >= 10000:
+                    fout.writelines(out_list)
+                    del out_list[:]
+            if len(out_list) > 0:
+                fout.writelines(out_list)
+        print 'count mentions finished!'
 
 def buildMonoKG(options):
     preprocessor = Preprocessor()
@@ -291,7 +442,7 @@ def extractLanglinks(options):
 # en_dict: {'entitle':[zhtitle, estitle]}
 # non_en_dict: {zhtitle: estitle}
 def merge(pre, en_dict, non_en_dict, dict_file):
-    with codecs.open(dict_file, 'rb', 'ISO-8859-1') as fin:
+    with codecs.open(dict_file, 'rb', ENCODE) as fin:
         for line in fin:
             items = re.split(r'\t', line.strip())
             if len(items) != 3 : continue
@@ -343,15 +494,30 @@ def mergeCrossLinks():
     merge([enPre, zhPre, esPre], en_dict, non_en_dict, zhOp.cross_link_file)
     merge([enPre, zhPre, esPre], en_dict, non_en_dict, esOp.cross_link_file)
 
-    with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', 'ISO-8859-1') as fout:
+    with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', ENCODE) as fout:
         fout.write("%d\n" % (len(en_dict) + len(non_en_dict)))
         for et in en_dict:
             fout.write("%s\t%s\n" % (et, '\t'.join(en_dict[et])))
         for zt in non_en_dict:
             fout.write("\t%s\t%s\n" % (zt, non_en_dict[zt]))
 
-if __name__ == '__main__':
-    #op = options('eswiki')
-    #extractLanglinks(op)
-    mergeCrossLinks()
 
+
+def clean():
+    op = options('eswiki')
+    pre = Preprocessor()
+    pre.setCurLang(op.lang)
+    pre.loadEntityDic(op.vocab_entity_file)
+    pre.loadRedirects(op.redirect_file)
+
+    cl = cleaner()
+    cl.cur_lang = op.lang
+    cl.entity_id = pre.entity_id
+    cl.redirects = pre.redirects
+    cl.clean(op.raw_anchor_file, op.anchor_file, op.mention_file)
+
+if __name__ == '__main__':
+    # op = options('eswiki')
+    # extractLanglinks(op)
+    # mergeCrossLinks()
+    clean()

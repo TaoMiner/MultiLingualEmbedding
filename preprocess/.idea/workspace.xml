@@ -10,7 +10,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/preprocess$tt.coverage" NAME="tt Coverage Results" MODIFIED="1492269259689" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/preprocess$tt.coverage" NAME="tt Coverage Results" MODIFIED="1492279435332" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -21,8 +21,8 @@
       <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2070">
-              <caret line="111" column="26" lean-forward="true" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="26" />
+            <state relative-caret-position="352">
+              <caret line="3256" column="0" lean-forward="false" selection-start-line="3256" selection-start-column="0" selection-end-line="3256" selection-end-column="0" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -33,12 +33,12 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1097">
-              <caret line="292" column="4" lean-forward="false" selection-start-line="292" selection-start-column="4" selection-end-line="292" selection-end-column="4" />
+            <state relative-caret-position="237">
+              <caret line="516" column="48" lean-forward="true" selection-start-line="516" selection-start-column="48" selection-end-line="516" selection-end-column="48" />
               <folding>
-                <marker date="1492270286000" expanded="true" signature="3586:3617" ph="INSERT INTO `redirect`... " />
-                <marker date="1492270286000" expanded="true" signature="6436:6468" ph="INSERT INTO `pagelinks`... " />
-                <marker date="1492270286000" expanded="true" signature="9427:9459" ph="INSERT INTO `langlinks`... " />
+                <marker date="1492281002000" expanded="true" signature="3883:3914" ph="INSERT INTO `redirect`... " />
+                <marker date="1492281002000" expanded="true" signature="6703:6735" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1492281002000" expanded="true" signature="9676:9708" ph="INSERT INTO `langlinks`... " />
               </folding>
             </state>
           </provider>
@@ -47,8 +47,8 @@
       <file leaf-file-name="tt.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="46">
-              <caret line="2" column="17" lean-forward="false" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
+            <state relative-caret-position="299">
+              <caret line="13" column="24" lean-forward="false" selection-start-line="13" selection-start-column="24" selection-end-line="13" selection-end-column="24" />
               <folding />
             </state>
           </provider>
@@ -74,6 +74,7 @@
       <find>redirect</find>
       <find>filter_disambig_pages</find>
       <find>keepPage</find>
+      <find>'ISO-8859-1'</find>
     </findStrings>
   </component>
   <component name="IdeDocumentHistory">
@@ -477,9 +478,9 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1492270286000" expanded="true" signature="3586:3617" ph="INSERT INTO `redirect`... " />
-            <marker date="1492270286000" expanded="true" signature="6436:6468" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1492270286000" expanded="true" signature="9427:9459" ph="INSERT INTO `langlinks`... " />
+            <marker date="1492281002000" expanded="true" signature="3883:3914" ph="INSERT INTO `redirect`... " />
+            <marker date="1492281002000" expanded="true" signature="6703:6735" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492281002000" expanded="true" signature="9676:9708" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -537,8 +538,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2070">
-          <caret line="111" column="26" lean-forward="true" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="26" />
+        <state relative-caret-position="352">
+          <caret line="3256" column="0" lean-forward="false" selection-start-line="3256" selection-start-column="0" selection-end-line="3256" selection-end-column="0" />
           <folding>
             <element signature="e#2093#2142#0" expanded="true" />
           </folding>
@@ -547,20 +548,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tt.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="46">
-          <caret line="2" column="17" lean-forward="false" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
+        <state relative-caret-position="299">
+          <caret line="13" column="24" lean-forward="false" selection-start-line="13" selection-start-column="24" selection-end-line="13" selection-end-column="24" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1097">
-          <caret line="292" column="4" lean-forward="false" selection-start-line="292" selection-start-column="4" selection-end-line="292" selection-end-column="4" />
+        <state relative-caret-position="237">
+          <caret line="516" column="48" lean-forward="true" selection-start-line="516" selection-start-column="48" selection-end-line="516" selection-end-column="48" />
           <folding>
-            <marker date="1492270286000" expanded="true" signature="3586:3617" ph="INSERT INTO `redirect`... " />
-            <marker date="1492270286000" expanded="true" signature="6436:6468" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1492270286000" expanded="true" signature="9427:9459" ph="INSERT INTO `langlinks`... " />
+            <marker date="1492281002000" expanded="true" signature="3883:3914" ph="INSERT INTO `redirect`... " />
+            <marker date="1492281002000" expanded="true" signature="6703:6735" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492281002000" expanded="true" signature="9676:9708" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
