@@ -696,7 +696,7 @@ void InitMultiModel(char *cross_link_file){
             i = 0;
             j++;
         }
-        if (i>2) continue;
+        if (i>=NUM_LANG) continue;
         a = SearchVocab(item, model[KG_VOCAB][i]);
         cross_links[i][j] = a;
         if (a!=-1)
