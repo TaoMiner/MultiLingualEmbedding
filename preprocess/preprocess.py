@@ -3,12 +3,15 @@
 import codecs
 import re
 import HTMLParser
-from itertools import izip, izip_longest
+from itertools import izip
 import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-ENCODING = 'utf-8'
+
+
+# wiki dump encoding as latin-1, we convert them to utf-8
+
 
 # parameters
 class options():
@@ -60,7 +63,7 @@ class Preprocessor():
         self.langlinkRE = re.compile(r'(\d{1,}),\'(en|zh|es)\',\'(.*?)\'')
 
     def loadTitleIndex(self, filename):
-        with codecs.open(filename, 'r', ENCODING) as fin:
+        with codecs.open(filename, 'r', 'latin-1') as fin:
             for line in fin:
                 m = self.nsidRE.match(line.strip())
                 if m != None:
@@ -71,7 +74,7 @@ class Preprocessor():
         print "successfully load %d title index!" % len(self.tmp_entity_id)
 
     def buildEntityDic(self, filename):
-        with codecs.open(filename, 'r', ENCODING) as fin:
+        with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 title = line.strip()
                 if title in self.tmp_entity_id:
@@ -80,7 +83,7 @@ class Preprocessor():
         print "successfully build %d entities!" % len(self.entity_id)
 
     def parseRedirects(self, filename):
-        with codecs.open(filename, 'rb', ENCODING) as fin:
+        with codecs.open(filename, 'rb', 'latin-1') as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `redirect` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -105,18 +108,18 @@ class Preprocessor():
         del self.tmp_entity_id
 
     def saveEntityDic(self, filename):
-        with codecs.open(filename, 'w', ENCODING) as fout:
+        with codecs.open(filename, 'w', 'utf-8') as fout:
             for ent in self.entity_id:
                 fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent)))
 
     def saveRedirects(self, filename):
-        with codecs.open(filename, 'w', ENCODING) as fout:
+        with codecs.open(filename, 'w', 'utf-8') as fout:
             for r in self.redirects:
                 # r_id \t r_title \t title
                 fout.write('%s\t%s\t%s\n' % (self.redirects_id[r], htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
     def loadEntityDic(self, filename):
-        with codecs.open(filename, 'rb', ENCODING) as fin:
+        with codecs.open(filename, 'rb', 'utf-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
@@ -125,7 +128,7 @@ class Preprocessor():
         print "successfully load %d entities!" % len(self.entity_id)
 
     def loadRedirects(self, filename):
-        with codecs.open(filename, 'rb', ENCODING) as fin:
+        with codecs.open(filename, 'rb', 'utf-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) != 3 : continue
@@ -135,17 +138,17 @@ class Preprocessor():
         print "successfully load %d redirects!" % len(self.redirects)
 
     def parseLinks(self, filename):
-        with codecs.open(filename, 'rb', ENCODING) as fin:
+        with codecs.open(filename, 'rb', 'latin-1') as fin:
             for line in fin:
-                line = line.replace('INSERT INTO `pagelinks` VALUES (', '')
-                for i in line.strip().split('),('):
+                line = line.replace(u'INSERT INTO `pagelinks` VALUES (', '')
+                for i in line.strip().split(u'),('):
                     m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
                     if m != None:
                         from_title = None
                         target_title = None
                         tmp_target_title = m.group(2)
-                        tmp_target_title = tmp_target_title.replace('\\', '')
-                        tmp_target_title = tmp_target_title.replace('_', ' ')
+                        tmp_target_title = tmp_target_title.replace(u'\\', '')
+                        tmp_target_title = tmp_target_title.replace(u'_', ' ')
                         tmp_from_id = m.group(1)
                         if tmp_target_title in self.redirects:
                             target_title = self.redirects[tmp_target_title]
@@ -165,7 +168,7 @@ class Preprocessor():
         print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
 
     def saveOutlinks(self,filename):
-        with codecs.open(filename, 'w', ENCODING) as fout:
+        with codecs.open(filename, 'w', 'utf-8') as fout:
             for t in self.outlinks:
                 fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
 
@@ -177,7 +180,7 @@ class Preprocessor():
                 linked_entities.add(lt)
         print "totally %d linked entities!" % len(linked_entities)
         error_count = 0
-        with codecs.open(filename, 'w', ENCODING) as fout:
+        with codecs.open(filename, 'w', 'utf-8') as fout:
             for t in linked_entities:
                 if t not in self.entity_id:
                     error_count += 1
@@ -195,7 +198,7 @@ class Preprocessor():
         print "processing %s language!" % self.cur_lang
 
     def parseLangLinks(self, filename):
-        with codecs.open(filename, 'rb', ENCODING) as fin:
+        with codecs.open(filename, 'rb', 'latin-1') as fin:
             for line in fin:
                 line = line.replace('INSERT INTO `langlinks` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -248,7 +251,7 @@ class Preprocessor():
             tmp_ml = self.mergeLangLinks([ct, self.cur_lang, '', self.lang1_label, self.lang2[ct], self.lang2_label])
             if tmp_ml:
                 multilinguallinks.append(tmp_ml)
-        with codecs.open(filename, 'w', ENCODING) as fout:
+        with codecs.open(filename, 'w', 'utf-8') as fout:
             fout.write("%d\n" % len(multilinguallinks))
             for links in multilinguallinks:
                 fout.write("%s\n" % '\t'.join(links))
@@ -353,8 +356,8 @@ class cleaner():
 
     def cleanZHWiki(self, wiki_anchor_file, output_file, mention_file):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', ENCODING) as fin:
-            with codecs.open(output_file, 'w', ENCODING) as fout:
+        with codecs.open(wiki_anchor_file, 'rb', 'latin-1') as fin:
+            with codecs.open(output_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
                     res = ''
@@ -363,7 +366,6 @@ class cleaner():
                     # some chinese entities contain whitespace
                     seg_line = "_".join(seg_list)
                     for s, e in self.findBalanced(seg_line,  ['[_['], [']_]']):
-                        print seg_line.encode(ENCODING)
                         # remove postfix of an anchor
                         tmp_line = re.sub(r'_', ' ', line[cur:s])
                         tmp_line = self.regularize(tmp_line)
@@ -419,7 +421,7 @@ class cleaner():
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
-        with codecs.open(mention_file, 'w', ENCODING) as fout:
+        with codecs.open(mention_file, 'w', 'utf-8') as fout:
             fout.write("%d\n" % anchor_count)
             out_list = []
             for t in self.mentions:
@@ -434,8 +436,8 @@ class cleaner():
 
     def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', ENCODING) as fin:
-            with codecs.open(output_file, 'w', ENCODING) as fout:
+        with codecs.open(wiki_anchor_file, 'rb', 'latin-1') as fin:
+            with codecs.open(output_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
                     res = ''
@@ -490,7 +492,7 @@ class cleaner():
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
-        with codecs.open(mention_file, 'w', ENCODING) as fout:
+        with codecs.open(mention_file, 'w', 'utf-8') as fout:
             fout.write("%d\n" % anchor_count)
             out_list = []
             for t in self.mentions:
@@ -529,7 +531,7 @@ def extractLanglinks(options):
 # en_dict: {'entitle':[zhtitle, estitle]}
 # non_en_dict: {zhtitle: estitle}
 def merge(pre, en_dict, non_en_dict, dict_file):
-    with codecs.open(dict_file, 'rb', ENCODING) as fin:
+    with codecs.open(dict_file, 'rb', 'utf-8') as fin:
         for line in fin:
             items = re.split(r'\t', line.strip())
             if len(items) != 3 : continue
@@ -581,7 +583,7 @@ def mergeCrossLinks():
     merge([enPre, zhPre, esPre], en_dict, non_en_dict, zhOp.cross_link_file)
     merge([enPre, zhPre, esPre], en_dict, non_en_dict, esOp.cross_link_file)
 
-    with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', ENCODING) as fout:
+    with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', 'utf-8') as fout:
         fout.write("%d\n" % (len(en_dict) + len(non_en_dict)))
         for et in en_dict:
             fout.write("%s\t%s\n" % (et, '\t'.join(en_dict[et])))
