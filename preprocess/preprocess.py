@@ -139,8 +139,9 @@ class Preprocessor():
         print "successfully load %d redirects!" % len(self.redirects)
 
     def parseLinks(self, filename):
-        with codecs.open(filename, 'rb', 'latin-1') as fin:
+        with codecs.open(filename, 'rb') as fin:
             for line in fin:
+                line = line.decode('utf-8', 'ignore')
                 line = line.replace(u'INSERT INTO `pagelinks` VALUES (', '')
                 for i in line.strip().split(u'),('):
                     m = self.linkRE.match(i)  # Only select namespace 0 (Main/Article) pages
@@ -199,8 +200,9 @@ class Preprocessor():
         print "processing %s language!" % self.cur_lang
 
     def parseLangLinks(self, filename):
-        with codecs.open(filename, 'rb', 'latin-1') as fin:
+        with codecs.open(filename, 'rb') as fin:
             for line in fin:
+                line = line.decode('utf-8', 'ignore')
                 line = line.replace('INSERT INTO `langlinks` VALUES (', '')
                 for i in line.strip().split('),('):
                     m = self.langlinkRE.match(i)
