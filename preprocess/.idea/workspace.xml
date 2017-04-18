@@ -21,8 +21,8 @@
       <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="23" />
+            <state relative-caret-position="303">
+              <caret line="3243" column="18" lean-forward="false" selection-start-line="3243" selection-start-column="18" selection-end-line="3243" selection-end-column="18" />
               <folding>
                 <element signature="e#2093#2142#0" expanded="true" />
               </folding>
@@ -33,13 +33,13 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="449">
-              <caret line="608" column="26" lean-forward="true" selection-start-line="608" selection-start-column="26" selection-end-line="608" selection-end-column="26" />
+            <state relative-caret-position="92">
+              <caret line="88" column="74" lean-forward="true" selection-start-line="88" selection-start-column="74" selection-end-line="88" selection-end-column="74" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
-                <marker date="1492473279000" expanded="true" signature="3882:3913" ph="INSERT INTO `redirect`... " />
-                <marker date="1492473279000" expanded="true" signature="6710:6742" ph="INSERT INTO `pagelinks`... " />
-                <marker date="1492473279000" expanded="true" signature="9691:9723" ph="INSERT INTO `langlinks`... " />
+                <marker date="1492475609000" expanded="true" signature="3923:3954" ph="INSERT INTO `redirect`... " />
+                <marker date="1492475609000" expanded="true" signature="6751:6783" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1492475609000" expanded="true" signature="9732:9764" ph="INSERT INTO `langlinks`... " />
               </folding>
             </state>
           </provider>
@@ -470,9 +470,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1492473279000" expanded="true" signature="3882:3913" ph="INSERT INTO `redirect`... " />
-            <marker date="1492473279000" expanded="true" signature="6710:6742" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1492473279000" expanded="true" signature="9691:9723" ph="INSERT INTO `langlinks`... " />
+            <marker date="1492475609000" expanded="true" signature="3923:3954" ph="INSERT INTO `redirect`... " />
+            <marker date="1492475609000" expanded="true" signature="6751:6783" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492475609000" expanded="true" signature="9732:9764" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -511,9 +511,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1492473279000" expanded="true" signature="3882:3913" ph="INSERT INTO `redirect`... " />
-            <marker date="1492473279000" expanded="true" signature="6710:6742" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1492473279000" expanded="true" signature="9691:9723" ph="INSERT INTO `langlinks`... " />
+            <marker date="1492475609000" expanded="true" signature="3923:3954" ph="INSERT INTO `redirect`... " />
+            <marker date="1492475609000" expanded="true" signature="6751:6783" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492475609000" expanded="true" signature="9732:9764" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -579,8 +579,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/WikiExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="23" />
+        <state relative-caret-position="303">
+          <caret line="3243" column="18" lean-forward="false" selection-start-line="3243" selection-start-column="18" selection-end-line="3243" selection-end-column="18" />
           <folding>
             <element signature="e#2093#2142#0" expanded="true" />
           </folding>
@@ -589,13 +589,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="449">
-          <caret line="608" column="26" lean-forward="true" selection-start-line="608" selection-start-column="26" selection-end-line="608" selection-end-column="26" />
+        <state relative-caret-position="92">
+          <caret line="88" column="74" lean-forward="true" selection-start-line="88" selection-start-column="74" selection-end-line="88" selection-end-column="74" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1492473279000" expanded="true" signature="3882:3913" ph="INSERT INTO `redirect`... " />
-            <marker date="1492473279000" expanded="true" signature="6710:6742" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1492473279000" expanded="true" signature="9691:9723" ph="INSERT INTO `langlinks`... " />
+            <marker date="1492475609000" expanded="true" signature="3923:3954" ph="INSERT INTO `redirect`... " />
+            <marker date="1492475609000" expanded="true" signature="6751:6783" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1492475609000" expanded="true" signature="9732:9764" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>

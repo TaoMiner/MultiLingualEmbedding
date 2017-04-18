@@ -63,7 +63,7 @@ class Preprocessor():
         self.langlinkRE = re.compile(r'(\d{1,}),\'(en|zh|es)\',\'(.*?)\'')
 
     def loadTitleIndex(self, filename):
-        with codecs.open(filename, 'r', 'latin-1') as fin:
+        with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 m = self.nsidRE.match(line.strip())
                 if m != None:
@@ -83,8 +83,9 @@ class Preprocessor():
         print "successfully build %d entities!" % len(self.entity_id)
 
     def parseRedirects(self, filename):
-        with codecs.open(filename, 'rb', 'latin-1') as fin:
+        with codecs.open(filename, 'rb') as fin:
             for line in fin:
+                line = line.decode('utf-8', 'ignore')
                 line = line.replace('INSERT INTO `redirect` VALUES (', '')
                 for i in line.strip().split('),('):
                     m = self.redirectRE.match(i)  # Only select namespace 0 (Main/Article) pages
@@ -356,7 +357,7 @@ class cleaner():
 
     def cleanZHWiki(self, wiki_anchor_file, output_file, mention_file):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', 'latin-1') as fin:
+        with codecs.open(wiki_anchor_file, 'rb', 'utf-8') as fin:
             with codecs.open(output_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
@@ -436,7 +437,7 @@ class cleaner():
 
     def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', 'latin-1') as fin:
+        with codecs.open(wiki_anchor_file, 'rb', 'utf-8') as fin:
             with codecs.open(output_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
