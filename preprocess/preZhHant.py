@@ -48,14 +48,15 @@ def loadTitleIndex(filename):
 formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)(;.*?\}|\})-')
 # format zh-cn and zh-tw
 def zhwikiReplacefj(zhwiki_file, zhwiki_format_file):
+    line_count = 0
     with codecs.open(zhwiki_file, 'r') as fin:
         with codecs.open(zhwiki_format_file, 'w', 'utf-8') as fout:
             for line in fin:
+                line_count += 1
+                if line_count % 1000000: print "has processed %d lines!" % line_count
                 line = line.decode('utf-8', 'ignore')
                 line = formatRE.sub('\g<label>', line)
                 fout.write(line)
-
-
 
 op = options('zhwiki')
 
