@@ -53,7 +53,7 @@ def zhwikiReplacefj(zhwiki_file, zhwiki_format_file):
         with codecs.open(zhwiki_format_file, 'w', 'utf-8') as fout:
             for line in fin:
                 line_count += 1
-                if line_count % 1000000: print "has processed %d lines!" % line_count
+                if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
                 line = line.decode('utf-8', 'ignore')
                 line = formatRE.sub('\g<label>', line)
                 fout.write(line)
