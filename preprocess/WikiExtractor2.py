@@ -3084,7 +3084,7 @@ def reduce_process(opts, output_queue, spool_length,
 # Minimum size of output files
 minFileSize = 200 * 1024
 
-
+linked_entities = set()
 def main():
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -3233,6 +3233,8 @@ def main():
 
     # load cross lingual linked entities
     linked_entity_file = args.crosslingual_file
+    pre = Preprocessor()
+    linked_entities = pre.loadCrossLinks(linked_entity_file)
 
     process_dump(input_file, args.templates, output_path, file_size,
                  args.compress, args.processes)

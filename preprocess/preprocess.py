@@ -472,7 +472,7 @@ class cleaner():
                     tmp_line = re.sub(r'_', ' ', seg_line[cur:])
                     tmp_line = self.regularize(tmp_line)
                     if len(tmp_line) > 0:
-                        res += self.regularize(seg_line[cur:]) + '\n'
+                        res += tmp_line + '\n'
                     else:
                         res = res.strip() + '\n'
                     if len(res) > 11:
