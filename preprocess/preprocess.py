@@ -349,9 +349,10 @@ class cleaner():
         # possessive case 's
         # tmp_line = re.sub(r' s |\'s', ' ', str)
         # following clean wiki xml, punctuation, numbers, and lower case
-        if self.op.lang == 'zhwiki':
-            tmp_line = self.zhpunc.sub('', str)
+
         tmp_line = self.punc.sub('', str)
+        if self.op.lang == 'zhwiki':
+            tmp_line = self.zhpunc.sub('', tmp_line)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
         tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
