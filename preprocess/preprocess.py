@@ -313,6 +313,21 @@ class Preprocessor():
         elif lang == 'es':
             mergedlinks[2] = title
 
+    def loadCrossLinks(self, filename):
+        with codecs.open(filename, 'rb', 'utf-8') as fin:
+            line_count = 0
+            link_dict = set()
+            for line in fin:
+                line_count += 1
+                if line_count < 2 : continue
+                items = re.split(r'\t', line.strip())
+                if len(items) != 3: continue
+                for i in items:
+                    if len(i) < 1: continue
+                    link_dict.add(i)
+        print "successfully load %d cross lingual entities!" % len(link_dict)
+        return link_dict
+
 class cleaner():
 
     def __init__(self, options, preprocessor):
@@ -408,12 +423,12 @@ class cleaner():
                     seg_line = "_".join(seg_list)
                     for s, e in self.findBalanced(seg_line,  ['[_['], [']_]']):
                         # remove postfix of an anchor
-                        tmp_line = re.sub(r'_', ' ', line[cur:s])
+                        tmp_line = re.sub(r'_', ' ', seg_line[cur:s])
                         tmp_line = self.regularize(tmp_line)
                         if len(tmp_line) > 0:
                             res += tmp_line + ' '
 
-                        tmp_anchor = line[s:e]
+                        tmp_anchor = seg_line[s:e]
                         # extract title and label
                         # [_[_word_word_|_word_word_]_] or [_[_word_word_]_]
                         tmp_vbar = tmp_anchor.find('|')
@@ -454,10 +469,10 @@ class cleaner():
                         if len(tmp_anchor) > 0:
                             res += tmp_anchor + ' '
                         cur = e
-                    tmp_line = re.sub(r'_', ' ', line[cur:])
+                    tmp_line = re.sub(r'_', ' ', seg_line[cur:])
                     tmp_line = self.regularize(tmp_line)
                     if len(tmp_line) > 0:
-                        res += self.regularize(line[cur:]) + '\n'
+                        res += self.regularize(seg_line[cur:]) + '\n'
                     else:
                         res = res.strip() + '\n'
                     if len(res) > 11:
@@ -633,7 +648,6 @@ def mergeCrossLinks():
             fout.write("\t%s\n" % '\t'.join(tmp_line))
 
 # clean anchor text symbols, convert [[entity|label]] to [[entity_id|label]]
-# format mono_kg to entity_id \t entityid
 def clean(lang):
     op = options(lang)
 
@@ -687,9 +701,11 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
+    lang = 'zhwiki'
     # mkb = MonoKGBuilder()
-    # mkb.setCurLang('zhwiki')
+    # mkb.setCurLang(lang)
     # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
-    mergeCrossLinks()
-    clean('zhwiki')
+    # mergeCrossLinks()
+    # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
+    clean(lang)
