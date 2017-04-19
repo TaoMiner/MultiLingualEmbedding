@@ -2818,7 +2818,8 @@ def pages_from(input):
         elif inText:
             page.append(line)
         elif tag == '/page':
-            if id != last_id and not redirect:
+            # cyx: only keep title in linked_entities
+            if id != last_id and not redirect and title in linked_entities:
                 yield (id, revid, title, ns, page)
                 last_id = id
                 ns = '0'
@@ -2826,7 +2827,6 @@ def pages_from(input):
             revid = None
             title = None
             page = []
-            redirect_title = None
 
 
 def process_dump(input_file, template_file, out_file, file_size, file_compress,
@@ -2951,8 +2951,6 @@ def process_dump(input_file, template_file, out_file, file_size, file_compress,
                     delay += 10
             if delay:
                 logging.info('Delay %ds', delay)
-            # cyx: collect all titles
-            out_titles.add(title)
             job = (id, revid, title, page, page_num)
             jobs_queue.put(job)  # goes to any available extract_process
             page_num += 1
