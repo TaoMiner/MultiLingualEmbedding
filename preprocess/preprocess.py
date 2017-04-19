@@ -8,7 +8,7 @@ import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-
+jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
 
 # wiki dump encoding as latin-1, we convert them to utf-8
 
@@ -33,6 +33,7 @@ class options():
         self.raw_vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity_all.dat'
         # kg file
         self.mono_outlink_file = self.dump_path + self.output_path + '/mono_kg.dat'
+        self.mono_outlink_idfile = self.dump_path + self.output_path + '/mono_kg_id.dat'
         # linked entity vocab
         self.vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity.dat'
         # cross links file
@@ -196,10 +197,21 @@ class Preprocessor():
             outlink_num += len(self.outlinks[t])
         print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
 
-    def saveOutlinks(self,filename):
+    def saveOutlinks(self,filename,idfilename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
-            for t in self.outlinks:
-                fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
+            with codecs.open(idfilename, 'w', 'utf-8') as fout_id:
+                tmp_line = []
+                for t in self.outlinks:
+                    if t not in self.entity_id or len(self.entity_id[t]) < 1: continue
+                    fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
+                    tmp_line.append(self.entity_id[t])
+                    for tt in self.outlinks[t]:
+                        if tt in self.entity_id:
+                            tmp_line.append(self.entity_id[tt])
+                    if len(tmp_line) > 1:
+                        fout_id.write('%s\n' % '\t'.join(tmp_line))
+                    del tmp_line[:]
+
 
     def saveLinkedEntity(self, filename):
         linked_entities = set()
@@ -303,31 +315,29 @@ class Preprocessor():
 
 class cleaner():
 
-    def __init__(self):
-        self.cur_lang = None
-        self.entity_id = {}
-        self.redirects = {}
+    def __init__(self, options, preprocessor):
+        self.op = options
+        self.entity_id = preprocessor.entity_id
+        self.redirects = preprocessor.redirects
         self.mentions = {}
+        print "cleaning %s language!" % self.op.lang
 
-        self.punc = re.compile('[%s]' % re.escape(string.punctuation))
+        self.punc = re.compile(ur'[%s]' % re.escape(string.punctuation))
+        zh_punctuation = "！？｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
+        self.zhpunc = re.compile(ur'[%s]' % re.escape(zh_punctuation.decode('utf-8')))
+
         self.numRE1 = re.compile(r'(?<=\s)[\d\s]+(?=($|\s))')
         self.numRE2 = re.compile(r'(?<=^)[\d\s]+(?=($|\s))')
         self.spaceRE = re.compile(r'[\s]+')
-
-    def setCurLang(self, lang):
-        if lang == 'enwiki':
-            self.cur_lang = 'en'
-        elif lang == 'eswiki':
-            self.cur_lang = 'es'
-        elif lang == 'zhwiki':
-            self.cur_lang = 'zh'
-        print "cleaning %s language!" % self.cur_lang
 
     def regularize(self, str):
         # possessive case 's
         # tmp_line = re.sub(r' s |\'s', ' ', str)
         # following clean wiki xml, punctuation, numbers, and lower case
-        tmp_line = self.punc.sub('', str)
+        if self.op.lang == 'zhwiki':
+            tmp_line = self.zhpunc.sub('', str)
+        else:
+            tmp_line = self.punc.sub('', str)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
         tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
@@ -375,19 +385,20 @@ class cleaner():
                     startSet = False
             cur = next.end()
 
-    def clean(self, wiki_anchor_file, output_file, mention_file):
-        if isinstance(self.cur_lang, type(None)):
-            print "don't know what language!"
-            return
-        if self.cur_lang == 'zh':
-            self.cleanZHWiki(wiki_anchor_file, output_file, mention_file)
+    def clean(self):
+        # clean wiki_anchor_text
+        if self.op.lang == 'zhwiki':
+            self.cleanZHWiki()
         else:
-            self.cleanOtherWiki(wiki_anchor_file, output_file, mention_file)
+            self.cleanOtherWiki()
+        print " clean wiki anchor text finished!"
+        # replace mono_kg with id
 
-    def cleanZHWiki(self, wiki_anchor_file, output_file, mention_file):
+
+    def cleanZHWiki(self):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', 'utf-8') as fin:
-            with codecs.open(output_file, 'w', 'utf-8') as fout:
+        with codecs.open(self.op.raw_anchor_file, 'rb', 'utf-8') as fin:
+            with codecs.open(self.op.anchor_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
                     res = ''
@@ -408,6 +419,7 @@ class cleaner():
                         tmp_vbar = tmp_anchor.find('|')
                         tmp_title = ''
                         tmp_label = ''
+                        tmp_title_id = ''
                         if tmp_vbar > 0:
                             tmp_title = tmp_anchor[4:tmp_vbar]
                             tmp_label = tmp_anchor[tmp_vbar + 2:-4]
@@ -416,18 +428,18 @@ class cleaner():
                             tmp_label = tmp_title
                         # map the right title
                         tmp_title = re.sub(r'_', '', tmp_title)
-                        mention_label = tmp_label
+
                         tmp_label = re.sub(r'_', ' ', tmp_label)
                         tmp_label = self.regularize(tmp_label)
+                        mention_label = tmp_label
                         if tmp_title not in self.entity_id and tmp_title not in self.redirects:
                             tmp_anchor = tmp_label
                         else:
                             if tmp_title in self.redirects:
                                 tmp_title = self.redirects[tmp_title]
-                            if tmp_title == tmp_label:
-                                tmp_anchor = '[[' + tmp_title + ']]'
-                            else:
-                                tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+                            tmp_title_id = self.entity_id[tmp_title]
+
+                            tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
                             if anchor_count % 100000 == 0:
                                 print 'has processed %d anchors!' % anchor_count
@@ -451,7 +463,7 @@ class cleaner():
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
-        with codecs.open(mention_file, 'w', 'utf-8') as fout:
+        with codecs.open(self.op.mention_file, 'w', 'utf-8') as fout:
             fout.write("%d\n" % anchor_count)
             out_list = []
             for t in self.mentions:
@@ -464,10 +476,10 @@ class cleaner():
                 fout.writelines(out_list)
         print 'count mentions finished!'
 
-    def cleanOtherWiki(self, wiki_anchor_file, output_file, mention_file):
+    def cleanOtherWiki(self):
         anchor_count = 0
-        with codecs.open(wiki_anchor_file, 'rb', 'utf-8') as fin:
-            with codecs.open(output_file, 'w', 'utf-8') as fout:
+        with codecs.open(self.op.raw_anchor_file, 'rb', 'utf-8') as fin:
+            with codecs.open(self.op.anchor_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
                     res = ''
@@ -483,6 +495,7 @@ class cleaner():
                         tmp_vbar = tmp_anchor.find('|')
                         tmp_title = ''
                         tmp_label = ''
+                        tmp_title_id = ''
                         if tmp_vbar > 0:
                             tmp_title = tmp_anchor[2:tmp_vbar]
                             tmp_label = tmp_anchor[tmp_vbar + 1:-2]
@@ -496,10 +509,9 @@ class cleaner():
                         else:
                             if tmp_title in self.redirects:
                                 tmp_title = self.redirects[tmp_title]
-                            if tmp_title == tmp_label:
-                                tmp_anchor = '[[' + tmp_title + ']]'
-                            else:
-                                tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+                            tmp_title_id = self.entity_id[tmp_title]
+
+                            tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
                             if anchor_count % 100000 == 0:
                                 print 'has processed %d anchors!' % anchor_count
@@ -522,7 +534,7 @@ class cleaner():
                     if len(res) > 11:
                         fout.write(res)
         print 'process train text finished! start count %d anchors ...' % anchor_count
-        with codecs.open(mention_file, 'w', 'utf-8') as fout:
+        with codecs.open(self.op.mention_file, 'w', 'utf-8') as fout:
             fout.write("%d\n" % anchor_count)
             out_list = []
             for t in self.mentions:
@@ -593,24 +605,45 @@ def mergeCrossLinks():
 
     with codecs.open(enOp.dump_path+'cross_links_all.dat', 'w', 'utf-8') as fout:
         fout.write("%d\n" % (len(en_dict) + len(non_en_dict)))
+        fout.write("English\tChinese\tSpanish\n")
         for et in en_dict:
             fout.write("%s\t%s\n" % (et, '\t'.join(en_dict[et])))
         for zt in non_en_dict:
             fout.write("\t%s\t%s\n" % (zt, non_en_dict[zt]))
 
+    with codecs.open(enOp.dump_path+'cross_links_all_id.dat', 'w', 'utf-8') as fout:
+        fout.write("%d\n" % (len(en_dict) + len(non_en_dict)))
+        fout.write("English\tChinese\tSpanish\n")
+        tmp_line = ['','','']
+        for et in en_dict:
+            if et not in enPre.entity_id and en_dict[et][0] not in zhPre.entity_id and en_dict[et][1] not in esPre.entity_id :
+                continue
 
+            tmp_line[0] = enPre.entity_id[et] if et in enPre.entity_id else ''
+            tmp_line[1] = zhPre.entity_id[en_dict[et][0]] if en_dict[et][0] in zhPre.entity_id else ''
+            tmp_line[2] = esPre.entity_id[en_dict[et][1]] if en_dict[et][1] in esPre.entity_id else ''
+            fout.write("%s\n" % '\t'.join(tmp_line))
+        tmp_line = ['','']
+        for zt in non_en_dict:
+            if zt not in zhPre.entity_id and non_en_dict[zt] not in esPre.entity_id:
+                continue
 
-def clean(op):
+            tmp_line[0] = zhPre.entity_id[zt] if zt in zhPre.entity_id else ''
+            tmp_line[1] = esPre.entity_id[non_en_dict[zt]] if non_en_dict[zt] in esPre.entity_id else ''
+            fout.write("\t%s\n" % '\t'.join(tmp_line))
+
+# clean anchor text symbols, convert [[entity|label]] to [[entity_id|label]]
+# format mono_kg to entity_id \t entityid
+def clean(lang):
+    op = options(lang)
+
     pre = Preprocessor()
     pre.setCurLang(op.lang)
     pre.loadEntityDic(op.vocab_entity_file)
     pre.loadRedirects(op.redirect_file)
 
-    cl = cleaner()
-    cl.cur_lang = op.lang
-    cl.entity_id = pre.entity_id
-    cl.redirects = pre.redirects
-    cl.clean(op.raw_anchor_file, op.anchor_file, op.mention_file)
+    cl = cleaner(op, pre)
+    cl.clean()
 
 class MonoKGBuilder():
 
@@ -633,7 +666,7 @@ class MonoKGBuilder():
         self.preprocessor.saveRedirects(self.options.redirect_file)
         # extract outlinks
         self.preprocessor.parseLinks(self.options.pagelink_dump)
-        self.preprocessor.saveOutlinks(self.options.mono_outlink_file)
+        self.preprocessor.saveOutlinks(self.options.mono_outlink_file, self.options.mono_outlink_idfile)
         self.preprocessor.saveLinkedEntity(self.options.vocab_entity_file)
 
     def extractLanglinks(self):
@@ -654,8 +687,9 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    mkb = MonoKGBuilder()
-    mkb.setCurLang('zhwiki')
-    mkb.process()
-    # mergeCrossLinks()
-    # clean(op)
+    # mkb = MonoKGBuilder()
+    # mkb.setCurLang('zhwiki')
+    # mkb.process()
+    # when processed all the languge monokg, merge each cross lingual links into one
+    mergeCrossLinks()
+    clean('zhwiki')
