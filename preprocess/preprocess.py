@@ -595,8 +595,7 @@ def mergeCrossLinks():
 
 
 
-def clean():
-    op = options('zhwiki')
+def clean(op):
     pre = Preprocessor()
     pre.setCurLang(op.lang)
     pre.loadEntityDic(op.vocab_entity_file)
@@ -613,4 +612,4 @@ if __name__ == '__main__':
     buildMonoKG(op)
     # extractLanglinks(op)
     # mergeCrossLinks()
-    # clean()
+    # clean(op)
