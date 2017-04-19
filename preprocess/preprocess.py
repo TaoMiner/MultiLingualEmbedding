@@ -338,7 +338,7 @@ class cleaner():
         print "cleaning %s language!" % self.op.lang
 
         self.punc = re.compile(ur'[%s]' % re.escape(string.punctuation))
-        zh_punctuation = "！？｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
+        zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
         self.zhpunc = re.compile(ur'[%s]' % re.escape(zh_punctuation.decode('utf-8')))
 
         self.numRE1 = re.compile(r'(?<=\s)[\d\s]+(?=($|\s))')
@@ -351,8 +351,7 @@ class cleaner():
         # following clean wiki xml, punctuation, numbers, and lower case
         if self.op.lang == 'zhwiki':
             tmp_line = self.zhpunc.sub('', str)
-        else:
-            tmp_line = self.punc.sub('', str)
+        tmp_line = self.punc.sub('', str)
         tmp_line = self.spaceRE.sub(' ', tmp_line)
         tmp_line = self.numRE1.sub('dddddd', tmp_line)
         tmp_line = self.numRE2.sub('dddddd', tmp_line).lower().strip()
