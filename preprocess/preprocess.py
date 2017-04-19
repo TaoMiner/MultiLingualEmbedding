@@ -316,7 +316,7 @@ class Preprocessor():
     def loadCrossLinks(self, filename):
         with codecs.open(filename, 'rb', 'utf-8') as fin:
             line_count = 0
-            link_dict = set()
+            link_set = set()
             for line in fin:
                 line_count += 1
                 if line_count < 2 : continue
@@ -324,9 +324,9 @@ class Preprocessor():
                 if len(items) != 3: continue
                 for i in items:
                     if len(i) < 1: continue
-                    link_dict.add(i)
-        print "successfully load %d cross lingual entities!" % len(link_dict)
-        return link_dict
+                    link_set.add(i)
+        print "successfully load %d cross lingual entities!" % len(link_set)
+        return link_set
 
 class cleaner():
 

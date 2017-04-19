@@ -2819,7 +2819,7 @@ def pages_from(input):
             page.append(line)
         elif tag == '/page':
             # cyx: only keep title in linked_entities
-            if id != last_id and not redirect and title in linked_entities:
+            if id != last_id and not redirect:
                 yield (id, revid, title, ns, page)
                 last_id = id
                 ns = '0'
@@ -2830,7 +2830,7 @@ def pages_from(input):
 
 
 def process_dump(input_file, template_file, out_file, file_size, file_compress,
-                 process_count):
+                 process_count, linked_entities):
     """
     :param input_file: name of the wikipedia dump file; '-' to read from stdin
     :param template_file: optional file with template definitions.
@@ -2941,6 +2941,7 @@ def process_dump(input_file, template_file, out_file, file_size, file_compress,
     page_num = 0
     for page_data in pages_from(input):
         id, revid, title, ns, page = page_data
+        if title not in linked_entities : continue
         if keepPage(ns, page):
             # slow down
             delay = 0
@@ -3082,7 +3083,6 @@ def reduce_process(opts, output_queue, spool_length,
 # Minimum size of output files
 minFileSize = 200 * 1024
 
-linked_entities = set()
 def main():
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -3235,7 +3235,7 @@ def main():
     linked_entities = pre.loadCrossLinks(linked_entity_file)
 
     process_dump(input_file, args.templates, output_path, file_size,
-                 args.compress, args.processes)
+                 args.compress, args.processes, linked_entities)
 
 
 def createLogger(quiet, debug):
