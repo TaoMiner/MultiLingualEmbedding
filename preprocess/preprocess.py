@@ -25,26 +25,37 @@ class options():
         self.langlink_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-langlinks.sql'
         # output
         self.output_path = self.lang + '_cl'
+        # WikiExtractor output
         self.title_file = self.dump_path + self.output_path + '/wiki_article_title'
+        self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text'
+        # redirect vocab
         self.redirect_file = self.dump_path + self.output_path + '/vocab_redirects.dat'
         self.raw_vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity_all.dat'
+        # kg file
         self.mono_outlink_file = self.dump_path + self.output_path + '/mono_kg.dat'
+        # linked entity vocab
         self.vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity.dat'
+        # cross links file
         self.cross_link_file = self.dump_path + self.output_path + '/cross_links.dat'
-        self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text'
+        # cleaned anchor text
         self.anchor_file = self.dump_path + self.output_path + '/anchor_text_cl.dat'
+        # entity mention mapping
         self.mention_file = self.dump_path + self.output_path + '/mention_count.dat'
 
 class Preprocessor():
 
     def __init__(self):
-        self.tmp_entity_id = {}
-        self.tmp_id_entity = {}
+        # total id dict of entity in namespace 0
+        self.total_entity_id = {}
+        self.total_id_entity = {}
+        # entity dict filter out redirects
         self.entity_id = {}
         self.id_entity = {}
+        # redirects dict extracted from wiki-redirect.sql
         self.redirects = {}
         self.id_redirects = {}
         self.redirects_id = {}
+        #
         self.outlinks = {}
         self.lang1 = {}
         self.lang2 = {}
@@ -61,26 +72,42 @@ class Preprocessor():
         # langlinks: (cur_id, target_lang, target_title),
         # only considering english, chinese and Spanish
         self.langlinkRE = re.compile(r'(\d{1,}),\'(en|zh|es)\',\'(.*?)\'')
+        # -{zh-cn:xxx1;zh-cn:xxx2}-
+        self.formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)([;].*?\}|\})-')
 
-    def loadTitleIndex(self, filename):
+    # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
+    def formatRawWiki(self, zhwiki_file, zhwiki_format_file):
+        line_count = 0
+        with codecs.open(zhwiki_file, 'r') as fin:
+            with codecs.open(zhwiki_format_file, 'w', 'utf-8') as fout:
+                for line in fin:
+                    line_count += 1
+                    if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
+                    line = line.decode('utf-8', 'ignore')
+                    line = self.formatRE.sub('\g<label>', line)
+                    fout.write(line)
+
+    def loadTotalIndex(self, filename):
         with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 m = self.nsidRE.match(line.strip())
                 if m != None:
                     id = m.group(2)
                     title = m.group(3)
-                    self.tmp_entity_id[title] = id
-                    self.tmp_id_entity[id] = title
-        print "successfully load %d title index!" % len(self.tmp_entity_id)
+                    self.total_entity_id[title] = id
+                    self.total_id_entity[id] = title
+        print "successfully load %d wiki index!" % len(self.total_entity_id)
 
+    # build wiki_aritle_title dict that doesnt contain any redirects
     def buildEntityDic(self, filename):
         with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 title = line.strip()
-                if title in self.tmp_entity_id:
-                    self.entity_id[title] = self.tmp_entity_id[title]
-                    self.id_entity[self.tmp_entity_id[title]] = title
+                if title in self.total_entity_id:
+                    self.entity_id[title] = self.total_entity_id[title]
+                    self.id_entity[self.total_entity_id[title]] = title
         print "successfully build %d entities!" % len(self.entity_id)
+
 
     def parseRedirects(self, filename):
         with codecs.open(filename, 'rb') as fin:
@@ -95,18 +122,18 @@ class Preprocessor():
                         rd_title = rd_title.replace('\\', '')
                         rd_title = rd_title.replace('_', ' ')
 
-                        if rd_id not in self.tmp_id_entity or rd_title not in self.entity_id or self.tmp_id_entity[rd_id] == rd_title:
+                        if rd_id not in self.total_id_entity or rd_title not in self.entity_id or self.total_id_entity[rd_id] == rd_title:
                             continue
-                        self.id_redirects[rd_id] = self.tmp_id_entity[rd_id]
-                        self.redirects_id[self.tmp_id_entity[rd_id]] = rd_id
-                        self.redirects[self.tmp_id_entity[rd_id]] = rd_title
+                        self.id_redirects[rd_id] = self.total_id_entity[rd_id]
+                        self.redirects_id[self.total_id_entity[rd_id]] = rd_id
+                        self.redirects[self.total_id_entity[rd_id]] = rd_title
                         # remove redirect title in entity dic
                         if rd_id in self.id_entity:
                             del self.entity_id[self.id_entity[rd_id]]
                             del self.id_entity[rd_id]
         print "successfully parse %d redirects for %d entities!" % (len(self.redirects), len(self.entity_id))
-        del self.tmp_id_entity
-        del self.tmp_entity_id
+        del self.total_id_entity
+        del self.total_entity_id
 
     def saveEntityDic(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
@@ -508,28 +535,6 @@ class cleaner():
                 fout.writelines(out_list)
         print 'count mentions finished!'
 
-def buildMonoKG(options):
-    preprocessor = Preprocessor()
-    # build entity dic and redirect dic
-    preprocessor.loadTitleIndex(options.entity_index_dump)
-    preprocessor.buildEntityDic(options.title_file)
-    preprocessor.parseRedirects(options.redirect_dump)
-    preprocessor.saveEntityDic(options.raw_vocab_entity_file)
-    preprocessor.saveRedirects(options.redirect_file)
-    # extract outlinks
-    preprocessor.parseLinks(options.pagelink_dump)
-    preprocessor.saveOutlinks(options.mono_outlink_file)
-    preprocessor.saveLinkedEntity(options.vocab_entity_file)
-
-def extractLanglinks(options):
-    preprocessor = Preprocessor()
-    preprocessor.setCurLang(options.lang)
-    preprocessor.loadEntityDic(options.vocab_entity_file)
-    preprocessor.loadRedirects(options.redirect_file)
-
-    preprocessor.parseLangLinks(options.langlink_dump)
-    preprocessor.saveLangLink(options.cross_link_file)
-
 # pre: [enpre, zhpre, espre]
 # en_dict: {'entitle':[zhtitle, estitle]}
 # non_en_dict: {zhtitle: estitle}
@@ -607,9 +612,50 @@ def clean(op):
     cl.redirects = pre.redirects
     cl.clean(op.raw_anchor_file, op.anchor_file, op.mention_file)
 
+class MonoKGBuilder():
+
+    def __init__(self):
+        self.lang = None
+        self.options = None
+        self.preprocessor = None
+
+    def setCurLang(self, lang):
+        self.lang = lang
+        self.options = options(lang)
+        self.preprocessor = Preprocessor()
+
+    def buildMonoKG(self):
+        # build entity dic and redirect dic
+        self.preprocessor.loadTotalIndex(self.options.entity_index_dump)
+        self.preprocessor.buildEntityDic(self.options.title_file)
+        self.preprocessor.parseRedirects(self.options.redirect_dump)
+        self.preprocessor.saveEntityDic(self.options.raw_vocab_entity_file)
+        self.preprocessor.saveRedirects(self.options.redirect_file)
+        # extract outlinks
+        self.preprocessor.parseLinks(self.options.pagelink_dump)
+        self.preprocessor.saveOutlinks(self.options.mono_outlink_file)
+        self.preprocessor.saveLinkedEntity(self.options.vocab_entity_file)
+
+    def extractLanglinks(self):
+        self.preprocessor.setCurLang(self.options.lang)
+        self.preprocessor.loadEntityDic(self.options.vocab_entity_file)
+        self.preprocessor.loadRedirects(self.options.redirect_file)
+
+        self.preprocessor.parseLangLinks(self.options.langlink_dump)
+        self.preprocessor.saveLangLink(self.options.cross_link_file)
+
+    def process(self):
+        if self.lang:
+            self.options = options(self.lang)
+            self.buildMonoKG()
+            self.extractLanglinks()
+
 if __name__ == '__main__':
-    op = options('eswiki')
-    buildMonoKG(op)
-    # extractLanglinks(op)
+    # if zhwiki, please format zhwiki.xml first
+    # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
+    # specify language 'eswiki', 'enwiki' or 'zhwiki'
+    mkb = MonoKGBuilder()
+    mkb.setCurLang('zhwiki')
+    mkb.process()
     # mergeCrossLinks()
     # clean(op)

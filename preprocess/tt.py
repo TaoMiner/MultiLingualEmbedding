@@ -6,12 +6,15 @@ import jieba
 import re
 import string
 from itertools import izip, izip_longest
+import codecs
 
-ss = ' wfwef-{zh-tw:域;zh-cn:體}-wefa'
+file = '/Users/ethan/Downloads/zhwiki/raw_chs_vocab_entity.dat'
 
-formatRE1 = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)(;.*?\}|\})-')
-
-formatRE2 = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)\}-')
-ss1 = formatRE1.sub('\g<label>', ss)
-
-print ss1
+titles = set()
+with codecs.open(file, 'rb', 'utf-8') as fin:
+    for line in fin:
+        items = re.split(r'\t', line.strip())
+        if items[1] in titles:
+            print items[1].encode('utf-8')
+        else:
+            titles.add(items[1])

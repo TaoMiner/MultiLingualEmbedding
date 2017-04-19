@@ -28,6 +28,7 @@ class options():
         self.raw_entity_file = self.dump_path + self.output_path + '/raw_vocab_entity.dat'
         # the simplified chinese wiki anchor file from wiki_anchor_text extracted by WikiExtractor
         self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_chs'
+        self.raw_chs_entity_file = self.dump_path + self.output_path + '/raw_chs_vocab_entity.dat'
 
         self.redirect_file = self.dump_path + self.output_path + '/vocab_redirects.dat'
         self.raw_vocab_entity_file = self.dump_path + self.output_path + '/vocab_entity_all.dat'
@@ -41,12 +42,57 @@ class ZhPreprocessor():
     def __init__(self):
         self.nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
         self.formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)([;].*?\}|\})-')
+        # redirect: (rd_from_id, rd_namespace_id, rd_title, rd_interwiki, rd_fragment),
+        # only for main namespace 0
+        self.redirectRE = re.compile(r'(\d{1,}),0,\'(.*?)\',\'(.*?)\',\'(.*?)\'')
         self.total_entity_id = {}
         self.total_id_entity = {}
         self.entity_id = {}
         self.id_entity = {}
 
-    # format zh-cn and zh-tw
+    def findBalanced(self, text, openDelim=['[['], closeDelim=[']]']):
+        """
+        Assuming that text contains a properly balanced expression using
+        :param openDelim: as opening delimiters and
+        :param closeDelim: as closing delimiters.
+        :return: an iterator producing pairs (start, end) of start and end
+        positions in text containing a balanced expression.
+        """
+        openPat = '|'.join([re.escape(x) for x in openDelim])
+        afterPat = dict()
+        for o, c in izip(openDelim, closeDelim):
+            afterPat[o] = re.compile(openPat + '|' + c, re.DOTALL)
+        stack = []
+        start = 0
+        cur = 0
+        # end = len(text)
+        startSet = False
+        startPat = re.compile(openPat)
+        nextPat = startPat
+        while True:
+            next = nextPat.search(text, cur)
+            if not next:
+                return
+            if not startSet:
+                start = next.start()
+                startSet = True
+            delim = next.group(0)
+            if delim in openDelim:
+                stack.append(delim)
+                nextPat = afterPat[delim]
+            else:
+                opening = stack.pop()
+                # assert opening == openDelim[closeDelim.index(next.group(0))]
+                if stack:
+                    nextPat = afterPat[stack[-1]]
+                else:
+                    yield start, next.end()
+                    nextPat = startPat
+                    start = next.end()
+                    startSet = False
+            cur = next.end()
+
+    # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
     def formatRawWiki(self, zhwiki_file, zhwiki_format_file):
         line_count = 0
         with codecs.open(zhwiki_file, 'r') as fin:
@@ -56,6 +102,7 @@ class ZhPreprocessor():
                     if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
                     line = line.decode('utf-8', 'ignore')
                     line = self.formatRE.sub('\g<label>', line)
+                    self.findBalanced(line)
                     fout.write(line)
 
     def loadTitleIndex(self, filename):
@@ -82,6 +129,9 @@ class ZhPreprocessor():
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for ent in self.entity_id:
                 fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent)))
+
+    # compare trans dic and simplied dic, clean different entity with the same simplied name
+    def cleanEntityDic(self, filename):
 
     def parseRedirects(self, filename):
         with codecs.open(filename, 'rb') as fin:
