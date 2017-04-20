@@ -457,23 +457,27 @@ class cleaner():
 
                         tmp_label = re.sub(r'_', ' ', tmp_label)
                         tmp_label = self.regularize(tmp_label)
+                        if len(tmp_label) < 1: continue
                         mention_label = tmp_label
                         if tmp_title not in self.entity_id and tmp_title not in self.redirects:
                             tmp_anchor = tmp_label
                         else:
                             if tmp_title in self.redirects:
                                 tmp_title = self.redirects[tmp_title]
-                            tmp_title_id = self.entity_id[tmp_title]
+                            if tmp_title in self.entity_id:
+                                tmp_title_id = self.entity_id[tmp_title]
 
-                            tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
-                            anchor_count += 1
-                            # count the mentions
-                            tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
-                            if mention_label in tmp_mention:
-                                tmp_mention[mention_label] += 1
+                                tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
+                                anchor_count += 1
+                                # count the mentions
+                                tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
+                                if mention_label in tmp_mention:
+                                    tmp_mention[mention_label] += 1
+                                else:
+                                    tmp_mention[mention_label] = 1
+                                self.mentions[tmp_title] = tmp_mention
                             else:
-                                tmp_mention[mention_label] = 1
-                            self.mentions[tmp_title] = tmp_mention
+                                tmp_anchor = tmp_label
                         # remove prefix of anchor
                         if len(tmp_anchor) > 0:
                             res += tmp_anchor + ' '
