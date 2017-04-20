@@ -153,7 +153,7 @@ class Preprocessor():
     def saveRedirects(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for r in self.redirects:
-                # r_id \t r_title \t title
+                # r_title \t title
                 fout.write('%s\t%s\n' % (htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
     def loadEntityDic(self, filename):
@@ -169,8 +169,8 @@ class Preprocessor():
         with codecs.open(filename, 'rb', 'utf-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                if len(items) != 3 : continue
-                self.redirects[items[1]] = items[2]
+                if len(items) != 2 : continue
+                self.redirects[items[0]] = items[1]
         print "successfully load %d redirects!" % len(self.redirects)
 
     def parseLinks(self, filename):
@@ -467,8 +467,6 @@ class cleaner():
 
                             tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
-                            if anchor_count % 1000000 == 0:
-                                print 'has processed %d anchors!' % anchor_count
                             # count the mentions
                             tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
                             if mention_label in tmp_mention:
@@ -540,8 +538,6 @@ class cleaner():
 
                             tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
-                            if anchor_count % 10000000 == 0:
-                                print 'has processed %d anchors!' % anchor_count
                             # count the mentions
                             tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
                             if tmp_label in tmp_mention:
