@@ -54,8 +54,6 @@ class Preprocessor():
         self.id_entity = {}
         # redirects dict extracted from wiki-redirect.sql
         self.redirects = {}
-        self.id_redirects = {}
-        self.redirects_id = {}
         #
         self.outlinks = {}
         self.lang1 = {}
@@ -125,16 +123,12 @@ class Preprocessor():
 
                         if rd_id not in self.total_id_entity or rd_title not in self.entity_id or self.total_id_entity[rd_id] == rd_title:
                             continue
-                        self.id_redirects[rd_id] = self.total_id_entity[rd_id]
-                        self.redirects_id[self.total_id_entity[rd_id]] = rd_id
                         self.redirects[self.total_id_entity[rd_id]] = rd_title
                         # remove redirect title in entity dic
                         if rd_id in self.id_entity:
                             del self.entity_id[self.id_entity[rd_id]]
                             del self.id_entity[rd_id]
         print "successfully parse %d redirects for %d entities!" % (len(self.redirects), len(self.entity_id))
-        del self.total_id_entity
-        del self.total_entity_id
 
     def lowerTitleToRedirects(self):
         tmp_redirects = {}
@@ -160,7 +154,7 @@ class Preprocessor():
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for r in self.redirects:
                 # r_id \t r_title \t title
-                fout.write('%s\t%s\t%s\n' % (self.redirects_id[r], htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
+                fout.write('%s\t%s\n' % (htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
     def loadEntityDic(self, filename):
         with codecs.open(filename, 'rb', 'utf-8') as fin:
@@ -176,8 +170,6 @@ class Preprocessor():
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) != 3 : continue
-                self.redirects_id[items[1]] = items[0]
-                self.id_redirects[items[0]] = items[1]
                 self.redirects[items[1]] = items[2]
         print "successfully load %d redirects!" % len(self.redirects)
 
@@ -199,10 +191,12 @@ class Preprocessor():
                             target_title = self.redirects[tmp_target_title]
                         elif tmp_target_title in self.entity_id:
                             target_title = tmp_target_title
-                        if tmp_from_id in self.id_redirects:
-                            from_title = self.redirects[self.id_redirects[tmp_from_id]]
-                        elif tmp_from_id in self.id_entity:
-                            from_title = self.id_entity[tmp_from_id]
+                        if tmp_from_id in self.total_id_entity:
+                            tmp_from_title = self.total_id_entity[tmp_from_id]
+                            if tmp_from_title in self.redirects:
+                                from_title = self.redirects[tmp_from_title]
+                            elif tmp_from_id in self.id_entity:
+                                from_title = self.id_entity[tmp_from_id]
                         if from_title and target_title:
                             tmp_set = set() if from_title not in self.outlinks else self.outlinks[from_title]
                             tmp_set.add(target_title)
@@ -268,10 +262,12 @@ class Preprocessor():
                         if target_lang == self.cur_lang : continue
                         target_title = target_title.replace('\\', '')
                         target_title = target_title.replace('_', ' ')
-                        if cur_id in self.id_redirects:
-                            cur_title = self.redirects[self.id_redirects[cur_id]]
-                        elif cur_id in self.id_entity:
-                            cur_title = self.id_entity[cur_id]
+                        if cur_id in self.total_id_entity:
+                            tmp_cur_title = self.total_id_entity[cur_id]
+                            if tmp_cur_title in self.redirects:
+                                cur_title = self.redirects[tmp_cur_title]
+                            elif cur_id in self.id_entity:
+                                cur_title = self.id_entity[cur_id]
                         # not redirect target title
                         if cur_title:
                             self.addLangLink(cur_title, target_lang, target_title)
@@ -702,6 +698,7 @@ class MonoKGBuilder():
 
     def extractLanglinks(self):
         self.preprocessor.setCurLang(self.options.lang)
+        self.preprocessor.loadTotalIndex(self.options.entity_index_dump)
         self.preprocessor.loadEntityDic(self.options.vocab_entity_file)
         self.preprocessor.loadRedirects(self.options.redirect_file)
 
