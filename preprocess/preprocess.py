@@ -471,7 +471,7 @@ class cleaner():
 
                             tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
-                            if anchor_count % 100000 == 0:
+                            if anchor_count % 1000000 == 0:
                                 print 'has processed %d anchors!' % anchor_count
                             # count the mentions
                             tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
@@ -544,7 +544,7 @@ class cleaner():
 
                             tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
                             anchor_count += 1
-                            if anchor_count % 100000 == 0:
+                            if anchor_count % 10000000 == 0:
                                 print 'has processed %d anchors!' % anchor_count
                             # count the mentions
                             tmp_mention = {} if tmp_title not in self.mentions else self.mentions[tmp_title]
