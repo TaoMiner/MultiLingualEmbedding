@@ -519,6 +519,7 @@ class cleaner():
                             tmp_label = tmp_title
                         # map the right title
                         tmp_label = self.regularize(tmp_label)
+                        if len(tmp_label) < 1: continue
                         if tmp_title not in self.entity_id and tmp_title not in self.redirects:
                             tmp_anchor = tmp_label
                         else:
@@ -701,7 +702,7 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    lang = 'zhwiki'
+    lang = 'enwiki'
     # mkb = MonoKGBuilder()
     # mkb.setCurLang(lang)
     # mkb.process()
