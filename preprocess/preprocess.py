@@ -136,6 +136,21 @@ class Preprocessor():
         del self.total_id_entity
         del self.total_entity_id
 
+    def lowerTitleToRedirects(self):
+        tmp_redirects = {}
+        overlapped_set = set()
+        for ent in self.entity_id:
+            lower_ent = ent.lower()
+            if lower_ent in tmp_redirects:
+                overlapped_set.add(lower_ent)
+            elif lower_ent not in self.redirects and lower_ent!=ent:
+                    tmp_redirects[lower_ent] = ent
+        for o in overlapped_set:
+            del tmp_redirects[o]
+        print "lowered %d new redirects!" % len(tmp_redirects)
+        self.redirects.update(tmp_redirects)
+        del tmp_redirects
+
     def saveEntityDic(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for ent in self.entity_id:
@@ -677,6 +692,7 @@ class MonoKGBuilder():
         self.preprocessor.loadTotalIndex(self.options.entity_index_dump)
         self.preprocessor.buildEntityDic(self.options.title_file)
         self.preprocessor.parseRedirects(self.options.redirect_dump)
+        self.preprocessor.lowerTitleToRedirects()
         self.preprocessor.saveEntityDic(self.options.raw_vocab_entity_file)
         self.preprocessor.saveRedirects(self.options.redirect_file)
         # extract outlinks
@@ -703,9 +719,9 @@ if __name__ == '__main__':
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
     lang = 'enwiki'
-    # mkb = MonoKGBuilder()
-    # mkb.setCurLang(lang)
-    # mkb.process()
+    mkb = MonoKGBuilder()
+    mkb.setCurLang(lang)
+    mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # mergeCrossLinks()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
