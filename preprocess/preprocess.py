@@ -8,8 +8,8 @@ import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-# jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
-jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
+jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
+#jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
 languages = ('en', 'zh', 'es')
 
@@ -20,14 +20,15 @@ class options():
             print "invalid lang id!"
             exit()
         self.dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
-        self.lang = languages[lang] + 'wiki'
-        self.redirect_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-redirect.sql'
-        self.title_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-all-titles-in-ns0'
-        self.entity_index_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-pages-articles-multistream-index.txt'
-        self.pagelink_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-pagelinks.sql'
-        self.langlink_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-langlinks.sql'
+        self.lang = languages[lang]
+        self.lang_wiki = self.lang+ 'wiki'
+        self.redirect_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-redirect.sql'
+        self.title_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-all-titles-in-ns0'
+        self.entity_index_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-pages-articles-multistream-index.txt'
+        self.pagelink_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-pagelinks.sql'
+        self.langlink_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-langlinks.sql'
         # output
-        self.output_path = self.lang + '_cl'
+        self.output_path = self.lang_wiki + '_cl'
         # WikiExtractor output
         self.title_file = self.dump_path + self.output_path + '/wiki_article_title'
         self.raw_anchor_file = self.dump_path + self.output_path + '/wiki_anchor_text'
@@ -363,7 +364,7 @@ class cleaner():
         # following clean wiki xml, punctuation, numbers, and lower case
 
         tmp_line = punc.sub('', str)
-        if lang == 'zhwiki':
+        if lang == 'zh':
             tmp_line = zhpunc.sub('', tmp_line)
         tmp_line = spaceRE.sub(' ', tmp_line)
         tmp_line = numRE1.sub('dddddd', tmp_line)
@@ -421,7 +422,7 @@ class cleaner():
         openDelim = ['[[']
         closeDelim = [']]']
         boundary = 1
-        if lang == 'zhwiki':
+        if lang == 'zh':
             seg_list = jieba.cut(sent, cut_all=False)
             # some chinese entities contain whitespace
             seg_line = " ".join(seg_list)
@@ -464,7 +465,7 @@ class cleaner():
         openDelim = ['[[']
         closeDelim = [']]']
         boundary = 1
-        if lang == 'zhwiki':
+        if lang == 'zh':
             seg_list = jieba.cut(sent, cut_all=False)
             # some chinese entities contain whitespace
             seg_line = "_".join(seg_list)
@@ -474,7 +475,7 @@ class cleaner():
             seg_line = sent
         for s, e in cleaner.findBalanced(seg_line, openDelim, closeDelim):
             # remove postfix of an anchor
-            if lang == 'zhwiki':
+            if lang == 'zh':
                 tmp_line = re.sub(r'_', ' ', seg_line[cur:s])
             else:
                 tmp_line = seg_line[cur:s]
@@ -495,7 +496,7 @@ class cleaner():
                 tmp_title = tmp_anchor[2*boundary:-2*boundary]
                 tmp_label = tmp_title
             # map the right title
-            if lang == 'zhwiki':
+            if lang == 'zh':
                 tmp_title = re.sub(r'_', '', tmp_title)
                 tmp_label = re.sub(r'_', ' ', tmp_label)
             tmp_label = cleaner.regularize(tmp_label, lang)
@@ -522,7 +523,7 @@ class cleaner():
                 if len(tmp_anchor) > 0:
                     res += tmp_anchor + ' '
             cur = e
-        if lang == 'zhwiki':
+        if lang == 'zh':
             tmp_line = re.sub(r'_', ' ', seg_line[cur:])
         else:
             tmp_line = seg_line[cur:]
@@ -534,19 +535,18 @@ class cleaner():
         return res
 
     def cleanWiki(self, raw_anchor_file, anchor_file, mention_file = None):
-        anchor_count = 0
         with codecs.open(raw_anchor_file, 'rb', 'utf-8') as fin:
             with codecs.open(anchor_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     cur = 0
                     res = ''
-                    res = cleaner.cleanAnchorSent(line.strip(), self.lang, True, self.entity_id, self.redirects, self.mentions)
+                    # isReplaceId = True, entity_id = None, redirects = None, mentions = None
+                    res = cleaner.cleanAnchorSent(line.strip(), self.lang, isReplaceId = True, entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
                     if len(res) > 11:
                         fout.write(res)
-        print 'process train text finished! start count %d anchors ...' % anchor_count
+        print 'process train text finished! start count anchors ...'
         if not mention_file:
             with codecs.open(mention_file, 'w', 'utf-8') as fout:
-                fout.write("%d\n" % anchor_count)
                 out_list = []
                 for t in self.mentions:
                     out_list.append(self.entity_id[t] + '\t' + t + "\t" + "\t".join(
@@ -654,7 +654,7 @@ def clean(lang):
     cl.init(lang)
     cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
     cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
-    cl.cleanWiki(op.raw_anchor_file, op.anchor_file, op.mention_file)
+    cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
 
 class MonoKGBuilder():
 
@@ -698,8 +698,8 @@ if __name__ == '__main__':
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
     lang_index = languages.index('es')
-    mkb = MonoKGBuilder(lang_index)
-    mkb.process()
+    # mkb = MonoKGBuilder(lang_index)
+    # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # mergeCrossLinks()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese

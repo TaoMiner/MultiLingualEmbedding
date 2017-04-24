@@ -6,7 +6,7 @@ import string
 import preprocess
 
 options = preprocess.options
-
+cleaner = preprocess.cleaner
 languages = preprocess.languages
 
 # <doc id="12" url="https://en.wikipedia.org/wiki?curid=12" title="Anarchism">
@@ -16,6 +16,9 @@ class Parallel():
 
     def __init__(self, lang1, lang2):
         # title:[[sent],...]
+        if lang1 == lang2:
+            print 'error:same languages!'
+            exit()
         self.lang1 = lang1
         self.lang2 = lang2
         self.ops = [options(lang1), options(lang2)]
@@ -41,51 +44,63 @@ class Parallel():
                 line_count += 1
                 items = re.split(r'\t', line.strip())
                 if len(items) != len(languages): continue
-                from_index = self.getIndex(self.ops[self.lang1].lang)
-                to_index = self.getIndex(self.ops[self.lang2].lang)
-                if from_index == to_index:
-                    print 'error:same languages!'
-                    exit()
-                for i in xrange(len(languages)):
-                    if len(items[from_index]) > 0 and len(items[to_index]) > 0:
-                        self.clinks[items[from_index]] = items[to_index]
-        print 'successfully load %d clinks from %s to %s!' % (len(self.clinks), self.ops[0].lang, self.ops[1].lang)
+                if len(items[self.lang1]) > 0 and len(items[self.lang2]) > 0:
+                    self.clinks[items[self.lang1]] = items[self.lang2]
+        print 'successfully load %d clinks from %s to %s!' % (len(self.clinks), languages[self.lang1], languages[self.lang2])
 
     def readDoc(self):
         for i in xrange(2):
-            self.readMonoDoc(self.ops[i])
+            self.readMonoDoc(i)
 
-    def readMonoDoc(self, op):
+    def readMonoDoc(self, i):
+        op = self.ops[i]
         with codecs.open(op.corpus_file, 'rb', 'utf-8') as fin:
-            cur_title = None
+            cur_title = ''
             for line in fin:
                 line = line.strip()
-                if len(line) < 1 or not isinstance(footerRE.match(line), type(None)): continue
+                if len(line) < 1: continue
+                if not isinstance(footerRE.match(line), type(None)) :
+                    cur_title = ''
+                    continue
                 m = headerRE.match(line)
                 if m:
                     cur_title = m.group(1)
-                    if len(cur_title) < 1:
-                        cur_title = None
                     continue
-                elif not isinstance(cur_title, type(None)):
-                    tmp_sents = op.corpus[cur_title] if cur_title in op.corpus else []
+                elif len(cur_title) > 0:
+                    tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
                     tmp_sents.append(cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False))
-                    op.corpus[cur_title] = tmp_sents
+                    self.corpus[i][cur_title] = tmp_sents
 
-    def extractContext(self, sents, op):
+    def extractContext(self, sents):
         contexts_dict = {}
         for sent in sents:
-            sent_cl = op.cl.cleanSent(sent)
-            for s, e in  op.cl.findBalanced(sent):
-
+            cur = 0
+            sent_words = []
+            anchors = []
+            for s, e in  cleaner.findBalanced(sent):
+                tmp_words = re.split(r' ', sent[cur:s])
+                sent_words.extend(tmp_words)
+                tmp_anchor = sent[s:e]
+                tmp_vbar = tmp_anchor.find('|')
+                tmp_label = ''
+                if tmp_vbar > 0:
+                    tmp_label = tmp_anchor[tmp_vbar + 1 :-2]
+                else:
+                    tmp_label = tmp_anchor[2:-2]
+                tmp_words = re.split(r' ', tmp_label)
+                sent_words.extend(tmp_words)
+                cur = e
+            if cur < len(sent):
+                tmp_words = re.split(r' ', sent[cur:])
+                sent_words.extend(tmp_words)
         return contexts_dict
 
     def extract(self):
         for cl in self.clinks:
-            if cl not in self.ops[0].corpus or self.clinks[cl] not in self.ops[1].corpus:
+            if cl not in self.corpus[0] or self.clinks[cl] not in self.corpus[1]:
                 continue
-            sents1 = self.ops[0].corpus[cl]
-            sents2 = self.ops[1].corpus[self.clinks[cl]]
+            sents1 = self.corpus[0][cl]
+            sents2 = self.corpus[1][self.clinks[cl]]
             contexts_dict1 = self.extractContext(sents1)
             contexts_dict2 = self.extractContext(sents2)
             for t1 in contexts_dict1:
@@ -95,6 +110,9 @@ class Parallel():
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
 if __name__ == '__main__':
+    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all.dat'
     lang1 = languages.index('en')
     lang2 = languages.index('zh')
     par = Parallel(lang1, lang2)
+    par.loadCrossLink(cross_file)
+    par.readDoc()
