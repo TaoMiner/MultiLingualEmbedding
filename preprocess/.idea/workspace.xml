@@ -31,16 +31,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="414">
-              <caret line="49" column="30" lean-forward="false" selection-start-line="49" selection-start-column="13" selection-end-line="49" selection-end-column="30" />
+            <state relative-caret-position="312">
+              <caret line="529" column="24" lean-forward="true" selection-start-line="529" selection-start-column="24" selection-end-line="529" selection-end-column="24" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
-                <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-                <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-                <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+                <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+                <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
               </folding>
             </state>
           </provider>
@@ -58,10 +58,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="parallel.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="parallel.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/parallel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="361">
+            <state relative-caret-position="1557">
               <caret line="137" column="17" lean-forward="true" selection-start-line="137" selection-start-column="17" selection-end-line="137" selection-end-column="17" />
               <folding>
                 <element signature="e#24#33#0" expanded="true" />
@@ -115,8 +115,8 @@
         <option value="$PROJECT_DIR$/preZhHant.py" />
         <option value="$PROJECT_DIR$/WikiExtractor2.py" />
         <option value="$PROJECT_DIR$/tt.py" />
-        <option value="$PROJECT_DIR$/preprocess.py" />
         <option value="$PROJECT_DIR$/parallel.py" />
+        <option value="$PROJECT_DIR$/preprocess.py" />
       </list>
     </option>
   </component>
@@ -523,9 +523,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -574,9 +574,9 @@
           <caret line="339" column="23" lean-forward="true" selection-start-line="339" selection-start-column="23" selection-end-line="339" selection-end-column="23" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -607,9 +607,9 @@
           <caret line="23" column="43" lean-forward="false" selection-start-line="23" selection-start-column="43" selection-end-line="23" selection-end-column="43" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -650,9 +650,9 @@
           <caret line="23" column="43" lean-forward="false" selection-start-line="23" selection-start-column="43" selection-end-line="23" selection-end-column="43" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -673,9 +673,9 @@
           <caret line="23" column="43" lean-forward="false" selection-start-line="23" selection-start-column="43" selection-end-line="23" selection-end-column="43" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -714,9 +714,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -755,9 +755,9 @@
           <caret line="610" column="24" lean-forward="false" selection-start-line="610" selection-start-column="18" selection-end-line="610" selection-end-column="24" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -787,9 +787,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -818,9 +818,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -859,9 +859,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
@@ -953,25 +953,25 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess.py">
+    <entry file="file://$PROJECT_DIR$/parallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="414">
-          <caret line="49" column="30" lean-forward="false" selection-start-line="49" selection-start-column="13" selection-end-line="49" selection-end-column="30" />
+        <state relative-caret-position="1557">
+          <caret line="137" column="17" lean-forward="true" selection-start-line="137" selection-start-column="17" selection-end-line="137" selection-end-column="17" />
           <folding>
-            <element signature="e#46#59#0" expanded="true" />
-            <marker date="1493066097000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
-            <marker date="1493066097000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1493066097000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
+            <element signature="e#24#33#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parallel.py">
+    <entry file="file://$PROJECT_DIR$/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="361">
-          <caret line="137" column="17" lean-forward="true" selection-start-line="137" selection-start-column="17" selection-end-line="137" selection-end-column="17" />
+        <state relative-caret-position="312">
+          <caret line="529" column="24" lean-forward="true" selection-start-line="529" selection-start-column="24" selection-end-line="529" selection-end-column="24" />
           <folding>
-            <element signature="e#24#33#0" expanded="true" />
+            <element signature="e#46#59#0" expanded="true" />
+            <marker date="1493068080000" expanded="true" signature="5483:5514" ph="INSERT INTO `redirect`... " />
+            <marker date="1493068080000" expanded="true" signature="9023:9055" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1493068080000" expanded="true" signature="12818:12850" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>

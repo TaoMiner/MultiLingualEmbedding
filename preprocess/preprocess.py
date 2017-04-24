@@ -505,8 +505,16 @@ class cleaner():
 
                 if redirects and tmp_title in redirects:
                     tmp_title = redirects[tmp_title]
-                if not entity_id or (entity_id and tmp_title in entity_id):
+
+                if not entity_id:
                     tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+                elif tmp_title in entity_id:
+                    if isReplaceId:
+                        tmp_title_id = entity_id[tmp_title]
+                        tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
+                    else:
+                        tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
+
                     # count the mentions
                     if mentions:
                         tmp_mention = {} if tmp_title not in mentions else mentions[tmp_title]
@@ -515,10 +523,6 @@ class cleaner():
                         else:
                             tmp_mention[tmp_label] = 1
                         mentions[tmp_title] = tmp_mention
-                elif isReplaceId and entity_id and tmp_title in entity_id:
-                    tmp_title_id = entity_id[tmp_title]
-                    tmp_anchor = '[[' + tmp_title_id + '|' + tmp_label + ']]'
-
                 # remove prefix of anchor
                 if len(tmp_anchor) > 0:
                     res += tmp_anchor + ' '
