@@ -54,7 +54,7 @@ class Parallel():
 
     def readMonoDoc(self, i):
         op = self.ops[i]
-        with codecs.open(op.corpus_file, 'rb', 'utf-8') as fin:
+        with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
             cur_title = ''
             for line in fin:
                 line = line.strip()
@@ -76,6 +76,7 @@ class Parallel():
         for sent in sents:
             cur = 0
             sent_words = []
+            # [[start, end],...]
             anchors = []
             for s, e in  cleaner.findBalanced(sent):
                 tmp_words = re.split(r' ', sent[cur:s])
@@ -83,16 +84,35 @@ class Parallel():
                 tmp_anchor = sent[s:e]
                 tmp_vbar = tmp_anchor.find('|')
                 tmp_label = ''
+                tmp_title = ''
                 if tmp_vbar > 0:
+                    tmp_title = tmp_anchor[2:tmp_vbar]
                     tmp_label = tmp_anchor[tmp_vbar + 1 :-2]
                 else:
                     tmp_label = tmp_anchor[2:-2]
+                    tmp_title = tmp_label
                 tmp_words = re.split(r' ', tmp_label)
+                start_index = len(sent_words)
                 sent_words.extend(tmp_words)
+                length = len(tmp_words)
+                if length > 0 and len(tmp_title) > 0:
+                    anchors.append([tmp_title, start_index,length])
                 cur = e
             if cur < len(sent):
                 tmp_words = re.split(r' ', sent[cur:])
                 sent_words.extend(tmp_words)
+            # sent_words contains all words in sent
+            # anchors contains start pos and end pos in the sentwords index
+            for anc in anchors:
+                tmp_contexts = []
+                begin = anc[1]-self.window if anc[1]-self.window > 0 else 0
+                end = anc[1] + anc[2] -1 + self.window if anc[1] + anc[2] -1 + self.window < len(sent_words) else len(sent_words)
+                for i in xrange(begin, end):
+                    if i >= anc[1] and i < anc[1]+anc[2]: continue
+                    if len(sent_words[i]) > 0:
+                        tmp_contexts.append(sent_words[i])
+                if len(tmp_contexts) > 0:
+                    contexts_dict[anc[0]] = tmp_contexts
         return contexts_dict
 
     def extract(self):
@@ -116,3 +136,4 @@ if __name__ == '__main__':
     par = Parallel(lang1, lang2)
     par.loadCrossLink(cross_file)
     par.readDoc()
+    par.extract()

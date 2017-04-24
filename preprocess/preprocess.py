@@ -47,7 +47,7 @@ class options():
         # entity mention mapping
         self.mention_file = self.dump_path + self.output_path + '/mention_count.dat'
         # linked wiki xml
-        self.corpus_file = self.dump_path + self.output_path + '/linked_wiki_pages.dat'
+        self.cross_corpus_file = self.dump_path + self.output_path + '/linked_wiki_pages.dat'
 
 nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
 # pagelink: (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
