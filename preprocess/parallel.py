@@ -27,16 +27,6 @@ class Parallel():
         self.parallel_contexts = []
         self.window = 5
 
-    def getIndex(self, lang):
-        index = -1
-        if lang == 'enwiki':
-            index = 0
-        elif lang == 'zhwiki':
-            index = 1
-        elif lang == 'eswiki':
-            index = 2
-        return index
-
     def loadCrossLink(self, filename):
         with codecs.open(filename, 'rb', 'utf-8') as fin:
             line_count = 0
@@ -129,11 +119,19 @@ class Parallel():
                 self.parallel_contexts.append([contexts_dict1[t1], contexts_dict2[self.clinks[t1]]])
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
+    def saveParaData(self, filename):
+        with codecs.open(filename, 'w', 'utf-8') as fout:
+            for context in self.parallel_contexts:
+                if len(context) != 2: continue
+                fout.write("%s\t%s\n" % (' '.join(context[0]), ' '.join(context[1])))
+
 if __name__ == '__main__':
     cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all.dat'
+    par_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/para_data.dat'
     lang1 = languages.index('en')
     lang2 = languages.index('zh')
     par = Parallel(lang1, lang2)
     par.loadCrossLink(cross_file)
     par.readDoc()
     par.extract()
+    par.saveParaData(par_file)
