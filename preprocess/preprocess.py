@@ -16,6 +16,9 @@ languages = ('en', 'zh', 'es')
 # parameters
 class options():
     def __init__(self, lang):
+        if lang >= len(languages) or lang < 0 :
+            print "invalid lang id!"
+            exit()
         self.dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
         self.lang = languages[lang] + 'wiki'
         self.redirect_dump = self.dump_path + self.lang + '/' + self.lang + '-20170401-redirect.sql'
@@ -308,12 +311,10 @@ class Preprocessor():
             tmp_tarlinks[self.cur_lang_index] = cur_title
         if tmp_tarlinks[self.cur_lang_index] != cur_title:
             print "error! different cur titles!"
-        if len(tmp_tarlinks[tar_index]) < 1:
+        if len(tmp_tarlinks[tar_index]) < 1 and tmp_tarlinks[tar_index]!=tar_title:
             tmp_tarlinks[tar_index] = tar_title
             self.langlinksCount[tar_index] += 1
             self.langlinks[cur_title] = tmp_tarlinks
-        else:
-            print 'error! repeated lang links!'
 
     def saveLangLink(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:

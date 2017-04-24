@@ -43,10 +43,10 @@ class Parallel():
                 if len(items) != len(languages): continue
                 from_index = self.getIndex(self.ops[self.lang1].lang)
                 to_index = self.getIndex(self.ops[self.lang2].lang)
-                if from_index == -1 or to_index == -1 or from_index == to_index:
-                    print 'error two languages!'
-                    return
-                for i in xrange(3):
+                if from_index == to_index:
+                    print 'error:same languages!'
+                    exit()
+                for i in xrange(len(languages)):
                     if len(items[from_index]) > 0 and len(items[to_index]) > 0:
                         self.clinks[items[from_index]] = items[to_index]
         print 'successfully load %d clinks from %s to %s!' % (len(self.clinks), self.ops[0].lang, self.ops[1].lang)
