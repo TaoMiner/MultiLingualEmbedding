@@ -75,7 +75,7 @@ class Preprocessor():
         self.outlinks = {}
         self.cur_lang_index = -1
         self.langlinks = None
-        self.langlinksCount = [0 for i in xrange(len(languages))]
+        self.langlinksCount = None
 
     # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
     def formatRawWiki(self, zhwiki_file, zhwiki_format_file):
@@ -267,7 +267,7 @@ class Preprocessor():
                 if m:
                     cur_lang = m.group(1)
                     self.cur_lang_index = languages.index(cur_lang)
-                    print "extract %d language language links!" % cur_lang
+                    print "extract %s language links!" % cur_lang
                 if self.cur_lang_index==-1: continue
                 line = line.replace('INSERT INTO `langlinks` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -298,14 +298,18 @@ class Preprocessor():
     def addLangLink(self, cur_title, tar_title, tar_lang):
         if isinstance(self.langlinks, type(None)):
             self.langlinks = {}
+            self.langlinksCount = [0 for i in xrange(len(languages))]
 
         tar_index = languages.index(tar_lang)
-        tmp_tarlinks = self.langlinks[cur_title] if cur_title in self.langlinks else ['' for i in xrange(len(languages))]
+        if cur_title in self.langlinks:
+            tmp_tarlinks = self.langlinks[cur_title]
+        else:
+            tmp_tarlinks = ['' for i in xrange(len(languages))]
+            tmp_tarlinks[self.cur_lang_index] = cur_title
+        if tmp_tarlinks[self.cur_lang_index] != cur_title:
+            print "error! different cur titles!"
         if len(tmp_tarlinks[tar_index]) < 1:
             tmp_tarlinks[tar_index] = tar_title
-            if tmp_tarlinks[self.cur_lang_index] != cur_title:
-                print "error! changing processing language!"
-                tmp_tarlinks[self.cur_lang_index] = cur_title
             self.langlinksCount[tar_index] += 1
             self.langlinks[cur_title] = tmp_tarlinks
         else:
@@ -344,11 +348,11 @@ class cleaner():
         self.entity_id = None
         self.redirects = None
         self.mentions = None
-        print "cleaning %s language!" % self.lang
 
     def init(self, lang):
         self.lang = languages[lang]
         self.mentions = {}
+        print "cleaning %s language!" % self.lang
 
 
     @staticmethod

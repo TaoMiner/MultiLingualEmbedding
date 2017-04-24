@@ -3,12 +3,11 @@ import re
 import codecs
 from itertools import izip
 import string
-from preprocess import cleaner, options
+import preprocess
 
-ENGLISH = 0
-CHINESE = 1
-SPANISH = 2
-languages = ('enwiki', 'zhwiki', 'eswiki')
+options = preprocess.options
+
+languages = preprocess.languages
 
 # <doc id="12" url="https://en.wikipedia.org/wiki?curid=12" title="Anarchism">
 headerRE = re.compile(r'<doc.*?title="(.*?)">')
@@ -17,6 +16,8 @@ class Parallel():
 
     def __init__(self, lang1, lang2):
         # title:[[sent],...]
+        self.lang1 = lang1
+        self.lang2 = lang2
         self.ops = [options(lang1), options(lang2)]
         self.corpus = [{},{}]
         self.clinks = {}
@@ -38,11 +39,10 @@ class Parallel():
             line_count = 0
             for line in fin:
                 line_count += 1
-                if line_count < 2: continue
                 items = re.split(r'\t', line.strip())
-                if len(items) != 3: continue
-                from_index = self.getIndex(self.ops[0].lang)
-                to_index = self.getIndex(self.ops[1].lang)
+                if len(items) != len(languages): continue
+                from_index = self.getIndex(self.ops[self.lang1].lang)
+                to_index = self.getIndex(self.ops[self.lang2].lang)
                 if from_index == -1 or to_index == -1 or from_index == to_index:
                     print 'error two languages!'
                     return
@@ -93,3 +93,8 @@ class Parallel():
                     continue
                 self.parallel_contexts.append([contexts_dict1[t1], contexts_dict2[self.clinks[t1]]])
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
+
+if __name__ == '__main__':
+    lang1 = languages.index('en')
+    lang2 = languages.index('zh')
+    par = Parallel(lang1, lang2)
