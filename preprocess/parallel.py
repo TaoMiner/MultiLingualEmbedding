@@ -46,13 +46,14 @@ class Parallel():
         op = self.ops[i]
         with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
             cur_title = ''
+            tmp_sents = None
             for line in fin:
                 line = line.strip()
                 tmp_line = ''
                 if len(line) < 1: continue
-                if not isinstance(footerRE.match(line), type(None)) :
+                m = footerRE.match(line)
+                if not isinstance(m, type(None)) :
                     self.corpus[i][cur_title] = tmp_sents
-                    print "%s:%d sents!" % (cur_title.encode('utf-8'), len(tmp_sents))
                     cur_title = ''
                     tmp_sents = None
                     continue
@@ -60,8 +61,9 @@ class Parallel():
                 if m:
                     cur_title = m.group(1)
                     tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
+                    print "%s:%d sents!" % (cur_title.encode('utf-8'), len(tmp_sents))
                     continue
-                elif tmp_sents and len(cur_title) > 0:
+                elif not isinstance(tmp_sents, type(None)) and len(cur_title) > 0:
                     tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False)
                     print tmp_line.encode('utf-8')
                     tmp_sents.append(tmp_line)
