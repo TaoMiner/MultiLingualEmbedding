@@ -2,8 +2,11 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+import re
 
 
-aa = [1,2,3]
-print aa[1:]
-print aa[2:]
+a = ['','a','']
+s = "%s\n" % '\t'.join(a)
+print s.strip('\n')
+items = re.split(r'\t', s.strip('\n'))
+print len(items)

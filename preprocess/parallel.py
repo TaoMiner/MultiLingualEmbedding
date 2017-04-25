@@ -32,7 +32,7 @@ class Parallel():
             line_count = 0
             for line in fin:
                 line_count += 1
-                items = re.split(r'\t', line.strip())
+                items = re.split(r'\t', line.strip('\n'))
                 if len(items) != len(languages): continue
                 if len(items[self.lang1]) > 0 and len(items[self.lang2]) > 0:
                     self.clinks[items[self.lang1]] = items[self.lang2]
