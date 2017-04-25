@@ -48,6 +48,7 @@ class Parallel():
             cur_title = ''
             for line in fin:
                 line = line.strip()
+                tmp_line = ''
                 if len(line) < 1: continue
                 if not isinstance(footerRE.match(line), type(None)) :
                     self.corpus[i][cur_title] = tmp_sents
@@ -61,7 +62,9 @@ class Parallel():
                     tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
                     continue
                 elif tmp_sents and len(cur_title) > 0:
-                    tmp_sents.append(cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False))
+                    tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False)
+                    print tmp_line.encode('utf-8')
+                    tmp_sents.append(tmp_line)
 
     def extractContext(self, sents):
         contexts_dict = {}

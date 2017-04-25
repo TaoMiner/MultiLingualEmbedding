@@ -61,8 +61,8 @@
       <file leaf-file-name="parallel.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/parallel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="265">
-              <caret line="53" column="84" lean-forward="false" selection-start-line="53" selection-start-column="84" selection-end-line="53" selection-end-column="84" />
+            <state relative-caret-position="518">
+              <caret line="65" column="50" lean-forward="true" selection-start-line="65" selection-start-column="50" selection-end-line="65" selection-end-column="50" />
               <folding>
                 <element signature="e#24#33#0" expanded="true" />
               </folding>
@@ -996,8 +996,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/parallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="53" column="84" lean-forward="false" selection-start-line="53" selection-start-column="84" selection-end-line="53" selection-end-column="84" />
+        <state relative-caret-position="518">
+          <caret line="65" column="50" lean-forward="true" selection-start-line="65" selection-start-column="50" selection-end-line="65" selection-end-column="50" />
           <folding>
             <element signature="e#24#33#0" expanded="true" />
           </folding>
