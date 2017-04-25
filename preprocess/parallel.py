@@ -41,6 +41,7 @@ class Parallel():
     def readDoc(self):
         for i in xrange(2):
             self.readMonoDoc(i)
+            print "successfully load %d doc for %s language!" % (len(self.corpus[i]), self.ops[i].lang)
 
     def readMonoDoc(self, i):
         op = self.ops[i]
@@ -54,7 +55,6 @@ class Parallel():
                 m = footerRE.match(line)
                 if not isinstance(m, type(None)) :
                     self.corpus[i][cur_title] = tmp_sents
-                    print "%s:%d sents!" % (cur_title.encode('utf-8'), len(tmp_sents))
                     cur_title = ''
                     tmp_sents = None
                     continue
