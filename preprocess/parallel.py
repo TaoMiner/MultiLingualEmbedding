@@ -50,16 +50,18 @@ class Parallel():
                 line = line.strip()
                 if len(line) < 1: continue
                 if not isinstance(footerRE.match(line), type(None)) :
+                    self.corpus[i][cur_title] = tmp_sents
+                    print "%s:%d sents!" % (cur_title.encode('utf-8'), len(tmp_sents))
                     cur_title = ''
+                    tmp_sents = None
                     continue
                 m = headerRE.match(line)
                 if m:
                     cur_title = m.group(1)
-                    continue
-                elif len(cur_title) > 0:
                     tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
+                    continue
+                elif tmp_sents and len(cur_title) > 0:
                     tmp_sents.append(cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False))
-                    self.corpus[i][cur_title] = tmp_sents
 
     def extractContext(self, sents):
         contexts_dict = {}

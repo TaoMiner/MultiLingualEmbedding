@@ -700,7 +700,7 @@ class MonoKGBuilder():
 def merge():
     files = []
     for i in xrange(len(languages)):
-        op = options[i]
+        op = options(i)
         files.append(op.cross_link_file)
 
     mergeCrossLinks(files)
