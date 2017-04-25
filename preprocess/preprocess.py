@@ -571,7 +571,7 @@ def addClinks(clink, clink_dict):
             if clink[i] in tmp_dict:
                 tmp_list = tmp_dict[clink[i]]
                 for j in xrange(len(clink[i+1:])):
-                    if len(clink[i+1+j]) < 1:
+                    if len(tmp_list[j]) < 1 and len(clink[i+1+j]) > 0:
                         tmp_list[j] = clink[i+1+j]
             else:
                 tmp_list = clink[i+1:]
