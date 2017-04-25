@@ -329,7 +329,7 @@ class Preprocessor():
         with codecs.open(filename, 'rb', 'utf-8') as fin:
             link_set = set()
             for line in fin:
-                items = re.split(r'\t', line.strip())
+                items = re.split(r'\t', line.strip('\n'))
                 if len(items) != len(languages): continue
                 for i in items:
                     if len(i) < 1: continue
@@ -601,7 +601,7 @@ def mergeCrossLinks(files):
     for file in files:
         with codecs.open(file, 'rb', 'utf-8') as fin:
             for line in fin:
-                items = re.split(r'\t', line.strip())
+                items = re.split(r'\t', line.strip('\n'))
                 if len(items) != num_lang : continue
                 addClinks(items, total_clinks)
         out = ''
