@@ -45,6 +45,9 @@ class Parallel():
 
     def readMonoDoc(self, i):
         op = self.ops[i]
+        pre = preprocess.Preprocessor()
+        entity_dic = pre.loadEntityDic(op.vocab_entity_file)
+        redirects = pre.loadRedirects(op.redirect_file)
         with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
             cur_title = ''
             tmp_sents = None
@@ -64,7 +67,7 @@ class Parallel():
                     tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
                     continue
                 elif not isinstance(tmp_sents, type(None)) and len(cur_title) > 0:
-                    tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=False)
+                    tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
                     tmp_sents.append(tmp_line)
 
     def extractContext(self, sents):

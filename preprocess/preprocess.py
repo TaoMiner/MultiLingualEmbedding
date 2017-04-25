@@ -9,7 +9,7 @@ import jieba
 
 htmlparser = HTMLParser.HTMLParser()
 jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
-#jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
+# jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
 languages = ('en', 'zh', 'es')
 
