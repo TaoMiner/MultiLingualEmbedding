@@ -1425,7 +1425,7 @@ int main(int argc, char **argv) {
         printf("\t-debug <int>\n");
         printf("\t\tSet the debug mode (default = 2 = more info during training)\n");
         printf("\nExamples:\n");
-        printf("./mlmpme -mono_anchor1 en_anchor.txt -mono_anchor2 zh_anchor.txt -mono_kg1 en_kg.txt -mono_kg2 zh_kg.txt -multi_kg multi_kg.txt -multi_context multi_context.txt -output1 ./en_vec/ -output2 ./zh_vec/ -save_mono_vocab1 ./en_vocab/ -save_mono_vocab2 ./zh_vocab/ -read_cross_link cross_links.txt -size 200 -window 5 -sample 1e-4 -negative 5 -threads 63  -save_iter 1 -iter 3\n\n");
+        printf("./mlmpme -mono_anchor1 en_anchor.txt -mono_anchor2 zh_anchor.txt -mono_kg1 en_kg.txt -mono_kg2 zh_kg.txt -multi_context multi_context.txt -output1 ./en_vec/ -output2 ./zh_vec/ -save_mono_vocab1 ./en_vocab/ -save_mono_vocab2 ./zh_vocab/ -read_cross_link cross_links.txt -size 200 -window 5 -sample 1e-4 -negative 5 -threads 63  -save_iter 1 -iter 3\n\n");
         return 0;
     }
     
