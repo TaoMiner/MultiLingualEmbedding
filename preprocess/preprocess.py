@@ -471,6 +471,7 @@ class cleaner():
             seg_line = "_".join(seg_list)
             openDelim = ['[_[']
             closeDelim = [']_]']
+            boundary = 2
         else:
             seg_line = sent
         for s, e in cleaner.findBalanced(seg_line, openDelim, closeDelim):
@@ -502,10 +503,8 @@ class cleaner():
             tmp_label = cleaner.regularize(tmp_label, lang)
             tmp_anchor = tmp_label
             if len(tmp_label) > 0 :
-
                 if redirects and tmp_title in redirects:
                     tmp_title = redirects[tmp_title]
-
                 if not entity_id:
                     tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
                 elif tmp_title in entity_id:

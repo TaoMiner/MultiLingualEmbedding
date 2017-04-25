@@ -25,7 +25,7 @@ class Parallel():
         self.corpus = [{},{}]
         self.clinks = {}
         self.parallel_contexts = []
-        self.window = 5
+        self.window = 15
 
     def loadCrossLink(self, filename):
         with codecs.open(filename, 'rb', 'utf-8') as fin:
@@ -49,7 +49,7 @@ class Parallel():
         entity_dic = pre.loadEntityDic(op.vocab_entity_file)
         redirects = pre.loadRedirects(op.redirect_file)
         with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
-            cur_title = ''
+            cur_title_id = ''
             tmp_sents = None
             for line in fin:
                 line = line.strip()
@@ -57,16 +57,18 @@ class Parallel():
                 if len(line) < 1: continue
                 m = footerRE.match(line)
                 if not isinstance(m, type(None)) :
-                    self.corpus[i][cur_title] = tmp_sents
-                    cur_title = ''
+                    self.corpus[i][cur_title_id] = tmp_sents
+                    cur_title_id = ''
                     tmp_sents = None
                     continue
                 m = headerRE.match(line)
                 if m:
-                    cur_title = m.group(1)
-                    tmp_sents = self.corpus[i][cur_title] if cur_title in self.corpus[i] else []
+                    cur_title = redirects[m.group(1)] if m.group(1) in redirects else m.group(1)
+                    cur_title_id = entity_dic[cur_title] if cur_title in entity_dic else ''
+                    if len(cur_title_id) > 0:
+                        tmp_sents = self.corpus[i][cur_title_id] if cur_title_id in self.corpus[i] else []
                     continue
-                elif not isinstance(tmp_sents, type(None)) and len(cur_title) > 0:
+                elif not isinstance(tmp_sents, type(None)) and len(cur_title_id) > 0:
                     tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
                     tmp_sents.append(tmp_line)
 
@@ -78,7 +80,7 @@ class Parallel():
             # [[start, end],...]
             anchors = []
             for s, e in  cleaner.findBalanced(sent):
-                tmp_words = re.split(r' ', sent[cur:s])
+                tmp_words = re.split(r' ', sent[cur:s].strip())
                 sent_words.extend(tmp_words)
                 tmp_anchor = sent[s:e]
                 tmp_vbar = tmp_anchor.find('|')
@@ -105,7 +107,7 @@ class Parallel():
             for anc in anchors:
                 tmp_contexts = []
                 begin = anc[1]-self.window if anc[1]-self.window > 0 else 0
-                end = anc[1] + anc[2] -1 + self.window if anc[1] + anc[2] -1 + self.window < len(sent_words) else len(sent_words)
+                end = anc[1] + anc[2] + self.window + 1 if anc[1] + anc[2] + self.window +1 < len(sent_words) else len(sent_words)
                 for i in xrange(begin, end):
                     if i >= anc[1] and i < anc[1]+anc[2]: continue
                     if len(sent_words[i]) > 0:
@@ -135,7 +137,7 @@ class Parallel():
                 fout.write("%s\t%s\n" % (' '.join(context[0]), ' '.join(context[1])))
 
 if __name__ == '__main__':
-    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all.dat'
+    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
     par_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/para_data.dat'
     lang1 = languages.index('en')
     lang2 = languages.index('zh')
