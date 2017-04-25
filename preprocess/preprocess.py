@@ -697,6 +697,14 @@ class MonoKGBuilder():
         self.buildMonoKG()
         self.extractLanglinks()
 
+def merge():
+    files = []
+    for i in xrange(len(languages)):
+        op = options[i]
+        files.append(op.cross_link_file)
+
+    mergeCrossLinks(files)
+
 if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
@@ -705,6 +713,6 @@ if __name__ == '__main__':
     # mkb = MonoKGBuilder(lang_index)
     # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
-    # mergeCrossLinks()
+    # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
     clean(lang_index)
