@@ -20,7 +20,7 @@ class Sampler():
                     if len(items[self.lang_indices[i]]) > 0:
                         self.ids[self.lang_indices[i]].add(items[self.lang_indices[i]])
         out = ''
-        for i in xrange(len(languages)):
+        for i in xrange(len(self.lang_indices)):
             out += "read %d entities of %s lang!" % (len(self.ids[self.lang_indices[i]]), languages[self.lang_indices[i]])
         print out
 
@@ -78,7 +78,8 @@ if __name__ == '__main__':
     kg_file1 = dump_path + lang1 + 'wiki_cl/mono_kg_id.dat'
     sample_kg_file1 = dump_path + lang1 + 'wiki_cl/sample_kg.dat'
 
-    an_file2 = dump_path + lang2 +'wiki_cl/anchor_text_cl.dat'
+    # for simplified chinese
+    an_file2 = dump_path + lang2 +'wiki_cl/anchor_text_chs.dat'
     sample_an_file2 = dump_path + lang2 + 'wiki_cl/anchor_text_sample.dat'
     kg_file2 = dump_path + lang2 + 'wiki_cl/mono_kg_id.dat'
     sample_kg_file2 = dump_path + lang2 + 'wiki_cl/sample_kg.dat'
