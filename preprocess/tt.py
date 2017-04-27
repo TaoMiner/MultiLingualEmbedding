@@ -5,8 +5,9 @@ sys.setdefaultencoding('utf8')
 import re
 
 
-a = ['','a','']
-s = "%s\n" % '\t'.join(a)
-print s.strip('\n')
-items = re.split(r'\t', s.strip('\n'))
-print len(items)
+a = 'he (wef) llo (disambiguate)'
+
+titlRE = re.compile(r' \([^\(]*?\)$')
+
+s = titlRE.sub('', a)
+print s

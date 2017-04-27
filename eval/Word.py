@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import codecs
 import struct
 import numpy as np
@@ -8,7 +10,7 @@ class Word():
     def __init__(self):
         self.vocab_size = 0
         self.layer_size = 0
-        self.vectors = {}
+        self.vectors = None
 
     def initVectorFormat(self, size):
         tmp_struct_fmt = []
@@ -26,15 +28,15 @@ class Word():
         print 'read %d words!' % len(vocab)
         return vocab
 
-    def sample(self, file1, file2, input_file,  output_file):
-        vocab1 = self.readVocab(file1)
-        vocab2 = self.readVocab(file2)
-        new_vocab = vocab1 & vocab2
+    def sample(self, subvocab_file, vector_file,  sample_file):
+        new_vocab = self.readVocab(subvocab_file)
         new_vocab_size = len(new_vocab)
         new_word_count = 0
+        vocab_size = 0
+        layer_size = 0
         print 'new vocab size: %d\n' % new_vocab_size
-        with codecs.open(input_file, 'rb') as fin_vec:
-            with codecs.open(output_file, 'wb') as fout_vec:
+        with codecs.open(vector_file, 'rb') as fin_vec:
+            with codecs.open(sample_file, 'wb') as fout_vec:
                 # read file head: vocab size and layer size
                 char_set = []
                 while True:
@@ -56,10 +58,10 @@ class Word():
                         if ch == '\t':
                             break
                         char_set.append(ch)
-                    label = "".join(char_set).decode('ISO-8859-1')
+                    label = "".join(char_set).decode('utf-8')
                     if label in new_vocab:
                         new_word_count += 1
-                        fout_vec.write("%s\t" % label.encode('ISO-8859-1'))
+                        fout_vec.write("%s\t" % label.encode('utf-8'))
                         fout_vec.write(fin_vec.read(4 * layer_size))
                         fout_vec.write(fin_vec.read(1))
                     else:
@@ -69,6 +71,8 @@ class Word():
 
 
     def loadVector(self, filename):
+        if isinstance(self.vectors, type(None)): self.vectors = {}
+        else: self.vectors.clear()
         with codecs.open(filename, 'rb') as fin_vec:
             # read file head: vocab size and layer size
             char_set = []
@@ -92,22 +96,13 @@ class Word():
                     if ch==' ' or ch=='\t':
                         break
                     char_set.append(ch)
-                label = "".join(char_set).decode('ISO-8859-1')
-                if label == '8,330' : break
+                label = "".join(char_set).decode('utf-8')
                 self.vectors[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
             print 'load %d words!' % self.vocab_size
 
 if __name__ == '__main__':
+    word_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_word.dat'
     word = Word()
-    word.loadVector('/Volumes/LifuMac/vectors.nyt2011.cbow.bin')
-    print word.vectors[u'knotheads']
-    '''
-    word_vector_file = '/data/m1/cyx/etc/output/exp10/vectors_word10.dat'
-    sample_file = '/data/m1/cyx/etc/expdata/conll/vectors_word.sample'
-    vocab_word_file = '/data/m1/cyx/etc/enwiki/vocab_word.txt'
-    vocab_conll_file = '/data/m1/cyx/etc/expdata/conll/conll_word_vocab'
-    wiki_word = Word()
-    wiki_word.sample(vocab_word_file, vocab_conll_file, word_vector_file, sample_file)
-    '''
+    word.loadVector(word_vector_file)
