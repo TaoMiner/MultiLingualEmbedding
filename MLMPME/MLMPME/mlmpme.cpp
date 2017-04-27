@@ -729,9 +729,52 @@ void InitModel(int model_type, int lang_id){
     if (negative > 0) InitUnigramTable(mono_vocab);
 }
 
+// cross lingual alignment
+/* Read parallel sentences into *sen for all languages from fi
+ * fi point to the file: each line contains NUM_LANG sentences separated by tab */
+void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH]) {
+    long long word_index;
+    char word[MAX_STRING];
+    int sentence_length = 0, anchor_pos, cur_lang=0;
+    struct vocab *word_model;
+    while (1) {
+        anchor_pos = ReadParText(word, fi);
+        if (feof(fi) || !strcmp(word, (char *)"</s>")){
+            sen[cur_lang][sentence_length] = 0;
+            break;
+        }
+        if (!strcmp(word, (char *)"</t>")){
+            sen[cur_lang][sentence_length] = 0;
+            sentence_length = 0;
+            cur_lang = (cur_lang + 1) % NUM_LANG;
+            continue;
+        }
+        //only for words
+        if (anchor_pos==-1 && sentence_length < MAX_SENTENCE_LENGTH-1){
+            word_model = &model[TEXT_VOCAB][cur_lang];
+            word_index = SearchVocab(word, word_model);
+            if (word_index == -1) continue;
+            //The subsampling randomly discards frequent words while keeping the ranking same
+            if (sample > 0) {
+                real ran = (sqrt(word_model->vocab[word_index].cn / (sample * word_model->train_items)) + 1) * (sample * word_model->train_items) / word_model->vocab[word_index].cn;
+                g_next_random = g_next_random * (unsigned long long)25214903917 + 11;
+                if (ran < (g_next_random & 0xFFFF) / (real)65536) continue;
+            }
+            sen[cur_lang][sentence_length] = word_index;
+            sentence_length++;
+            if (sentence_length >= MAX_SENTENCE_LENGTH){
+                sentence_length = MAX_SENTENCE_LENGTH - 1;
+                continue;
+            }
+        }
+        
+    }
+}
+
 void InitMultiModel(char *cross_link_file){
     int a, i, j, clink[NUM_LANG],b;
     char item[MAX_STRING];
+    long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
     FILE *fin = fopen(cross_link_file, "rb");
     if (fin == NULL) {
         printf("ERROR: training data file not found!\n");
@@ -775,6 +818,14 @@ void InitMultiModel(char *cross_link_file){
     num_clink = j;
     for(i = 0; i < NUM_LANG; i++)
         cross_links[i] = (int *)realloc(cross_links[i], num_clink * sizeof(int));
+    // initialize the parallel context number
+    fin = fopen(multi_context_file, "rb");
+    while(1){
+        ReadSent(fin, par_sen);
+        par_line_num ++;
+        if (feof(fin)) break;
+    }
+    fclose(fin);
 }
 
 void *TrainTextModelThread(void *id) {
@@ -1257,48 +1308,6 @@ void TrainMonoModel(int model_type, int lang_id){
         resetSenseCluster(lang_id);
 }
 
-// cross lingual alignment
-/* Read parallel sentences into *sen for all languages from fi
- * fi point to the file: each line contains NUM_LANG sentences separated by tab */
-void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH]) {
-    long long word_index;
-    char word[MAX_STRING];
-    int sentence_length = 0, anchor_pos, cur_lang=0;
-    struct vocab *word_model;
-    while (1) {
-        anchor_pos = ReadParText(word, fi);
-        if (feof(fi) || !strcmp(word, (char *)"</s>")){
-            sen[cur_lang][sentence_length] = 0;
-            break;
-        }
-        if (!strcmp(word, (char *)"</t>")){
-            sen[cur_lang][sentence_length] = 0;
-            sentence_length = 0;
-            cur_lang = (cur_lang + 1) % NUM_LANG;
-            continue;
-        }
-        //only for words
-        if (anchor_pos==-1 && sentence_length < MAX_SENTENCE_LENGTH-1){
-            word_model = &model[TEXT_VOCAB][cur_lang];
-            word_index = SearchVocab(word, word_model);
-            if (word_index == -1) continue;
-            //The subsampling randomly discards frequent words while keeping the ranking same
-            if (sample > 0) {
-                real ran = (sqrt(word_model->vocab[word_index].cn / (sample * word_model->train_items)) + 1) * (sample * word_model->train_items) / word_model->vocab[word_index].cn;
-                g_next_random = g_next_random * (unsigned long long)25214903917 + 11;
-                if (ran < (g_next_random & 0xFFFF) / (real)65536) continue;
-            }
-            sen[cur_lang][sentence_length] = word_index;
-            sentence_length++;
-            if (sentence_length >= MAX_SENTENCE_LENGTH){
-                sentence_length = MAX_SENTENCE_LENGTH - 1;
-                continue;
-            }
-        }
-        
-    }
-}
-
 void UpdateEmbeddings(real *embeddings, int offset, int num_updates, real *deltas, real weight) {
     int a;
     real step;
@@ -1418,13 +1427,6 @@ void TrainMultiModel(){
     long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
-    FILE *fi_par = fopen(multi_context_file, "rb");
-    while(1){
-        ReadSent(fi_par, par_sen);
-        par_line_num ++;
-        if (feof(fi_par)) break;
-    }
-    fclose(fi_par);
     printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num, multi_context_file);
     for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, BilbowaThread, (void *)a);
     for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);

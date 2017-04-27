@@ -8,8 +8,8 @@ import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-# jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
-jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
+jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
+# jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
 languages = ('en', 'zh', 'es')
 
@@ -466,7 +466,7 @@ class cleaner():
         closeDelim = [']]']
         boundary = 1
         if lang == 'zh':
-            seg_list = jieba.cut(sent, cut_all=False)
+            seg_list = jieba.cut(sent.strip(), cut_all=False)
             # some chinese entities contain whitespace
             seg_line = "_".join(seg_list)
             openDelim = ['[_[']
@@ -532,9 +532,9 @@ class cleaner():
             tmp_line = seg_line[cur:]
         tmp_line = cleaner.regularize(tmp_line, lang)
         if len(tmp_line) > 0:
-            res += tmp_line + '\n'
+            res += tmp_line
         else:
-            res = res.strip() + '\n'
+            res = res.strip()
         return res
 
     def cleanWiki(self, raw_anchor_file, anchor_file, mention_file = None):
@@ -546,7 +546,7 @@ class cleaner():
                     # isReplaceId = True, entity_id = None, redirects = None, mentions = None
                     res = cleaner.cleanAnchorSent(line.strip(), self.lang, isReplaceId = True, entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
                     if len(res) > 11:
-                        fout.write(res)
+                        fout.write("%s\n" % res)
         print 'process train text finished! start count anchors ...'
         if not mention_file:
             with codecs.open(mention_file, 'w', 'utf-8') as fout:
