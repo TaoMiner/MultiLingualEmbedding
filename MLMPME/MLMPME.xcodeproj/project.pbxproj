@@ -34,7 +34,6 @@
 
 /* Begin PBXFileReference section */
 		AA0360EB1E7B0EDB002BD51D /* mlmpme.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mlmpme.cpp; sourceTree = "<group>"; };
-		AA0360EC1E7B0EDB002BD51D /* mlmpme.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = mlmpme.hpp; sourceTree = "<group>"; };
 		AA93469D1E79CEA2003D081B /* MLMPME */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MLMPME; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA9DE1A1E9312F4003E9156 /* test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA9DE1C1E9312F4003E9156 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -80,7 +79,6 @@
 			isa = PBXGroup;
 			children = (
 				AA0360EB1E7B0EDB002BD51D /* mlmpme.cpp */,
-				AA0360EC1E7B0EDB002BD51D /* mlmpme.hpp */,
 			);
 			path = MLMPME;
 			sourceTree = "<group>";

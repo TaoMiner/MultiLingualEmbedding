@@ -8,8 +8,8 @@ import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
-# jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
+# jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
+jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
 languages = ('en', 'zh', 'es')
 
@@ -704,6 +704,36 @@ def merge():
 
     mergeCrossLinks(files)
 
+def subCrossLinks(filename, outputfile, lang):
+    with codecs.open(filename, 'rb', 'utf-8') as fin:
+        out_clinks = []
+        count_line = 0
+        indexes = []
+        for line in fin:
+            count_line += 1
+            if count_line == 2:
+                items = re.split(r' ', line.strip('\n'))
+                if len(items) != len(languages):
+                    print 'out of languages!'
+                    return
+                indexes = [languages.index(lang[i]) for i in xrange(len(lang))]
+                continue
+            if len(indexes) < 1: continue
+            tmp_ids = []
+            id_count = 0
+            items = re.split(r'\t', line.strip('\n'))
+            for i in indexes:
+                tmp_ids.append(items[i])
+                if len(items[i]) > 0 :
+                    id_count += 1
+            if id_count > 1:
+                out_clinks.append(tmp_ids)
+    with codecs.open(outputfile, 'w', 'utf-8') as fout:
+        fout.write("%d\n" % len(out_clinks))
+        for clink in out_clinks:
+            fout.write("%s\n" % '\t'.join(clink))
+
+
 if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
@@ -714,4 +744,8 @@ if __name__ == '__main__':
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    clean(lang_index)
+    # clean(lang_index)
+    cross_file = '/Users/ethan/Downloads/mlmpme/sample_cross.dat'
+    sub_file = '/Users/ethan/Downloads/mlmpme/sub_cross.dat'
+    lang = ['en','zh']
+    subCrossLinks(cross_file, sub_file, lang)
