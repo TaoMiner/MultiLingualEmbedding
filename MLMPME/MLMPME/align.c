@@ -61,7 +61,7 @@ struct model_var2 {
 }joint_model;
 
 const int vocab_hash_size = 30000000;  // Maximum items in the vocabulary
-int local_iter=0, binary = 0, debug_mode = 2, window = 5, min_count = 0, num_threads = 12, min_reduce = 1, cw = 0, sg = 1;
+int local_iter=0, binary = 0, debug_mode = 2, window = 5, min_count = 5, num_threads = 12, min_reduce = 1, cw = 0, sg = 1;
 long long layer1_size = 100;
 long long iter = 5, tmp_anchor_num = 0;
 real alpha = 0.025, sample = 1e-3;
@@ -979,7 +979,7 @@ void InitTextModel(){
 
 void InitKgModel(){
     p_model = &kg_model;
-    min_count = 1;
+    // min_count = 1;
     InitModel();
     p_model = NULL;
 }
