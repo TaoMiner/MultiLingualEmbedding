@@ -848,7 +848,7 @@ void *TrainTextModelThread(void *id) {
     
     struct vocab *mono_words = &model[TEXT_VOCAB][cur_lang_id];
     struct vocab *mono_entities = &model[KG_VOCAB][cur_lang_id];
-    struct vocab *mono_senses = nullptr;
+    struct vocab *mono_senses = NULL;
     if (hasSense)
         mono_senses = &model[SENSE_VOCAB][cur_lang_id];
     
