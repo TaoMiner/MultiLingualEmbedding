@@ -1282,7 +1282,7 @@ void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH]) {
             word_model = &model[TEXT_VOCAB][cur_lang];
             word_index = SearchVocab(word, word_model);
             if (word_index == -1) continue;
-            // The subsampling randomly discards frequent words while keeping the ranking same
+            //The subsampling randomly discards frequent words while keeping the ranking same
             if (sample > 0) {
                 real ran = (sqrt(word_model->vocab[word_index].cn / (sample * word_model->train_items)) + 1) * (sample * word_model->train_items) / word_model->vocab[word_index].cn;
                 g_next_random = g_next_random * (unsigned long long)25214903917 + 11;
@@ -1357,12 +1357,22 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], real *d
     int a;
     real grad_norm;
     real *syn0_1, *syn0_2;
+    int len[NUM_LANG];
     // FPROP
     // RESET DELTAS
     for (a = 0; a < layer_size; a++) deltas[a] = 0;
-    // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
+    // length of sen
     for (int i=0;i<NUM_LANG;i++)
+        for(a=0;a<MAX_SENTENCE_LENGTH;a++)
+            if (sen[i][a]==0){
+                len[i] = a;
+                break;
+            }
+    // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
+    for (int i=0;i<NUM_LANG;i++){
+        if (len[i]==0) continue;
         for (int j=i+1;j<NUM_LANG;j++){
+            if (len[j]==0) continue;
             syn0_1 = model[TEXT_VOCAB][i].syn0;
             syn0_2 = model[TEXT_VOCAB][j].syn0;
             FpropSent(sen[i], deltas, syn0_1, +1);
@@ -1370,6 +1380,7 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], real *d
             bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
             UpdateSquaredError(sen[i], sen[j], deltas, syn0_1, syn0_2);
         }
+    }
 }
 
 /* Thread for performing the cross-lingual learning */
@@ -1381,7 +1392,6 @@ void *BilbowaThread(void *id) {
     int line_num = 0, cur_line = 0;
     
     real deltas[layer_size];
-    
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file, "rb");
     fseek(fi_par, 0, SEEK_END);
@@ -1391,9 +1401,10 @@ void *BilbowaThread(void *id) {
     
     //skip the current line
     if((long long)id!=0) ReadSent(fi_par, par_sen);
-    
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
+        for(int i=0;i<NUM_LANG;i++)
+            par_sen[i][0] = 0;
         ReadSent(fi_par, par_sen);
         cur_line ++;
         BilBOWASentenceUpdate(par_sen, deltas);
@@ -1404,10 +1415,17 @@ void *BilbowaThread(void *id) {
 
 void TrainMultiModel(){
     long a;
+    long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
-    printf("\nStarting training multilingual text model using file %s\n", multi_context_file);
-    
+    FILE *fi_par = fopen(multi_context_file, "rb");
+    while(1){
+        ReadSent(fi_par, par_sen);
+        par_line_num ++;
+        if (feof(fi_par)) break;
+    }
+    fclose(fi_par);
+    printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num, multi_context_file);
     for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, BilbowaThread, (void *)a);
     for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
 }
@@ -1415,11 +1433,11 @@ void TrainMultiModel(){
 void TrainModel(){
     long long i;
     
-//    for (i=0;i<NUM_LANG;i++)
-//        TrainMonoModel(KG_VOCAB, i);
-//    
-//    for (i=0;i<NUM_LANG;i++)
-//        TrainMonoModel(TEXT_VOCAB, i);
+    for (i=0;i<NUM_LANG;i++)
+        TrainMonoModel(KG_VOCAB, i);
+    
+    for (i=0;i<NUM_LANG;i++)
+        TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
     TrainMultiModel();

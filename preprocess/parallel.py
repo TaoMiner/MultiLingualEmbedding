@@ -134,6 +134,7 @@ class Parallel():
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for context in self.parallel_contexts:
                 if len(context) != 2: continue
+                if len(context[0]) <1 or len(context[1])<1: continue
                 fout.write("%s\t%s\n" % (' '.join(context[0]), ' '.join(context[1])))
 
 if __name__ == '__main__':
