@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 #define MAX_STRING 1100          //>longest entity + longest mention + 1
-#define NUM_LANG 2
+#define NUM_LANG 1
 #define NUM_MODEL 3
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
@@ -57,7 +57,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, min_count = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1;
+int local_iter=0, debug_mode = 2, window = 5, min_count = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1;
 long long layer_size = 100;
 const int table_size = 1e8;
 real alpha = 0.025, sample = 1e-3, bilbowa_grad=0;
@@ -639,9 +639,11 @@ void SaveVocab(struct vocab *mono_vocab) {
     fclose(fo);
 }
 
-void SaveVector(struct vocab *mono_vocab){
+void SaveVector(struct vocab *mono_vocab, int id){
     long a, b;
-    FILE *fo = fopen(mono_vocab->output_file, "wb");
+    char output_file[MAX_STRING];
+    sprintf(output_file, "%s%d", mono_vocab->output_file, id);
+    FILE *fo = fopen(output_file, "wb");
     fprintf(fo, "%lld %lld\n", mono_vocab->vocab_size, layer_size);
     // Save the item vectors
     for (a = 0; a < mono_vocab->vocab_size; a++) {
@@ -846,7 +848,9 @@ void *TrainTextModelThread(void *id) {
     
     struct vocab *mono_words = &model[TEXT_VOCAB][cur_lang_id];
     struct vocab *mono_entities = &model[KG_VOCAB][cur_lang_id];
-    struct vocab *mono_senses = &model[SENSE_VOCAB][cur_lang_id];
+    struct vocab *mono_senses = nullptr;
+    if (hasSense)
+        mono_senses = &model[SENSE_VOCAB][cur_lang_id];
     
     FILE *fi = fopen(mono_words->train_file, "rb");
     fseek(fi, mono_words->file_size / (long long)num_threads * (long long)id, SEEK_SET);
@@ -918,7 +922,7 @@ void *TrainTextModelThread(void *id) {
                     sentence_length++;
                     if (sentence_length >= MAX_SENTENCE_LENGTH) break;
                 }
-                if(anchor_pos>=0 && b >= mention_length-1){
+                if(hasSense && anchor_pos>=0 && b >= mention_length-1){
                     anchors[anchor_count].length = sentence_length - anchors[anchor_count].start_pos;
                     if(anchors[anchor_count].length>0){
                         anchors[anchor_count].entity_index = SearchVocab(entity, &model[KG_VOCAB][cur_lang_id]);
@@ -981,7 +985,7 @@ void *TrainTextModelThread(void *id) {
         sentence_position++;
         if (sentence_position >= sentence_length) {
             // train word embedding finished! start train mention sense embedding ...
-            if (anchor_count > 0){
+            if (hasSense && anchor_count > 0){
                 for(anchor_position=0;anchor_position<anchor_count;anchor_position++){
                     for (c = 0; c < layer_size; c++) neu1[c] = 0;
                     for (c = 0; c < layer_size; c++) neu1e[c] = 0;
@@ -1224,7 +1228,7 @@ void *TrainKgModelThread(void *id) {
         }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
-        if (cross_index>0){
+        if (NUM_LANG >=2 && cross_index>0){
             for (c = 0; c < layer_size; c++) neu1[c] = 0;
             for (c = 0; c < layer_size; c++) neu1e[c] = 0;
             for (int k=0;k<NUM_LANG;k++){
@@ -1304,7 +1308,7 @@ void TrainMonoModel(int model_type, int lang_id){
     if (KG_VOCAB==model_type)
         for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainKgModelThread, (void *)a);
     for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
-    if (TEXT_VOCAB==model_type)
+    if (TEXT_VOCAB==model_type && hasSense)
         resetSenseCluster(lang_id);
 }
 
@@ -1442,7 +1446,8 @@ void TrainModel(){
         TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
-    TrainMultiModel();
+    if (NUM_LANG>=2)
+        TrainMultiModel();
 }
 
 int ArgPos(char *str, int argc, char **argv) {
@@ -1491,6 +1496,8 @@ int main(int argc, char **argv) {
         printf("\t\tNumber of negative examples; default is 5, common values are 3 - 10 (0 = not used)\n");
         printf("\t-threads <int>\n");
         printf("\t\tUse <int> threads (default 12)\n");
+        printf("\t-has_sense <int>\n");
+        printf("\t\tif we train sense embedding (default 1)\n");
         printf("\t-iter <int>\n");
         printf("\t\tRun more training iterations (default 5)\n");
         printf("\t-min-count_word <int>\n");
@@ -1541,6 +1548,7 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-save_iter", argc, argv)) > 0) save_iter = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) hasSense = atoi(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i < EXP_TABLE_SIZE; i++) {
@@ -1553,9 +1561,9 @@ int main(int argc, char **argv) {
         
         // initialize output file
         if(output_path[i][0]!=0){
-            sprintf(model[TEXT_VOCAB][i].output_file, "%svectors%d_word.dat", output_path[i], i+1);
-            sprintf(model[KG_VOCAB][i].output_file, "%svectors%d_entity.dat", output_path[i], i+1);
-            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors%d_senses.dat", output_path[i], i+1);
+            sprintf(model[TEXT_VOCAB][i].output_file, "%svectors%d_word", output_path[i], i+1);
+            sprintf(model[KG_VOCAB][i].output_file, "%svectors%d_entity", output_path[i], i+1);
+            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors%d_senses", output_path[i], i+1);
         }
         
         //initialize save vocab file
@@ -1576,10 +1584,11 @@ int main(int argc, char **argv) {
         //the init order is necessary, words->entity->senses
         InitModel(TEXT_VOCAB, i);
         InitModel(KG_VOCAB, i);
-        InitModel(SENSE_VOCAB, i);
+        if (hasSense)
+            InitModel(SENSE_VOCAB, i);
     }
     printf("init model finished!");
-    if(cross_link_file[0]!=0)
+    if(cross_link_file[0]!=0 && NUM_LANG>=2)
         InitMultiModel(cross_link_file);
     
     //start training
@@ -1592,9 +1601,10 @@ int main(int argc, char **argv) {
         if (local_iter%save_iter==0){
             printf("saving results...\n");
             for (i=0;i<NUM_LANG;i++){
-                SaveVector(&model[TEXT_VOCAB][i]);
-                SaveVector(&model[KG_VOCAB][i]);
-                SaveVector(&model[SENSE_VOCAB][i]);
+                SaveVector(&model[TEXT_VOCAB][i], local_iter);
+                SaveVector(&model[KG_VOCAB][i], local_iter);
+                if(hasSense)
+                    SaveVector(&model[SENSE_VOCAB][i], local_iter);
             }
         }
     }
