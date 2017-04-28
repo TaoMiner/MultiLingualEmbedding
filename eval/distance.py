@@ -4,6 +4,7 @@ from Entity import Entity
 from Word import Word
 from Sense import Sense
 from scipy import spatial
+import os
 
 class distance():
     def __init__(self):
@@ -12,35 +13,37 @@ class distance():
         self.senses = None
 
     def loadModels(self, op):
-        self.words = Word()
-        self.words.loadVector(op.word_vector_file)
-
-        self.entities = Entity()
-        self.entities.entity_id = self.entities.loadEntityDic(op.entity_dic_file)
-        self.entities.id_entity = self.entities.loadEntityIdDic(op.entity_dic_file)
-        self.entities.loadVector(op.entity_vector_file)
-
-        self.senses = Sense()
-        self.senses.setIdEntityDic(self.entities.id_entity)
-        self.senses.loadVector(op.sense_vector_file)
-        self.senses.buildMultiProto()
+        if os.path.isfile(op.word_vector_file):
+            self.words = Word()
+            self.words.loadVector(op.word_vector_file)
+        if os.path.isfile(op.entity_vector_file) and os.path.isfile(op.entity_dic_file):
+            self.entities = Entity()
+            self.entities.entity_id = self.entities.loadEntityDic(op.entity_dic_file)
+            self.entities.id_entity = self.entities.loadEntityIdDic(op.entity_dic_file)
+            self.entities.loadVector(op.entity_vector_file)
+        if os.path.isfile(op.sense_vector_file) and not isinstance(self.entities,type(None)):
+            self.senses = Sense()
+            self.senses.setIdEntityDic(self.entities.id_entity)
+            self.senses.loadVector(op.sense_vector_file)
+            self.senses.buildMultiProto()
 
     def getWordVec(self, word):
-        if word in self.words.vectors:
+        if not isinstance(self.words,type(None)) and word in self.words.vectors:
             return self.words.vectors[word]
         return []
 
     def getSenseVec(self, mention):
-        senses = self.senses.getMentSense(mention)
-        if senses and len(senses)>=1:
-            if len(senses)==1: return self.senses.vectors[senses[0]]
-            out = 'please input the candidate number: \n'
-            for i in xrange(len(senses)):
-                if senses[i] not in self.entities.id_entity: continue
-                out += i + ':' + self.entities.id_entity[senses[i]] + '\n'
-            sense_index = int(raw_input(out))
-            if sense_index >=0 and sense_index < len(senses) and senses[sense_index] in self.entities.id_entity:
-                return self.senses.vectors[senses[sense_index]]
+        if not isinstance(self.senses, type(None)):
+            senses = self.senses.getMentSense(mention)
+            if senses and len(senses)>=1:
+                if len(senses)==1: return self.senses.vectors[senses[0]]
+                out = 'please input the candidate number: \n'
+                for i in xrange(len(senses)):
+                    if senses[i] not in self.entities.id_entity: continue
+                    out += i + ':' + self.entities.id_entity[senses[i]] + '\n'
+                sense_index = int(raw_input(out))
+                if sense_index >=0 and sense_index < len(senses) and senses[sense_index] in self.entities.id_entity:
+                    return self.senses.vectors[senses[sense_index]]
         return []
 
     @staticmethod
@@ -59,11 +62,11 @@ class distance():
 
 class options():
     def __init__(self, lang):
-        self.vec_path = '/Users/ethan/Downloads/mlmpme/'+lang+'vec/'
-        self.word_vector_file = self.vec_path + 'vectors1_word1'
-        self.entity_vector_file = self.vec_path + 'vectors1_entity1'
-        self.sense_vector_file = self.vec_path + 'vectors1_senses1'
-        self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/vocab_entity.dat'
+        self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp3/'+lang+'vec/'
+        self.word_vector_file = self.vec_path + 'vectors1_word5'
+        self.entity_vector_file = self.vec_path + 'vectors1_entity5'
+        self.sense_vector_file = self.vec_path + 'vectors1_senses5'
+        self.entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/'+lang+'wiki_cl/vocab_entity.dat'
 
 if __name__ == '__main__':
     topn = 10
