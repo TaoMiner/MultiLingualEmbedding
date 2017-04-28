@@ -79,13 +79,12 @@ int main(int argc, char **argv)
     for (a = 0; a < N; a++) bestd[a] = 0;
     for (a = 0; a < N; a++) bestw[a][0] = 0;
     scanf("%s", st1);
-    line_count++;
-    if(line_count%1000==0)
-	printf("has processed: %d lines.\n", line_count);
     for (a = 0; a < strlen(st1); a++) st1[a] = toupper(st1[a]);
     if ((!strcmp(st1, ":")) || (!strcmp(st1, "EXIT")) || feof(stdin)) {
       if (TCN == 0) TCN = 1;
       if (QID != 0) {
+        printf("ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100, CCN, TCN);
+        printf("Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
         sprintf(log_output, "%sACCURACY TOP1: %.2f %%  (%d / %d)\n", log_output, CCN / (float)TCN * 100, CCN, TCN);
         sprintf(log_output, "%sTotal accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", log_output, CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
       }
