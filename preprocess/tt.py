@@ -5,9 +5,8 @@ sys.setdefaultencoding('utf8')
 import re
 
 
-a = 'he (wef) llo (disambiguate)'
+a = [['a',0.01], ['b',0.1],['c',0.2]]
 
-titlRE = re.compile(r' \([^\(]*?\)$')
+b = sorted(a, key=lambda x: x[1] )
 
-s = titlRE.sub('', a)
-print s
+print b

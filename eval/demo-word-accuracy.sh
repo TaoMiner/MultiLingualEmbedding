@@ -1,2 +1,2 @@
 make
-time ./compute-accuracy ../etc/wiki2016ab/vectors_word10.dat < ../data/wiki2016/questions-words.txt
+time ./compute-accuracy /data/m1/cyx/MultiMPME/etc/test/envec/vectors1_word.dat < /data/m1/cyx/MultiMPME/expdata/questions-words.txt

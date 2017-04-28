@@ -10,8 +10,8 @@ class Entity():
     def __init__(self):
         self.vocab_size = 0
         self.layer_size = 0
-        self.wiki_id = None
-        self.id_wiki = None
+        self.entity_id = None
+        self.id_entity = None
         self.vectors = None
 
     @staticmethod

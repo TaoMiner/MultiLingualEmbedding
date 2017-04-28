@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <ctype.h>
 
-#define LOGFILE "../etc/log"
+#define LOGFILE "/data/m1/cyx/MultiMPME/expdata/log_word"
 
 const long long max_size = 2000;         // max length of strings
 const long long N = 1;                   // number of closest words

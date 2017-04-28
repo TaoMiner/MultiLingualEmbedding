@@ -35,12 +35,16 @@ class Sense():
             print "sub:%s" % title
         return title
 
-    def buildMultiProto(self, entityDicFile):
+    def setIdEntityDic(self, id_entity):
+        self.id_entity = id_entity
+
+    def buildMultiProto(self):
+        if isinstance(self.id_entity, type(None)):
+            print "please set id entity dic!"
+            return
         if isinstance(self.mention_dic, type(None)):
             self.mention_dic = {}
         else: self.mention_dic.clear()
-        if isinstance(self.id_entity, type(None)):
-            self.id_entity = Entity.loadEntityIdDic(entityDicFile)
         for t_id in self.vectors:
             title = self.getSenseTitle(t_id)
             if len(title) < 1 : continue
@@ -102,5 +106,6 @@ if __name__ == '__main__':
     sense_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_senses.dat'
     entity_dic_file = '/Users/ethan/Downloads/mlmpme/envec/vocab_entity.dat'
     wiki_sense = Sense()
+    wiki_sense.setIdEntityDic(Entity.loadEntityIdDic(entity_dic_file))
     wiki_sense.loadVector(sense_vector_file)
-    wiki_sense.buildMultiProto(entity_dic_file)
+    wiki_sense.buildMultiProto()
