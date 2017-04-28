@@ -19,14 +19,14 @@ class Sense():
         self.id_entity = None
 
     def getMentSense(self, mention):
-        senses = None
-        if self.mention_dic and mention in self.mention_dic:
+        senses = []
+        if not isinstance(self.mention_dic,type(None)) and mention in self.mention_dic:
             senses = self.mention_dic[mention]
         return senses
 
     def getSenseTitle(self, sense_id):
         title = ''
-        if self.id_entity and sense_id in self.id_entity:
+        if not isinstance(self.id_entity,type(None)) and sense_id in self.id_entity:
             title = self.id_entity[sense_id]
         if len(title) > 0:
             title = titleRE.sub('', title)
@@ -100,8 +100,8 @@ class Sense():
         print 'load %d senses!' % (self.vocab_size)
 
 if __name__ == '__main__':
-    sense_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_senses.dat'
-    entity_dic_file = '/Users/ethan/Downloads/mlmpme/envec/vocab_entity.dat'
+    sense_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_senses1'
+    entity_dic_file = '/Users/ethan/Downloads/mlmpme/vocab_entity.dat'
     wiki_sense = Sense()
     wiki_sense.setIdEntityDic(Entity.loadEntityIdDic(entity_dic_file))
     wiki_sense.loadVector(sense_vector_file)

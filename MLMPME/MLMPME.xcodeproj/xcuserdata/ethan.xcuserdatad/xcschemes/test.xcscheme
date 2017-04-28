@@ -61,6 +61,12 @@
             ReferencedContainer = "container:MLMPME.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "/Users/ethan/Downloads/mlmpme/envec/vectors1_word1 &lt; /Users/ethan/Downloads/mlmpme/questions-words.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

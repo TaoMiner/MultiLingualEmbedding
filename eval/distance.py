@@ -35,7 +35,7 @@ class distance():
     def getSenseVec(self, mention):
         if not isinstance(self.senses, type(None)):
             senses = self.senses.getMentSense(mention)
-            if senses and len(senses)>=1:
+            if len(senses)>=1:
                 if len(senses)==1: return self.senses.vectors[senses[0]]
                 out = 'please input the candidate number: \n'
                 for i in xrange(len(senses)):
@@ -55,18 +55,26 @@ class distance():
         sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
 
         for s in sorted_sim:
-            if not isinstance(idDic, type(None)):
+            if not isinstance(idDic, type(None)) and s[0] in idDic:
                 print "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
             else:
                 print "%s:%f" % (s[0].encode('utf-8'), s[1])
 
 class options():
     def __init__(self, lang):
+
         self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp3/'+lang+'vec/'
         self.word_vector_file = self.vec_path + 'vectors1_word5'
         self.entity_vector_file = self.vec_path + 'vectors1_entity5'
         self.sense_vector_file = self.vec_path + 'vectors1_senses5'
         self.entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/'+lang+'wiki_cl/vocab_entity.dat'
+        '''
+        self.vec_path = '/Users/ethan/Downloads/mlmpme/' + lang + 'vec/'
+        self.word_vector_file = self.vec_path + 'vectors1_word1'
+        self.entity_vector_file = self.vec_path + 'vectors1_entity1'
+        self.sense_vector_file = self.vec_path + 'vectors1_senses1'
+        self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/vocab_entity.dat'
+        '''
 
 if __name__ == '__main__':
     topn = 10
