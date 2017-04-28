@@ -7,7 +7,7 @@ from scipy import spatial
 import os
 import codecs
 
-languages = ['en','zh']
+languages = [u'en',u'zh']
 topn = 10
 
 class Ruler():
@@ -53,7 +53,7 @@ class Ruler():
     @staticmethod
     def findNearest(vec, model, topN, idDic=None, fout=None):
         sim = []
-        tmp_line = "\n                                              Cosine distance\n------------------------------------------------------------------------\n"
+        tmp_line = u"\n                                              Cosine distance\n------------------------------------------------------------------------\n"
         output(fout,tmp_line)
         for w in model.vectors:
             sim.append([w,spatial.distance.cosine(vec,model.vectors[w])])
@@ -61,15 +61,16 @@ class Ruler():
 
         for s in sorted_sim:
             if not isinstance(idDic, type(None)) and s[0] in idDic:
-                tmp_line = "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
+                tmp_line = u"%s:%f" % (idDic[s[0]], s[1])
                 output(fout,tmp_line)
             else:
-                tmp_line = "%s:%f" % (s[0].encode('utf-8'), s[1])
+                tmp_line = u"%s:%f" % (s[0], s[1])
                 output(fout, tmp_line)
 
 class options():
     def __init__(self, lang):
         lang_index = str(languages.index(lang) + 1)
+
         self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp1/'+lang+'vec/'
         self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word.dat'
         self.entity_vector_file = self.vec_path + 'vectors'+ lang_index +'_entity.dat'
@@ -109,32 +110,32 @@ class distance():
                 if len(tmp_sense_vec) > 0: break
 
             if len(tmp_word_vec) > 0:
-                tmp_line = "Finding nearest words for %s!" % item.encode('utf-8')
+                tmp_line = u"Finding nearest words for %s!" % item
                 output(fout, tmp_line)
                 for i in xrange(self.num_lang):
-                    tmp_line = "Searching %s words ..." % languages[i]
+                    tmp_line = u"Searching %s words ..." % languages[i]
                     output(fout,tmp_line)
-                    Ruler.findNearest(tmp_word_vec, self.rulers[i].words, topn)
+                    Ruler.findNearest(tmp_word_vec, self.rulers[i].words, topn, fout=fout)
             else:
-                tmp_line = "no such word!"
+                tmp_line = u"no such word!"
                 output(fout, tmp_line)
 
             if len(tmp_sense_vec) > 0:
-                tmp_line = "Finding nearest entities for %s!" % item.encode('utf-8')
+                tmp_line = u"Finding nearest entities for %s!" % item
                 output(fout, tmp_line)
                 for i in xrange(self.num_lang):
-                    tmp_line = "Searching %s entities ..." % languages[i]
+                    tmp_line = u"Searching %s entities ..." % languages[i]
                     output(fout,tmp_line)
-                    Ruler.findNearest(tmp_sense_vec, self.rulers[i].senses, topn, self.rulers[i].entities.id_entity)
+                    Ruler.findNearest(tmp_sense_vec, self.rulers[i].senses, topn, idDic=self.rulers[i].entities.id_entity, fout=fout)
             else:
-                tmp_line = "no such entity!"
+                tmp_line = u"no such entity!"
                 output(fout,tmp_line)
         if not isinstance(fout, type(None)):
             fout.close()
 
 def output(fout, str):
     if isinstance(fout, type(None)):
-        print str
+        print str.encode('utf-8')
     else:
         fout.write("%s\n" % str)
 
