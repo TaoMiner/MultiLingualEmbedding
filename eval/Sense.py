@@ -26,13 +26,10 @@ class Sense():
 
     def getSenseTitle(self, sense_id):
         title = ''
-        print "sense id:%s" % sense_id
         if self.id_entity and sense_id in self.id_entity:
             title = self.id_entity[sense_id]
-            print "raw:%s" % title
         if len(title) > 0:
             title = titleRE.sub('', title)
-            print "sub:%s" % title
         return title
 
     def setIdEntityDic(self, id_entity):
