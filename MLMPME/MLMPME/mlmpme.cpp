@@ -49,6 +49,7 @@ struct vocab {
     real starting_alpha, alpha;
     real *syn0, *syn1neg;
     int *table;
+    int min_count;
 };
 
 // NUM_MODEL: words, entities, senses vocab; NUM_LANG: different languages
@@ -57,7 +58,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, min_count = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5;
 long long layer_size = 100;
 const int table_size = 1e8;
 real alpha = 0.025, sample = 1e-3, bilbowa_grad=0;
@@ -395,7 +396,7 @@ void SortVocab(struct vocab *mono_vocab) {
     mono_vocab->train_items = 0;
     for (a = 0; a < size; a++) {
         // items occuring less than min_count times will be discarded from the vocab
-        if ((mono_vocab->vocab[a].cn < min_count) && (a != 0)) {
+        if ((mono_vocab->vocab[a].cn < mono_vocab->min_count) && (a != 0)) {
             mono_vocab->vocab_size--;
             free(mono_vocab->vocab[a].item);
         } else {
@@ -711,6 +712,9 @@ void InitModel(int model_type, int lang_id){
     // initialize vocab type
     mono_vocab->vocab_type = model_type;
     mono_vocab->lang = lang_id;
+    if (model_type==TEXT_VOCAB && lang_id==0) mono_vocab->min_count = 70;
+    else if (model_type==TEXT_VOCAB && lang_id==1) mono_vocab->min_count = 15;
+    else mono_vocab->min_count = min_count;
     
     mono_vocab->vocab_max_size = 2500000;      //vocab word size is 2.7m
     mono_vocab->vocab_size = 0;
@@ -1546,9 +1550,9 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-negative", argc, argv)) > 0) negative = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-save_iter", argc, argv)) > 0) save_iter = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) hasSense = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i < EXP_TABLE_SIZE; i++) {
