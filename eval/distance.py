@@ -37,18 +37,20 @@ class distance():
 
 if __name__ == '__main__':
     topn = 10
-    entity_dic_file = '/Users/ethan/Downloads/mlmpme/envec/vocab_entity.dat'
-    word_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_word.dat'
+    vec_path = '/data/m1/cyx/MultiMPME/etc/test/envec/'
+    entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/enwiki_cl/vocab_entity.dat'
+
+    word_vector_file = vec_path + 'vectors1_word.dat'
+    entity_vector_file = vec_path + 'vectors1_entity.dat'
+    sense_vector_file = vec_path + 'vectors1_senses.dat'
     wiki_word = Word()
     wiki_word.loadVector(word_vector_file)
 
-    entity_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_entity.dat'
     wiki_entity = Entity()
     wiki_entity.entity_id = wiki_entity.loadEntityDic(entity_dic_file)
     wiki_entity.id_entity = wiki_entity.loadEntityIdDic(entity_dic_file)
     wiki_entity.loadVector(entity_vector_file)
 
-    sense_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_senses.dat'
     wiki_sense = Sense()
     wiki_sense.setIdEntityDic(wiki_entity.id_entity)
     wiki_sense.loadVector(sense_vector_file)
