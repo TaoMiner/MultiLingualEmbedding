@@ -5,10 +5,12 @@ from Word import Word
 from Sense import Sense
 from scipy import spatial
 import os
+import codecs
 
 languages = ['en','zh']
+topn = 10
 
-class distance():
+class Ruler():
     def __init__(self):
         self.words = None
         self.entities = None
@@ -49,21 +51,21 @@ class distance():
         return []
 
     @staticmethod
-    def findNearest(vec, model, topN, idDic=None):
+    def findNearest(vec, model, topN, idDic=None, fout=None):
         sim = []
-        print "\n                                              Cosine distance\n------------------------------------------------------------------------\n"
+        tmp_line = "\n                                              Cosine distance\n------------------------------------------------------------------------\n"
+        output(fout,tmp_line)
         for w in model.vectors:
             sim.append([w,spatial.distance.cosine(vec,model.vectors[w])])
         sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
 
         for s in sorted_sim:
-            '''
             if not isinstance(idDic, type(None)) and s[0] in idDic:
-                print "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
+                tmp_line = "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
+                output(fout,tmp_line)
             else:
-                print "%s:%f" % (s[0].encode('utf-8'), s[1])
-            '''
-            print "%s:%f" % (s[0].encode('utf-8'), s[1])
+                tmp_line = "%s:%f" % (s[0].encode('utf-8'), s[1])
+                output(fout, tmp_line)
 
 class options():
     def __init__(self, lang):
@@ -81,42 +83,62 @@ class options():
         self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/'+lang + 'wiki_cl/vocab_entity.dat'
         '''
 
+class distance():
+    def __init__(self):
+        self.num_lang = len(languages)
+        self.ops = [options(l) for l in languages]
+        self.rulers = [Ruler() for i in xrange(self.num_lang)]
+        for i in xrange(self.num_lang):
+            self.rulers[i].loadModels(self.ops[i])
+
+    def process(self, log_file = None):
+        fout = None
+        if not isinstance(log_file, type(None)):
+            fout = codecs.open(log_file, 'w', encoding='UTF-8')
+        while (1):
+            item = raw_input("Enter word or mention (EXIT to break): ")
+            if item == 'EXIT': break
+            item = item.decode('utf-8')
+            tmp_word_vec = []
+            for i in xrange(self.num_lang):
+                tmp_word_vec = self.rulers[i].getWordVec(item)
+                if len(tmp_word_vec) > 0: break
+            tmp_sense_vec = []
+            for i in xrange(self.num_lang):
+                tmp_sense_vec = self.rulers[i].getSenseVec(item)
+                if len(tmp_sense_vec) > 0: break
+
+            if len(tmp_word_vec) > 0:
+                tmp_line = "Finding nearest words for %s!" % item.encode('utf-8')
+                output(fout, tmp_line)
+                for i in xrange(self.num_lang):
+                    tmp_line = "Searching %s words ..." % languages[i]
+                    output(fout,tmp_line)
+                    Ruler.findNearest(tmp_word_vec, self.rulers[i].words, topn)
+            else:
+                tmp_line = "no such word!"
+                output(fout, tmp_line)
+
+            if len(tmp_sense_vec) > 0:
+                tmp_line = "Finding nearest entities for %s!" % item.encode('utf-8')
+                output(fout, tmp_line)
+                for i in xrange(self.num_lang):
+                    tmp_line = "Searching %s entities ..." % languages[i]
+                    output(fout,tmp_line)
+                    Ruler.findNearest(tmp_sense_vec, self.rulers[i].senses, topn, self.rulers[i].entities.id_entity)
+            else:
+                tmp_line = "no such entity!"
+                output(fout,tmp_line)
+        if not isinstance(fout, type(None)):
+            fout.close()
+
+def output(fout, str):
+    if isinstance(fout, type(None)):
+        print str
+    else:
+        fout.write("%s\n" % str)
+
 if __name__ == '__main__':
-    topn = 10
-    num_lang = len(languages)
-
-    ops = [options(l) for l in languages]
-
-    rulers = [distance() for i in xrange(num_lang)]
-    for i in xrange(num_lang):
-        rulers[i].loadModels(ops[i])
-
-
-    while(1):
-        item = raw_input("Enter word or mention (EXIT to break): ")
-        if item == 'EXIT' : break
-        item = item.decode('utf-8')
-        tmp_word_vec = []
-        for i in xrange(num_lang):
-            tmp_word_vec = rulers[i].getWordVec(item)
-            if len(tmp_word_vec) > 0: break
-        tmp_sense_vec = []
-        for i in xrange(num_lang):
-            tmp_sense_vec = rulers[i].getSenseVec(item)
-            if len(tmp_sense_vec) > 0: break
-
-        if len(tmp_word_vec) > 0:
-            print "Finding nearest words for %s!" % item.encode('utf-8')
-            for i in xrange(num_lang):
-                print "Searching %s words ..." % languages[i]
-                distance.findNearest(tmp_word_vec, rulers[i].words, topn)
-        else:
-            print "no such word!"
-
-        if len(tmp_sense_vec) > 0:
-            print "Finding nearest entities for %s!" % item.encode('utf-8')
-            for i in xrange(num_lang):
-                print "Searching %s entities ..." % languages[i]
-                distance.findNearest(tmp_sense_vec, rulers[i].senses, topn, rulers[i].entities.id_entity)
-        else:
-            print "no such entity!"
+    log_file = './distance.out'
+    dis = distance()
+    dis.process(log_file)
