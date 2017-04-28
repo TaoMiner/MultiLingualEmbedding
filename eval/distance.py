@@ -57,15 +57,18 @@ class distance():
         sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
 
         for s in sorted_sim:
+            '''
             if not isinstance(idDic, type(None)) and s[0] in idDic:
                 print "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
             else:
                 print "%s:%f" % (s[0].encode('utf-8'), s[1])
+            '''
+            print "%s:%f" % (s[0].encode('utf-8'), s[1])
 
 class options():
     def __init__(self, lang):
         lang_index = str(languages.index(lang) + 1)
-        self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp3/'+lang+'vec/'
+        self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp1/'+lang+'vec/'
         self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word.dat'
         self.entity_vector_file = self.vec_path + 'vectors'+ lang_index +'_entity.dat'
         self.sense_vector_file = self.vec_path + 'vectors'+ lang_index +'_senses.dat'
@@ -83,8 +86,6 @@ if __name__ == '__main__':
     num_lang = len(languages)
 
     ops = [options(l) for l in languages]
-    for op in ops:
-        print op.entity_vector_file
 
     rulers = [distance() for i in xrange(num_lang)]
     for i in xrange(num_lang):
