@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 #define MAX_STRING 1100          //>longest entity + longest mention + 1
-#define NUM_LANG 1
+#define NUM_LANG 2
 #define NUM_MODEL 3
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6

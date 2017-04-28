@@ -63,12 +63,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-mono_anchor1 /Users/ethan/Downloads/mlmpme/enwiki_cl/anchor_text_sample.dat -mono_anchor2 /Users/ethan/Downloads/mlmpme/zhwiki_cl/anchor_text_sample.dat -mono_kg1 /Users/ethan/Downloads/mlmpme/enwiki_cl/sample_kg.dat -mono_kg2 /Users/ethan/Downloads/mlmpme/zhwiki_cl/sample_kg.dat -multi_context /Users/ethan/Downloads/mlmpme/para_data.dat -output1 /Users/ethan/Downloads/mlmpme/envec/ -output2 /Users/ethan/Downloads/mlmpme/zhvec/ -read_mono_vocab1 /Users/ethan/Downloads/mlmpme/envec/ -read_mono_vocab2 /Users/ethan/Downloads/mlmpme/zhvec/ -read_cross_link /Users/ethan/Downloads/mlmpme/sub_cross.dat -size 200 -window 5 -sample 1e-4 -negative 5 -threads 3 -save_iter 1 -iter 1"
-            isEnabled = "NO">
+            argument = "-mono_anchor1 /Users/ethan/Downloads/mlmpme/enwiki_cl/anchor_text_sample.dat -mono_anchor2 /Users/ethan/Downloads/mlmpme/zhwiki_cl/anchor_text_sample.dat -mono_kg1 /Users/ethan/Downloads/mlmpme/enwiki_cl/sample_kg.dat -mono_kg2 /Users/ethan/Downloads/mlmpme/zhwiki_cl/sample_kg.dat -multi_context /Users/ethan/Downloads/mlmpme/para_data.dat -output1 /Users/ethan/Downloads/mlmpme/envec/ -output2 /Users/ethan/Downloads/mlmpme/zhvec/ -save_mono_vocab1 /Users/ethan/Downloads/mlmpme/envec/ -save_mono_vocab2 /Users/ethan/Downloads/mlmpme/zhvec/ -read_cross_link /Users/ethan/Downloads/mlmpme/sub_cross.dat -size 200 -window 5 -sample 1e-4 -negative 5 -threads 3 -save_iter 1 -iter 1"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-mono_anchor1 /Users/ethan/Downloads/mlmpme/enwiki_cl/anchor_text_sample.dat -mono_kg1 /Users/ethan/Downloads/mlmpme/enwiki_cl/sample_kg.dat -output1 /Users/ethan/Downloads/mlmpme/envec/ -save_mono_vocab1 /Users/ethan/Downloads/mlmpme/envec/ -size 200 -window 5 -sample 1e-4 -negative 5 -threads 3 -save_iter 1 -iter 1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

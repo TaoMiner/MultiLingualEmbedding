@@ -11,66 +11,96 @@ class distance():
         self.entities = None
         self.senses = None
 
-    def set(self, words, entities, senses):
-        self.words = words
-        self.entities = entities
-        self.senses = senses
+    def loadModels(self, op):
+        self.words = Word()
+        self.words.loadVector(op.word_vector_file)
 
-    def findNearestWords(self, vec, topN):
-        sim = []
-        for w in self.words.vectors:
-            sim.append([w,spatial.distance.cosine(vec,self.words.vectors[w])])
-        sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
-        print "\n                                              word      Cosine distance\n------------------------------------------------------------------------\n"
-        for s in sorted_sim:
-            print s
+        self.entities = Entity()
+        self.entities.entity_id = self.entities.loadEntityDic(op.entity_dic_file)
+        self.entities.id_entity = self.entities.loadEntityIdDic(op.entity_dic_file)
+        self.entities.loadVector(op.entity_vector_file)
 
-    def findNearestEntity(self, vec, topN):
+        self.senses = Sense()
+        self.senses.setIdEntityDic(self.entities.id_entity)
+        self.senses.loadVector(op.sense_vector_file)
+        self.senses.buildMultiProto()
+
+    def getWordVec(self, word):
+        if word in self.words.vectors:
+            return self.words.vectors[word]
+        return []
+
+    def getSenseVec(self, mention):
+        senses = self.senses.getMentSense(mention)
+        if senses and len(senses)>=1:
+            if len(senses)==1: return self.senses.vectors[senses[0]]
+            out = 'please input the candidate number: \n'
+            for i in xrange(len(senses)):
+                if senses[i] not in self.entities.id_entity: continue
+                out += i + ':' + self.entities.id_entity[senses[i]] + '\n'
+            sense_index = int(raw_input(out))
+            if sense_index >=0 and sense_index < len(senses) and senses[sense_index] in self.entities.id_entity:
+                return self.senses.vectors[senses[sense_index]]
+        return []
+
+    @staticmethod
+    def findNearest(vec, model, topN, idDic=None):
         sim = []
-        for e in self.entities.vectors:
-            if e in self.entities.id_entity:
-                sim.append([self.entities.id_entity[e], spatial.distance.cosine(vec,self.entities.vectors[e])])
+        print "\n                                              Cosine distance\n------------------------------------------------------------------------\n"
+        for w in model.vectors:
+            sim.append([w,spatial.distance.cosine(vec,model.vectors[w])])
         sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
-        print "\n                                              entity       Cosine distance\n------------------------------------------------------------------------\n"
+
         for s in sorted_sim:
-            print s
+            if not isinstance(idDic, type(None)):
+                print "%s:%f" % (idDic[s[0]].encode('utf-8'), s[1])
+            else:
+                print "%s:%f" % (s[0].encode('utf-8'), s[1])
+
+class options():
+    def __init__(self, lang):
+        self.vec_path = '/Users/ethan/Downloads/mlmpme/'+lang+'vec/'
+        self.word_vector_file = self.vec_path + 'vectors1_word1'
+        self.entity_vector_file = self.vec_path + 'vectors1_entity1'
+        self.sense_vector_file = self.vec_path + 'vectors1_senses1'
+        self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/vocab_entity.dat'
 
 if __name__ == '__main__':
     topn = 10
-    vec_path = '/data/m1/cyx/MultiMPME/etc/test/envec/'
-    entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/enwiki_cl/vocab_entity.dat'
+    languages = ['en']
+    num_lang = len(languages)
+    ops = [options(l) for l in languages]
 
-    word_vector_file = vec_path + 'vectors1_word.dat'
-    entity_vector_file = vec_path + 'vectors1_entity.dat'
-    sense_vector_file = vec_path + 'vectors1_senses.dat'
-    wiki_word = Word()
-    wiki_word.loadVector(word_vector_file)
+    rulers = [distance() for i in xrange(num_lang)]
+    for i in xrange(num_lang):
+        rulers[i].loadModels(ops[i])
 
-    wiki_entity = Entity()
-    wiki_entity.entity_id = wiki_entity.loadEntityDic(entity_dic_file)
-    wiki_entity.id_entity = wiki_entity.loadEntityIdDic(entity_dic_file)
-    wiki_entity.loadVector(entity_vector_file)
-
-    wiki_sense = Sense()
-    wiki_sense.setIdEntityDic(wiki_entity.id_entity)
-    wiki_sense.loadVector(sense_vector_file)
-    wiki_sense.buildMultiProto()
-
-    dis = distance()
-    dis.set(wiki_word, wiki_entity, wiki_sense)
 
     while(1):
-        item = input("Enter word or mention (EXIT to break): ")
+        item = raw_input("Enter word or mention (EXIT to break): ")
         if item == 'EXIT' : break
-        if item in dis.words.vectors:
-            dis.findNearestWords(dis.words.vectors[item], topn)
-        senses = dis.senses.getMentSense(item)
-        if senses:
-            if len(senses) > 1:
-                out = 'please input the candidate number: \n'
-                for i in xrange(len(senses)):
-                    if senses[i] not in dis.entities.id_entity : continue
-                    out += i + ':' + dis.entities.id_entity[senses[i]] + '\n'
-                sense_index = input(out)
-                if sense_index < len(senses) and sense_index >= 0 and sense_index in dis.entities.id_entity:
-                    dis.findNearestEntity(dis.senses.vectors[senses[sense_index]], topn)
+        item = item.decode('utf-8')
+        tmp_word_vec = []
+        for i in xrange(num_lang):
+            tmp_word_vec = rulers[i].getWordVec(item)
+            if len(tmp_word_vec) > 0: break
+        tmp_sense_vec = []
+        for i in xrange(num_lang):
+            tmp_sense_vec = rulers[i].getSenseVec(item)
+            if len(tmp_sense_vec) > 0: break
+
+        if len(tmp_word_vec) > 0:
+            print "Finding nearest words for %s!" % item.encode('utf-8')
+            for i in xrange(num_lang):
+                print "Searching %s words ..." % languages[i]
+                distance.findNearest(tmp_word_vec, rulers[i].words, topn)
+        else:
+            print "no such word!"
+
+        if len(tmp_sense_vec) > 0:
+            print "Finding nearest entities for %s!" % item.encode('utf-8')
+            for i in xrange(num_lang):
+                print "Searching %s entities ..." % languages[i]
+                distance.findNearest(tmp_sense_vec, rulers[i].senses, topn, rulers[i].entities.id_entity)
+        else:
+            print "no such entity!"

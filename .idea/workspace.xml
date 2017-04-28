@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Sense.py" afterPath="$PROJECT_DIR$/eval/Sense.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/xcuserdata/ethan.xcuserdatad/xcschemes/MLMPME.xcscheme" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/xcuserdata/ethan.xcuserdatad/xcschemes/MLMPME.xcscheme" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" afterPath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/distance.py" afterPath="$PROJECT_DIR$/eval/distance.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -24,11 +28,21 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="Sense.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Sense.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/Sense.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="29" column="44" lean-forward="true" selection-start-line="29" selection-start-column="44" selection-end-line="29" selection-end-column="44" />
+            <state relative-caret-position="368">
+              <caret line="20" column="20" lean-forward="false" selection-start-line="20" selection-start-column="8" selection-end-line="20" selection-end-column="20" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="compute-accuracy.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/eval/compute-accuracy.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-816">
+              <caret line="93" column="50" lean-forward="true" selection-start-line="93" selection-start-column="50" selection-end-line="93" selection-end-column="50" />
               <folding />
             </state>
           </provider>
@@ -47,7 +61,7 @@
       <file leaf-file-name="Word.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/Word.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="138">
+            <state relative-caret-position="207">
               <caret line="12" column="20" lean-forward="false" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="20" />
               <folding />
             </state>
@@ -57,8 +71,8 @@
       <file leaf-file-name="evalEntity.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/evalEntity.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="368">
-              <caret line="16" column="24" lean-forward="true" selection-start-line="16" selection-start-column="24" selection-end-line="16" selection-end-column="24" />
+            <state relative-caret-position="253">
+              <caret line="16" column="24" lean-forward="false" selection-start-line="16" selection-start-column="24" selection-end-line="16" selection-end-column="24" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -66,11 +80,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="distance.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="distance.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/eval/distance.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="46" column="42" lean-forward="true" selection-start-line="46" selection-start-column="42" selection-end-line="46" selection-end-column="42" />
+            <state relative-caret-position="598">
+              <caret line="53" column="28" lean-forward="true" selection-start-line="53" selection-start-column="28" selection-end-line="53" selection-end-column="28" />
               <folding>
                 <element signature="e#46#71#0" expanded="true" />
               </folding>
@@ -82,7 +96,7 @@
         <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="230">
-              <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+              <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -112,8 +126,8 @@
         <option value="$PROJECT_DIR$/eval/evalEntity.py" />
         <option value="$PROJECT_DIR$/eval/Entity.py" />
         <option value="$PROJECT_DIR$/preprocess/tt.py" />
-        <option value="$PROJECT_DIR$/eval/distance.py" />
         <option value="$PROJECT_DIR$/eval/Sense.py" />
+        <option value="$PROJECT_DIR$/eval/distance.py" />
       </list>
     </option>
   </component>
@@ -142,8 +156,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -186,6 +198,8 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -533,26 +547,26 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17285945" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17528272" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -631,22 +645,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/distance.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="524" column="70" lean-forward="true" selection-start-line="524" selection-start-column="70" selection-end-line="526" selection-end-column="72" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/demo-distance.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/distance.c" />
+    <entry file="file://$PROJECT_DIR$/eval/demo-distance.sh" />
     <entry file="file://$PROJECT_DIR$/eval/Entity.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="230">
@@ -657,7 +657,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/Word.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="138">
+        <state relative-caret-position="207">
           <caret line="12" column="20" lean-forward="false" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="20" />
           <folding />
         </state>
@@ -665,8 +665,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/evalEntity.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="368">
-          <caret line="16" column="24" lean-forward="true" selection-start-line="16" selection-start-column="24" selection-end-line="16" selection-end-column="24" />
+        <state relative-caret-position="253">
+          <caret line="16" column="24" lean-forward="false" selection-start-line="16" selection-start-column="24" selection-end-line="16" selection-end-column="24" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
@@ -676,26 +676,34 @@
     <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="230">
-          <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/compute-accuracy.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-816">
+          <caret line="93" column="50" lean-forward="true" selection-start-line="93" selection-start-column="50" selection-end-line="93" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/Sense.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="368">
+          <caret line="20" column="20" lean-forward="false" selection-start-line="20" selection-start-column="8" selection-end-line="20" selection-end-column="20" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/distance.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="46" column="42" lean-forward="true" selection-start-line="46" selection-start-column="42" selection-end-line="46" selection-end-column="42" />
+        <state relative-caret-position="598">
+          <caret line="53" column="28" lean-forward="true" selection-start-line="53" selection-start-column="28" selection-end-line="53" selection-end-column="28" />
           <folding>
             <element signature="e#46#71#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/Sense.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="29" column="44" lean-forward="true" selection-start-line="29" selection-start-column="44" selection-end-line="29" selection-end-column="44" />
-          <folding />
         </state>
       </provider>
     </entry>
