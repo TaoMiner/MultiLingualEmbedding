@@ -6,6 +6,8 @@ from Sense import Sense
 from scipy import spatial
 import os
 
+languages = ['en','zh']
+
 class distance():
     def __init__(self):
         self.words = None
@@ -62,25 +64,27 @@ class distance():
 
 class options():
     def __init__(self, lang):
-
+        lang_index = str(languages.index(lang) + 1)
         self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp3/'+lang+'vec/'
-        self.word_vector_file = self.vec_path + 'vectors1_word5'
-        self.entity_vector_file = self.vec_path + 'vectors1_entity5'
-        self.sense_vector_file = self.vec_path + 'vectors1_senses5'
+        self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word.dat'
+        self.entity_vector_file = self.vec_path + 'vectors'+ lang_index +'_entity.dat'
+        self.sense_vector_file = self.vec_path + 'vectors'+ lang_index +'_senses.dat'
         self.entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/'+lang+'wiki_cl/vocab_entity.dat'
         '''
         self.vec_path = '/Users/ethan/Downloads/mlmpme/' + lang + 'vec/'
-        self.word_vector_file = self.vec_path + 'vectors1_word1'
-        self.entity_vector_file = self.vec_path + 'vectors1_entity1'
-        self.sense_vector_file = self.vec_path + 'vectors1_senses1'
-        self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/vocab_entity.dat'
+        self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word1'
+        self.entity_vector_file = self.vec_path + 'vectors'+lang_index+'_entity1'
+        self.sense_vector_file = self.vec_path + 'vectors'+lang_index+'_senses1'
+        self.entity_dic_file = '/Users/ethan/Downloads/mlmpme/'+lang + 'wiki_cl/vocab_entity.dat'
         '''
 
 if __name__ == '__main__':
     topn = 10
-    languages = ['en']
     num_lang = len(languages)
+
     ops = [options(l) for l in languages]
+    for op in ops:
+        print op.entity_vector_file
 
     rulers = [distance() for i in xrange(num_lang)]
     for i in xrange(num_lang):
