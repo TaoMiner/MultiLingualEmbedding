@@ -42,17 +42,17 @@ class Evaluator:
         avg = []
         simmax = []
         for d in self.data:
-            if d[1] not in self.tr_word.vectors or d[0] not in self.tr_word.vectors:
+            if d[1] not in self.tr_word.vectors or d[2] not in self.tr_word.vectors:
                 glb.append(0)
                 avg.append(0)
                 simmax.append(0)
             else:
-                sim = self.cosSim(self.tr_word.vectors[d[1]], self.tr_word.vectors[d[0]])
+                sim = self.cosSim(self.tr_word.vectors[d[1]], self.tr_word.vectors[d[2]])
                 glb.append(sim)
                 if self.tr_map:
                     sumsim, tmp_sim, count, largest_sim = 0, 0, 0, -1.0
                     for i in self.getSenseVec(d[1]):
-                        for j in self.getSenseVec(d[0]):
+                        for j in self.getSenseVec(d[2]):
                             tmp_sim = self.cosSim(i, j)
                             if tmp_sim > largest_sim:
                                 largest_sim = tmp_sim
@@ -63,16 +63,16 @@ class Evaluator:
                 else:
                     avg.append(sim)
                     simmax.append(sim)
-        output = open('/data/m1/cyx/etc/expdata/wordsim353_pred', 'w')
+        output = open('/data/m1/cyx/MultiMPME/expdata/wordsim353_pred', 'w')
         for i in xrange(len(self.data)):
-            output.write('%s\t%s\t%f\t%f\n' % (self.data[i][0], self.data[i][1], self.standard[i], glb[i]*10 ))
+            output.write('%s\t%s\t%f\t%f\n' % (self.data[i][1], self.data[i][2], self.standard[i], glb[i]*10 ))
         output.close()
         return stats.spearmanr(self.standard, glb), stats.spearmanr(self.standard, avg), stats.spearmanr(self.standard, simmax)
 
 if __name__ == '__main__':
     base_path = '/data/m1/cyx/MultiMPME/'
-    word_vector_file = base_path + 'etc/exp1/vectors1_word.dat'
-    sense_vector_file = base_path + 'etc/exp1/vectors1_senses.dat'
+    word_vector_file = base_path + 'etc/exp1/envec/vectors1_word.dat'
+    sense_vector_file = base_path + 'etc/exp1/envec/vectors1_senses.dat'
     word_sim_file = base_path + 'expdata/wordsim353_agreed.txt'
     output_file = base_path + 'expdata/log_wordsim353'
     entity_dic_file = base_path + 'data/dumps20170401/enwiki_cl/vocab_entity.dat'
