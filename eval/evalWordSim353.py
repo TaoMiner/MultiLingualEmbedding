@@ -13,8 +13,8 @@ class Evaluator:
         self.standard = []
 
     def loadData(self,file):
-        self.data = map(lambda x: x.strip().lower().split('\t'), open(file).readlines())
-        self.standard = [float(d[3]) for d in self.data[11:]]
+        self.data = map(lambda x: x.strip().lower().split('\t'), open(file).readlines()[11:])
+        self.standard = [float(d[3]) for d in self.data]
 
     def loadWordEmbeddings(self, word):
         self.tr_word = word
