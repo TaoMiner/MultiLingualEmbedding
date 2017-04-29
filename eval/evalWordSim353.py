@@ -14,7 +14,7 @@ class Evaluator:
 
     def loadData(self,file):
         self.data = map(lambda x: x.strip().lower().split('\t'), open(file).readlines())
-        self.standard = [float(d[2]) for d in self.data]
+        self.standard = [float(d[3]) for d in self.data[11:]]
 
     def loadWordEmbeddings(self, word):
         self.tr_word = word
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     base_path = '/data/m1/cyx/MultiMPME/'
     word_vector_file = base_path + 'etc/exp1/vectors1_word.dat'
     sense_vector_file = base_path + 'etc/exp1/vectors1_senses.dat'
-    word_sim_file = base_path + 'expdata/wordsim_similarity_goldstandard.txt'
+    word_sim_file = base_path + 'expdata/wordsim353_agreed.txt'
     output_file = base_path + 'expdata/log_wordsim353'
     entity_dic_file = base_path + 'data/dumps20170401/enwiki_cl/vocab_entity.dat'
     has_sense = False
