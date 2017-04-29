@@ -1432,7 +1432,6 @@ void *BilbowaThread(void *id) {
 
 void TrainMultiModel(){
     long a;
-    long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
     printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num, multi_context_file);

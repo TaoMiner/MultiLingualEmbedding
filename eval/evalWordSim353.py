@@ -2,8 +2,8 @@ import codecs
 import struct
 import numpy as np
 from Word import Word
-from Title import Title
-from Map import Map
+from Sense import Sense
+from Entity import Entity
 import math
 from scipy import stats
 from scipy import spatial
@@ -24,9 +24,6 @@ class Evaluator:
     def loadEmbeddings(self, word, title):
         self.tr_word = word
         self.tr_title = title
-
-    def loadMentionMap(self, mention_map):
-        self.tr_map = mention_map
 
     def cosSim(self, v1, v2):
 	return 1 - spatial.distance.cosine(v1,v2)
@@ -73,39 +70,34 @@ class Evaluator:
         return stats.spearmanr(self.standard, glb), stats.spearmanr(self.standard, avg), stats.spearmanr(self.standard, simmax)
 
 if __name__ == '__main__':
-    word_vector_file = '/data/m1/cyx/etc/output/exp3/vectors_word10.dat'
-    title_vector_file = '/data/m1/cyx/etc/output/exp10/vectors_title10.dat'
-    mention_name_file = '/data/m1/cyx/etc/enwiki/mention_names'
-    word_sim_file = '/data/m1/cyx/etc/expdata/wordsim_similarity_goldstandard.txt'
-    output_file = '/data/m1/cyx/etc/expdata/log_wordsim353'
-    wiki_id_file = '/data/m1/cyx/etc/enwiki/wiki_title_cl'
-    has_title = False
+    base_path = '/data/m1/cyx/MultiMPME/'
+    word_vector_file = base_path + 'etc/exp1/vectors1_word.dat'
+    sense_vector_file = base_path + 'etc/exp1/vectors1_senses.dat'
+    word_sim_file = base_path + 'expdata/wordsim_similarity_goldstandard.txt'
+    output_file = base_path + 'expdata/log_wordsim353'
+    entity_dic_file = base_path + 'data/dumps20170401/enwiki_cl/vocab_entity.dat'
+    has_sense = False
 
     wiki_word = Word()
     wiki_word.loadVector(word_vector_file)
     print len(wiki_word.vectors)
-    if has_title:
-        wiki_title = Title()
-        wiki_title.loadVector(title_vector_file)
-        print len(wiki_title.vectors)
-
-        mention_map = Map()
-        mention_map.loadWikiID(wiki_id_file)
-        mention_map.load(mention_name_file)
-	   print len(mention_map.names)
+    if has_sense:
+        wiki_sense = Sense()
+        wiki_sense.setIdEntityDic(Entity.loadEntityIdDic(entity_dic_file))
+        wiki_sense.loadVector(sense_vector_file)
+        wiki_sense.buildMultiProto()
 
     eval = Evaluator()
     eval.loadData(word_sim_file)
-    if has_title:
-        eval.loadEmbeddings(wiki_word, wiki_title)
-        eval.loadMentionMap(mention_map)
+    if has_sense:
+        eval.loadEmbeddings(wiki_word, wiki_sense)
     else:
         eval.loadWordEmbeddings(wiki_word)
     gs, avgs, maxs = eval.evaluate()
     output = open(output_file, 'a')
     output.write('\n*****************************************************')
-    if has_title:
-        output.write('\n'+word_sim_file+'\n' + word_vector_file + '\n' + title_vector_file +'\n' + 'glb: ' + str(gs)+ 'avg: ' + str(avgs)+ 'glb: ' + str(maxs))
+    if has_sense:
+        output.write('\n'+word_sim_file+'\n' + word_vector_file + '\n' + sense_vector_file +'\n' + 'glb: ' + str(gs)+ 'avg: ' + str(avgs)+ 'glb: ' + str(maxs))
     else:
         output.write('\n' +word_sim_file+'\n'+ word_vector_file + '\n' + 'glb: ' + str(gs) )
     output.write('\n*****************************************************')
