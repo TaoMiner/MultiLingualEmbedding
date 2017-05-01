@@ -1,5 +1,5 @@
 //
-//  mlmpme.cpp
+//  mlmpmev2.cpp
 //  MLMPME
 //
 //  Created by 曹艺馨 on 17/3/16.
@@ -61,7 +61,7 @@ int *cross_links[NUM_LANG];
 int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5;
 long long layer_size = 100;
 const int table_size = 1e8;
-real alpha = 0.025, sample = 1e-3, bilbowa_grad=0;
+real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_alpha = 0.025, cross_tmp_alpha = 0.025, cross_line = 0;
 real *expTable;
 char multi_context_file[MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[MAX_STRING];
 clock_t start;
@@ -1400,6 +1400,55 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], real *d
     }
 }
 
+void update(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], void *id, int lang1, int lang2){
+    long long a, b, c, d, word1_index=-1, word2_index=-1, target, label, l1, l2;
+    unsigned long long next_random = (long long)id;
+    real *neu1e = (real *)calloc(layer_size, sizeof(real));
+    struct vocab *mono_words1 = &model[TEXT_VOCAB][lang1];
+    struct vocab *mono_words2 = &model[TEXT_VOCAB][lang2];
+    real f, g;
+    for (a=0;a<MAX_SENTENCE_LENGTH;a++){
+        if (sen[lang1][a]<=0) break;
+        word1_index = sen[lang1][a];
+        if (word1_index == -1) continue;
+        l1 = word1_index * layer_size;
+        for (c = 0; c < layer_size; c++) neu1e[c] = 0;
+        for (b=0;b<MAX_SENTENCE_LENGTH;b++){
+            if (sen[lang2][b]<=0) break;
+            word2_index = sen[lang2][b];
+            if (word2_index == -1) continue;
+            if (sample > 0) {
+                real ran = (sqrt(mono_words2->vocab[word2_index].cn / (sample * mono_words2->train_items)) + 1) * (sample * mono_words2->train_items) / mono_words2->vocab[word2_index].cn;
+                next_random = next_random * (unsigned long long)25214903917 + 11;
+                if (ran < (next_random & 0xFFFF) / (real)65536) continue;
+            }
+            // NEGATIVE SAMPLING
+            if (negative > 0) for (d = 0; d < negative + 1; d++) {
+                if (d == 0) {
+                    target = word2_index;
+                    label = 1;
+                } else {
+                    next_random = next_random * (unsigned long long)25214903917 + 11;
+                    target = mono_words2->table[(next_random >> 16) % table_size];
+                    if (target == 0) target = next_random % (mono_words2->vocab_size - 1) + 1;
+                    if (target == word2_index) continue;
+                    label = 0;
+                }
+                l2 = target * layer_size;
+                f = 0;
+                for (c = 0; c < layer_size; c++) f += mono_words1->syn0[c + l1] * mono_words2->syn1neg[c + l2];
+                if (f > MAX_EXP) g = (label - 1) * cross_tmp_alpha;
+                else if (f < -MAX_EXP) g = (label - 0) * cross_tmp_alpha;
+                else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * cross_tmp_alpha;
+                for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_words2->syn1neg[c + l2];
+                for (c = 0; c < layer_size; c++) mono_words2->syn1neg[c + l2] += g * mono_words1->syn0[c + l1];
+            }
+            // Learn weights input -> hidden
+            for (c = 0; c < layer_size; c++) mono_words1->syn0[c + l1] += neu1e[c];
+        }
+    }
+}
+
 /* Thread for performing the cross-lingual learning */
 void *BilbowaThread(void *id) {
     
@@ -1424,7 +1473,18 @@ void *BilbowaThread(void *id) {
             par_sen[i][0] = 0;
         ReadSent(fi_par, par_sen);
         cur_line ++;
-        BilBOWASentenceUpdate(par_sen, deltas);
+        cross_line ++;
+        if (NUM_LANG >= 2){
+            if (cur_line % 1000 == 0){
+                printf("%cAlpha: %f  ", 13, cross_tmp_alpha);
+                fflush(stdout);
+                cross_tmp_alpha = cross_alpha * (1 - cross_line / (real)(iter * par_line_num + 1));
+                if (cross_tmp_alpha < cross_alpha * 0.0001) cross_tmp_alpha = cross_alpha * 0.0001;
+            }
+            update(par_sen, id, 0, 1);
+            update(par_sen, id, 1, 0);
+        }
+        //BilBOWASentenceUpdate(par_sen, deltas);
     } // while training loop
     fclose(fi_par);
     pthread_exit(NULL);
@@ -1433,6 +1493,8 @@ void *BilbowaThread(void *id) {
 void TrainMultiModel(){
     long a;
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
+    cross_line = 0;
+    cross_alpha = cross_tmp_alpha;
     start = clock();
     printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num, multi_context_file);
     for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, BilbowaThread, (void *)a);
@@ -1442,11 +1504,11 @@ void TrainMultiModel(){
 void TrainModel(){
     long long i;
     
-    for (i=0;i<NUM_LANG;i++)
-        TrainMonoModel(KG_VOCAB, i);
-    
-    for (i=0;i<NUM_LANG;i++)
-        TrainMonoModel(TEXT_VOCAB, i);
+//    for (i=0;i<NUM_LANG;i++)
+//        TrainMonoModel(KG_VOCAB, i);
+//    
+//    for (i=0;i<NUM_LANG;i++)
+//        TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
     if (NUM_LANG>=2)
