@@ -49,8 +49,8 @@ class options():
         # linked wiki xml
         self.cross_corpus_file = self.dump_path + self.output_path + '/linked_wiki_pages.dat'
         # wiki text
-        self.raw_text_file = self.dump_path + self.output_path + 'wiki_text'
-        self.text_file = self.dump_path + self.output_path + 'wiki_text_cl'
+        self.raw_text_file = self.dump_path + self.output_path + '/wiki_text'
+        self.text_file = self.dump_path + self.output_path + '/wiki_text_cl'
 
 nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
 # pagelink: (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
@@ -757,14 +757,14 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    lang_index = languages.index('es')
+    # lang_index = languages.index('es')
     # mkb = MonoKGBuilder(lang_index)
     # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    cleanT(lang_index)
-    # cross_file = '/Users/ethan/Downloads/mlmpme/sample_cross.dat'
-    # sub_file = '/Users/ethan/Downloads/mlmpme/sub_cross.dat'
-    # lang = ['en','zh']
-    # subCrossLinks(cross_file, sub_file, lang)
+    # cleanT(lang_index)
+    lang = ['en', 'es']
+    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
+    sub_file = '/data/m1/cyx/MultiMPME/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
+    subCrossLinks(cross_file, sub_file, lang)

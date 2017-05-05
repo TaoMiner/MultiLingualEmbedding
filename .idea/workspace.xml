@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.pbxproj" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.pbxproj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/preprocess.py" afterPath="$PROJECT_DIR$/preprocess/preprocess.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -25,42 +28,10 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="Sense.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/eval/Sense.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2300">
-              <caret line="104" column="4" lean-forward="false" selection-start-line="104" selection-start-column="4" selection-end-line="104" selection-end-column="24" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="evalWordSim353.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="207">
-              <caret line="18" column="39" lean-forward="false" selection-start-line="18" selection-start-column="39" selection-end-line="18" selection-end-column="39" />
-              <folding>
-                <element signature="e#0#13#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preprocess/WikiExtractor.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="380">
-              <caret line="3145" column="34" lean-forward="true" selection-start-line="3145" selection-start-column="34" selection-end-line="3145" selection-end-column="34" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="parallel.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/preprocess/parallel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="495">
+            <state relative-caret-position="219">
               <caret line="133" column="8" lean-forward="false" selection-start-line="133" selection-start-column="8" selection-end-line="133" selection-end-column="57" />
               <folding />
             </state>
@@ -70,12 +41,12 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="449">
-              <caret line="765" column="22" lean-forward="true" selection-start-line="765" selection-start-column="22" selection-end-line="765" selection-end-column="22" />
+            <state relative-caret-position="564">
+              <caret line="769" column="45" lean-forward="true" selection-start-line="769" selection-start-column="45" selection-end-line="769" selection-end-column="45" />
               <folding>
-                <marker date="1494018472000" expanded="true" signature="5657:5688" ph="INSERT INTO `redirect`... " />
-                <marker date="1494018472000" expanded="true" signature="9197:9229" ph="INSERT INTO `pagelinks`... " />
-                <marker date="1494018472000" expanded="true" signature="12992:13024" ph="INSERT INTO `langlinks`... " />
+                <marker date="1494019854000" expanded="true" signature="5659:5690" ph="INSERT INTO `redirect`... " />
+                <marker date="1494019854000" expanded="true" signature="9199:9231" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1494019854000" expanded="true" signature="12994:13026" ph="INSERT INTO `langlinks`... " />
               </folding>
             </state>
           </provider>
@@ -876,6 +847,14 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="15" column="44" lean-forward="true" selection-start-line="15" selection-start-column="44" selection-end-line="15" selection-end-column="44" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="207">
@@ -896,28 +875,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/parallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="495">
+        <state relative-caret-position="219">
           <caret line="133" column="8" lean-forward="false" selection-start-line="133" selection-start-column="8" selection-end-line="133" selection-end-column="57" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="15" column="44" lean-forward="true" selection-start-line="15" selection-start-column="44" selection-end-line="15" selection-end-column="44" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="449">
-          <caret line="765" column="22" lean-forward="true" selection-start-line="765" selection-start-column="22" selection-end-line="765" selection-end-column="22" />
+        <state relative-caret-position="564">
+          <caret line="769" column="45" lean-forward="true" selection-start-line="769" selection-start-column="45" selection-end-line="769" selection-end-column="45" />
           <folding>
-            <marker date="1494018472000" expanded="true" signature="5657:5688" ph="INSERT INTO `redirect`... " />
-            <marker date="1494018472000" expanded="true" signature="9197:9229" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1494018472000" expanded="true" signature="12992:13024" ph="INSERT INTO `langlinks`... " />
+            <marker date="1494019854000" expanded="true" signature="5659:5690" ph="INSERT INTO `redirect`... " />
+            <marker date="1494019854000" expanded="true" signature="9199:9231" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1494019854000" expanded="true" signature="12994:13026" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
