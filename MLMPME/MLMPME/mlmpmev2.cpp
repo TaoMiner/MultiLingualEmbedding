@@ -1504,11 +1504,11 @@ void TrainMultiModel(){
 void TrainModel(){
     long long i;
     
-//    for (i=0;i<NUM_LANG;i++)
-//        TrainMonoModel(KG_VOCAB, i);
-//    
-//    for (i=0;i<NUM_LANG;i++)
-//        TrainMonoModel(TEXT_VOCAB, i);
+    for (i=0;i<NUM_LANG;i++)
+        TrainMonoModel(KG_VOCAB, i);
+    
+    for (i=0;i<NUM_LANG;i++)
+        TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
     if (NUM_LANG>=2)

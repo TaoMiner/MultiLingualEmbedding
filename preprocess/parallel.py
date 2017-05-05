@@ -141,7 +141,7 @@ if __name__ == '__main__':
     cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
     par_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/para_data.dat'
     lang1 = languages.index('en')
-    lang2 = languages.index('zh')
+    lang2 = languages.index('es')
     par = Parallel(lang1, lang2)
     par.loadCrossLink(cross_file)
     par.readDoc()
