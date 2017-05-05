@@ -48,6 +48,9 @@ class options():
         self.mention_file = self.dump_path + self.output_path + '/mention_count.dat'
         # linked wiki xml
         self.cross_corpus_file = self.dump_path + self.output_path + '/linked_wiki_pages.dat'
+        # wiki text
+        self.raw_text_file = self.dump_path + self.output_path + 'wiki_text'
+        self.text_file = self.dump_path + self.output_path + 'wiki_text_cl'
 
 nsidRE = re.compile(r'(\d{1,}):(\d{1,}):(.*)')
 # pagelink: (pl_from_id, pl_namespace, pl_title, pl_from_namespace),
@@ -371,6 +374,14 @@ class cleaner():
         tmp_line = numRE2.sub('dddddd', tmp_line).lower().strip()
         return tmp_line
 
+    def cleanText(self, raw_text_file, text_file):
+        with codecs.open(raw_text_file, 'rb', 'utf-8') as fin:
+            with codecs.open(text_file, 'w', 'utf-8') as fout:
+                for line in fin:
+                    line = self.regularize(line, self.lang)
+                    if len(line) > 11:
+                        fout.write("%s\n" % line)
+
     @staticmethod
     def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
         """
@@ -649,6 +660,13 @@ def mergeCrossLinks(files):
         for cl_id in out_clinks_id:
             fout.write("%s\n" % '\t'.join(cl_id))
 
+def cleanT(lang):
+    op = options(lang)
+
+    cl = cleaner()
+    cl.init(lang)
+    cl.cleanText(op.raw_text_file, op.text_file)
+
 # clean anchor text symbols, convert [[entity|label]] to [[entity_id|label]]
 def clean(lang):
     op = options(lang)
@@ -657,7 +675,8 @@ def clean(lang):
     cl.init(lang)
     cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
     cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
-    cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
+    # cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
+    cl.cleanWiki(op.raw_text_file, op.text_file, mention_file=op.mention_file)
 
 class MonoKGBuilder():
 
@@ -744,8 +763,8 @@ if __name__ == '__main__':
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    # clean(lang_index)
-    cross_file = '/Users/ethan/Downloads/mlmpme/sample_cross.dat'
-    sub_file = '/Users/ethan/Downloads/mlmpme/sub_cross.dat'
-    lang = ['en','zh']
-    subCrossLinks(cross_file, sub_file, lang)
+    cleanT(lang_index)
+    # cross_file = '/Users/ethan/Downloads/mlmpme/sample_cross.dat'
+    # sub_file = '/Users/ethan/Downloads/mlmpme/sub_cross.dat'
+    # lang = ['en','zh']
+    # subCrossLinks(cross_file, sub_file, lang)
