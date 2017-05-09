@@ -22,10 +22,12 @@ class Parallel():
         self.lang1 = lang1
         self.lang2 = lang2
         self.ops = [options(lang1), options(lang2)]
+        self.entity_dics = [None, None]
         self.corpus = [{},{}]
         self.clinks = {}
         self.parallel_contexts = []
         self.window = 15
+        self.has_brace = True
 
     def loadCrossLink(self, filename):
         with codecs.open(filename, 'rb', 'utf-8') as fin:
@@ -117,7 +119,7 @@ class Parallel():
         return contexts_dict
 
     # keep the anchor
-    def extractContext2(self, sents):
+    def extractContext2(self, sents, entity_dic=None, has_brace = False):
         contexts_dict = {}
         for sent in sents:
             cur = 0
@@ -157,9 +159,20 @@ class Parallel():
                 for i in xrange(begin, end):
                     if i >= anc[2] and i < anc[2]+anc[3]:
                         if not has_anchor:
-                            tmp_anchor_str = '[[' + anc[0] + '|' + anc[1] + ']]'
-                            tmp_contexts.append(tmp_anchor_str)
-                            has_anchor = True
+                            if isinstance(entity_dic, type(None)):
+                                title = anc[0]
+                            else:
+                                title = entity_dic[anc[0]] if anc[0] in entity_dic else ''
+                            if len(title) > 0:
+                                if has_brace:
+                                    tmp_anchor_str = '[[' + title + '|' + anc[1] + ']]'
+                                else:
+                                    tmp_anchor_str = anc[1]
+                                tmp_contexts.append(tmp_anchor_str)
+                                has_anchor = True
+                            else:
+                                del tmp_contexts[:]
+                                break
                         continue
                     if len(sent_words[i]) > 0:
                         tmp_contexts.append(sent_words[i])
@@ -176,8 +189,8 @@ class Parallel():
                 continue
             sents1 = self.corpus[0][cl]
             sents2 = self.corpus[1][self.clinks[cl]]
-            contexts_dict1 = self.extractContext2(sents1)
-            contexts_dict2 = self.extractContext2(sents2)
+            contexts_dict1 = self.extractContext2(sents1, entity_dic=self.entity_dics[0], has_brace=self.has_brace)
+            contexts_dict2 = self.extractContext2(sents2, entity_dic=self.entity_dics[1], has_brace=self.has_brace)
             for t1 in contexts_dict1:
                 if t1 not in self.clinks or self.clinks[t1] not in contexts_dict2:
                     continue
@@ -206,6 +219,10 @@ if __name__ == '__main__':
     lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)
     par.loadCrossLink(cross_file)
+    par.entity_dics[0] = preprocess.Preprocessor.loadEntityIdDic(par.ops[0].vocab_entity_file)
+    par.entity_dics[1] = preprocess.Preprocessor.loadEntityIdDic(par.ops[1].vocab_entity_file)
+    # whether output brace for anchors
+    par.has_brace = True
     par.readDoc()
     par.extract()
     par.saveParaData(par_file)
