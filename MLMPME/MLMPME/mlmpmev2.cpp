@@ -712,9 +712,7 @@ void InitModel(int model_type, int lang_id){
     // initialize vocab type
     mono_vocab->vocab_type = model_type;
     mono_vocab->lang = lang_id;
-    if (model_type==TEXT_VOCAB && lang_id==0) mono_vocab->min_count = 70;
-    else if (model_type==TEXT_VOCAB && lang_id==1) mono_vocab->min_count = 15;
-    else mono_vocab->min_count = min_count;
+    mono_vocab->min_count = min_count;
     
     mono_vocab->vocab_max_size = 2500000;      //vocab word size is 2.7m
     mono_vocab->vocab_size = 0;

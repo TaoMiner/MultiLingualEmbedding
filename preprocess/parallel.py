@@ -116,19 +116,79 @@ class Parallel():
                     contexts_dict[anc[0]] = tmp_contexts
         return contexts_dict
 
+    # keep the anchor
+    def extractContext2(self, sents):
+        contexts_dict = {}
+        for sent in sents:
+            cur = 0
+            sent_words = []
+            # [[start, end],...]
+            anchors = []
+            for s, e in  cleaner.findBalanced(sent):
+                tmp_words = re.split(r' ', sent[cur:s].strip())
+                sent_words.extend(tmp_words)
+                tmp_anchor = sent[s:e]
+                tmp_vbar = tmp_anchor.find('|')
+                tmp_label = ''
+                tmp_title = ''
+                if tmp_vbar > 0:
+                    tmp_title = tmp_anchor[2:tmp_vbar]
+                    tmp_label = tmp_anchor[tmp_vbar + 1 :-2]
+                else:
+                    tmp_label = tmp_anchor[2:-2]
+                    tmp_title = tmp_label
+                tmp_words = re.split(r' ', tmp_label)
+                start_index = len(sent_words)
+                sent_words.extend(tmp_words)
+                length = len(tmp_words)
+                if length > 0 and len(tmp_title) > 0:
+                    anchors.append([tmp_title, tmp_label, start_index,length])
+                cur = e
+            if cur < len(sent):
+                tmp_words = re.split(r' ', sent[cur:])
+                sent_words.extend(tmp_words)
+            # sent_words contains all words in sent
+            # anchors contains start pos and end pos in the sentwords index
+            for anc in anchors:
+                has_anchor = False
+                tmp_contexts = []
+                begin = anc[2]-self.window if anc[2]-self.window > 0 else 0
+                end = anc[2] + anc[3] + self.window + 1 if anc[2] + anc[3] + self.window +1 < len(sent_words) else len(sent_words)
+                for i in xrange(begin, end):
+                    if i >= anc[2] and i < anc[2]+anc[3]:
+                        if not has_anchor:
+                            tmp_anchor_str = '[[' + anc[0] + '|' + anc[1] + ']]'
+                            tmp_contexts.append(tmp_anchor_str)
+                            has_anchor = True
+                        continue
+                    if len(sent_words[i]) > 0:
+                        tmp_contexts.append(sent_words[i])
+                if len(tmp_contexts) > 1:
+                    tmp_context_set = contexts_dict[anc[0]] if anc[0] in contexts_dict else []
+                    tmp_context_set.append(tmp_contexts)
+                    contexts_dict[anc[0]] = tmp_context_set
+        return contexts_dict
+
     def extract(self):
+        num_nonequal = 0
         for cl in self.clinks:
             if cl not in self.corpus[0] or self.clinks[cl] not in self.corpus[1]:
                 continue
             sents1 = self.corpus[0][cl]
             sents2 = self.corpus[1][self.clinks[cl]]
-            contexts_dict1 = self.extractContext(sents1)
-            contexts_dict2 = self.extractContext(sents2)
+            contexts_dict1 = self.extractContext2(sents1)
+            contexts_dict2 = self.extractContext2(sents2)
             for t1 in contexts_dict1:
                 if t1 not in self.clinks or self.clinks[t1] not in contexts_dict2:
                     continue
-                self.parallel_contexts.append([contexts_dict1[t1], contexts_dict2[self.clinks[t1]]])
-        print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
+                context_set1 = contexts_dict1[t1]
+                context_set2 = contexts_dict2[self.clinks[t1]]
+                min_set_num = min(len(context_set1), len(context_set2))
+                for i in xrange(min_set_num):
+                    self.parallel_contexts.append([context_set1[i], context_set2[i]])
+                if len(context_set1) != len(context_set2):
+                    num_nonequal += 1
+        print "successfully load %d parallel contexts! non equal %d context!" % (len(self.parallel_contexts), num_nonequal)
 
     def saveParaData(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
@@ -138,10 +198,12 @@ class Parallel():
                 fout.write("%s\t%s\n" % (' '.join(context[0]), ' '.join(context[1])))
 
 if __name__ == '__main__':
+    str_lang1 = 'en'
+    str_lang2 = 'es'
     cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
-    par_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/para_data.dat'
-    lang1 = languages.index('en')
-    lang2 = languages.index('es')
+    par_file = '/data/m1/cyx/MultiMPME/data/paradata/para_contexts2.' + str_lang1 + '-' + str_lang2
+    lang1 = languages.index(str_lang1)
+    lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)
     par.loadCrossLink(cross_file)
     par.readDoc()
