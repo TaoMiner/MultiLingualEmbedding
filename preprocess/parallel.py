@@ -213,8 +213,8 @@ class Parallel():
 if __name__ == '__main__':
     str_lang1 = 'en'
     str_lang2 = 'es'
-    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
-    par_file = '/data/m1/cyx/MultiMPME/data/paradata/para_contexts2.' + str_lang1 + '-' + str_lang2
+    cross_file = '/home/caoyx/data/dump20170401/cross_links_all_id.dat'
+    par_file = '/home/caoyx/data/paradata/para_contexts2.' + str_lang1 + '-' + str_lang2
     lang1 = languages.index(str_lang1)
     lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)

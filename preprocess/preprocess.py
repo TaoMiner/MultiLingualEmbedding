@@ -8,7 +8,7 @@ import string
 import jieba
 
 htmlparser = HTMLParser.HTMLParser()
-jieba.set_dictionary('/data/m1/cyx/MultiMPME/data/dict.txt.big')
+jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
 # jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
 languages = ('en', 'zh', 'es')
@@ -19,7 +19,7 @@ class options():
         if lang >= len(languages) or lang < 0 :
             print "invalid lang id!"
             exit()
-        self.dump_path = '/data/m1/cyx/MultiMPME/data/dumps20170401/'
+        self.dump_path = '/home/caoyx/data/dump20170401/'
         self.lang = languages[lang]
         self.lang_wiki = self.lang+ 'wiki'
         self.redirect_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-redirect.sql'
@@ -660,6 +660,7 @@ def mergeCrossLinks(files):
         for cl_id in out_clinks_id:
             fout.write("%s\n" % '\t'.join(cl_id))
 
+# clean into plain text
 def cleanT(lang):
     op = options(lang)
 
@@ -757,14 +758,14 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    # lang_index = languages.index('es')
-    # mkb = MonoKGBuilder(lang_index)
-    # mkb.process()
+    lang_index = languages.index('es')
+    mkb = MonoKGBuilder(lang_index)
+    mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    # cleanT(lang_index)
-    lang = ['en', 'es']
-    cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
-    sub_file = '/data/m1/cyx/MultiMPME/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
-    subCrossLinks(cross_file, sub_file, lang)
+    clean(lang_index)
+    # lang = ['en', 'es']
+    # cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
+    # sub_file = '/data/m1/cyx/MultiMPME/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
+    # subCrossLinks(cross_file, sub_file, lang)
