@@ -676,8 +676,7 @@ def clean(lang):
     cl.init(lang)
     cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
     cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
-    # cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
-    cl.cleanWiki(op.raw_text_file, op.text_file, mention_file=op.mention_file)
+    cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
 
 class MonoKGBuilder():
 
