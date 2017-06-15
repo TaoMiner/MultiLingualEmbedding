@@ -353,12 +353,29 @@ class cleaner():
         self.entity_id = None
         self.redirects = None
         self.mentions = None
+        self.formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)([;].*?\}|\})-')
 
     def init(self, lang):
         self.lang = languages[lang]
         self.mentions = {}
         print "cleaning %s language!" % self.lang
 
+    # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
+    def formatRawWiki(self, raw_anchor_file):
+        line_count = 0
+        with codecs.open(raw_anchor_file, 'r', 'utf-8') as fin:
+            with codecs.open('./tmp', 'w', 'utf-8') as fout:
+                for line in fin:
+                    line_count += 1
+                    if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
+                    line = line.decode('utf-8', 'ignore')
+                    line = self.formatRE.sub('\g<label>', line)
+                    self.findBalanced(line)
+                    fout.write(line)
+        with codecs.open('./tmp', 'r', 'utf-8') as fin:
+            with codecs.open(raw_anchor_file, 'w', 'utf-8') as fout:
+                for line in fin:
+                    fout.write(line)
 
     @staticmethod
     def regularize(str, lang):
@@ -674,6 +691,8 @@ def clean(lang):
 
     cl = cleaner()
     cl.init(lang)
+    if lang == languages.index('zh'):
+        cl.formatRawWiki(op.raw_anchor_file)
     cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
     cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
     cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
