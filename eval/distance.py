@@ -71,11 +71,11 @@ class options():
     def __init__(self, lang):
         lang_index = str(languages.index(lang) + 1)
 
-        self.vec_path = '/data/m1/cyx/MultiMPME/etc/exp1/'+lang+'vec/'
-        self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word.dat'
-        self.entity_vector_file = self.vec_path + 'vectors'+ lang_index +'_entity.dat'
-        self.sense_vector_file = self.vec_path + 'vectors'+ lang_index +'_senses.dat'
-        self.entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/'+lang+'wiki_cl/vocab_entity.dat'
+        self.vec_path = '/home/caoyx/data/etc/exp2/'+lang+'vec/'
+        self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word5'
+        self.entity_vector_file = self.vec_path + 'vectors'+ lang_index +'_entity5'
+        self.sense_vector_file = self.vec_path + 'vectors'+ lang_index +'_senses5'
+        self.entity_dic_file = '/home/caoyx/data/dump20170401/'+lang+'wiki_cl/vocab_entity.dat'
         '''
         self.vec_path = '/Users/ethan/Downloads/mlmpme/' + lang + 'vec/'
         self.word_vector_file = self.vec_path + 'vectors'+ lang_index +'_word1'
@@ -142,4 +142,4 @@ def output(fout, str):
 if __name__ == '__main__':
     log_file = './distance.out'
     dis = distance()
-    dis.process(log_file)
+    dis.process()

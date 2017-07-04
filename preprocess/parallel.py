@@ -213,8 +213,8 @@ class Parallel():
 if __name__ == '__main__':
     str_lang1 = 'en'
     str_lang2 = 'es'
-    cross_file = '/home/caoyx/data/dump20170401/cross_links_all_id.dat'
-    par_file = '/home/caoyx/data/paradata/para_contexts2.' + str_lang1 + '-' + str_lang2
+    cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
+    par_file = '/home/caoyx/data/paradata/para_contexts.' + str_lang1 + '-' + str_lang2
     lang1 = languages.index(str_lang1)
     lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     par.entity_dics[0] = preprocess.Preprocessor.loadEntityIdDic(par.ops[0].vocab_entity_file)
     par.entity_dics[1] = preprocess.Preprocessor.loadEntityIdDic(par.ops[1].vocab_entity_file)
     # whether output brace for anchors
-    par.has_brace = True
+    par.has_brace = False
     par.readDoc()
     par.extract()
     par.saveParaData(par_file)

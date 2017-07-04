@@ -368,7 +368,6 @@ class cleaner():
                 for line in fin:
                     line_count += 1
                     if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
-                    line = line.decode('utf-8', 'ignore')
                     line = self.formatRE.sub('\g<label>', line)
                     self.findBalanced(line)
                     fout.write(line)
@@ -777,13 +776,14 @@ if __name__ == '__main__':
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
     lang_index = languages.index('es')
-    mkb = MonoKGBuilder(lang_index)
-    mkb.process()
+    # mkb = MonoKGBuilder(lang_index)
+    # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    clean(lang_index)
-    # lang = ['en', 'es']
-    # cross_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/cross_links_all_id.dat'
-    # sub_file = '/data/m1/cyx/MultiMPME/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
+    # clean(lang_index)
+    cleanT(lang_index)
+    # lang = ['en', 'zh']
+    # cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
+    # sub_file = '/home/caoyx/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
     # subCrossLinks(cross_file, sub_file, lang)
