@@ -44,7 +44,7 @@ class Ruler():
                 out = 'please input the candidate number: \n'
                 for i in xrange(len(senses)):
                     if senses[i] not in self.entities.id_entity: continue
-                    out += i + ':' + self.entities.id_entity[senses[i]] + '\n'
+                    out += str(i) + ':' + self.entities.id_entity[senses[i]] + '\n'
                 sense_index = int(raw_input(out))
                 if sense_index >=0 and sense_index < len(senses) and senses[sense_index] in self.entities.id_entity:
                     return self.senses.vectors[senses[sense_index]]
