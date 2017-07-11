@@ -1381,6 +1381,7 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], real *d
         for(a=0;a<MAX_SENTENCE_LENGTH;a++)
             if (sen[i][a]==0){
                 len[i] = a;
+                if (a==0) return;       // disgard those have empty sents
                 break;
             }
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
