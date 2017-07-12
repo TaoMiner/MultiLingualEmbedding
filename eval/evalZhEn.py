@@ -44,25 +44,32 @@ class evaluator():
     def eval(self, topN = topn, log_file = None):
         fout = None
         if not isinstance(log_file, type(None)):
-            fout = codecs.open(log_file, 'w', encoding='UTF-8')
-        sim = []
+            fout = codecs.open(log_file, 'a', encoding='UTF-8')
+        count = 0
         for p in self.lex:
+            count += 1
             zh_w = p[0]
             en_ws = p[1]
-            if zh_w in self.words[0].vectors:
-                vec = self.words[0].vectors[zh_w]
+            is_correct = False
+            for en_w in en_ws:
+                if en_w in self.words[1].vectors:
+                    vec = self.words[1].vectors[en_w]
+                    sim = []
+                    for w in self.words[0].vectors:
+                        sim.append([w, spatial.distance.cosine(vec, self.words[0].vectors[w])])
+                    sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
 
-                for w in self.words[1].vectors:
-                    sim.append([w,spatial.distance.cosine(vec, self.words[1].vectors[w])])
-                sorted_sim = sorted(sim, key=lambda x: x[1])[:topN]
-
-                for en_w in en_ws:
                     for s in sorted_sim:
-                        if en_w == s[0]:
+                        if zh_w == s[0]:
                             self.tp += 1
+                            is_correct = True
+                            break
+                if is_correct: break
+            if count % 10 == 0:
+                print "%d/%d, tp is %d!" % (count, len(self.lex), self.tp)
         print "top %d acc is %f" % (topn, float(self.tp)/len(self.lex))
-        fout.write("exp%d top %d acc is %f.\n" % (self.expnum, topn, float(self.tp)/len(self.lex)))
         if not isinstance(fout, type(None)):
+            fout.write("exp%d top %d acc is %f.\n" % (self.expnum, topn, float(self.tp) / len(self.lex)))
             fout.close()
 
 if __name__ == '__main__':
