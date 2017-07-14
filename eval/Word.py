@@ -103,9 +103,9 @@ class Word():
                     str_o = ''
                     if label in new_vocab:
                         new_word_count += 1
-                        str_o = label
+                        str_o = label.encode('utf-8')
                         for i in xrange(layer_size):
-                            str_o = str_o + ' ' + str(struct.unpack('f', fin_vec.read(4)))
+                            str_o = "%s %17f" % (str_o, struct.unpack('f', fin_vec.read(4))[0])
                         str_o += '\n'
                         fin_vec.read(1)
                         fout_vec.write(str_o)

@@ -781,8 +781,8 @@ if __name__ == '__main__':
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    # clean(lang_index)
-    cleanT(lang_index)
+    clean(lang_index)
+    # cleanT(lang_index)
     # lang = ['en', 'zh']
     # cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     # sub_file = '/home/caoyx/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
