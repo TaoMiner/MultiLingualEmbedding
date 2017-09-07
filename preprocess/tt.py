@@ -1,6 +1,6 @@
 import codecs
 import re
-'''
+
 from preprocess import cleaner
 
 import jieba
@@ -21,15 +21,3 @@ with codecs.open(file, 'r', 'utf8') as fin:
             seg_line = " ".join(seg_list)
             zh_str = cleaner.regularize(seg_line, 'zh')
             fout.write("%s\t%s\n" % (en_str, zh_str))
-'''
-
-containerRE = re.compile(r'^<(.*)>')
-
-ss = '</doc>'
-
-m = containerRE.match(ss)
-
-if m:
-    print "match!"
-else:
-    print "not match!"

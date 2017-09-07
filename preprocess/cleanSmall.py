@@ -31,7 +31,7 @@ with codecs.open(page_file, 'r', 'utf8') as fin:
             if len(res) > 11:
                 fout.write("%s\n" % res)
         print 'process train text finished! start count anchors ...'
-        if not mention_file:
+        if mention_file:
             with codecs.open(mention_file, 'w', 'utf-8') as fout:
                 out_list = []
                 for t in cl.mentions:
