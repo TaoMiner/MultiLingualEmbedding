@@ -30,9 +30,9 @@ class Evaluator:
         self.train = self.features[self.features.doc_id < 947]
         tmp = self.features[self.features.doc_id >= 947]
         self.testa = tmp[tmp.doc_id < 1163]
-        #self.testb = tmp[tmp.doc_id >= 1163]
+        self.testb = tmp[tmp.doc_id >= 1163]
         # predict full dataset
-        self.testb = self.features
+        # self.testb = self.features
 
     def gbdt(self):
         gbdt=GradientBoostingRegressor(
@@ -55,13 +55,13 @@ class Evaluator:
         self.train_x = self.train.loc[:, self.feature_list].values
         self.train_y = self.train.loc[:, 'label'].values
 
-        self.testb_x = self.testb.loc[:, self.feature_list].values
-        self.testb_y = self.testb.loc[:, 'label'].values
+        self.testa_x = self.testa.loc[:, self.feature_list].values
+        self.testa_y = self.testa.loc[:, 'label'].values
 
         gbdt.fit(self.train_x, self.train_y)
         print("train finished!")
-        pred=gbdt.predict(self.testb_x)
-        self.testb.insert(0,'score', pred)
+        pred=gbdt.predict(self.testa_x)
+        self.testa.insert(0,'score', pred)
 
         #testa's doc_id 947-1162
         total_p = 0.0
@@ -69,8 +69,9 @@ class Evaluator:
         total_doc_num = 0
         total_mention_num = 0
         # for i in xrange(1163,1394,1) only for testb
-        for i in xrange(1, 1394, 1):
-            df_doc = self.testb[self.testb.doc_id == i]
+        # for testa
+        for i in xrange(947, 1163, 1):
+            df_doc = self.testa[self.testa.doc_id == i]
             if df_doc.shape[0]==0:continue
             d_mention_num = df_doc['mention_id'].iloc[-1]+1
             #max score's index of mention's candidates
