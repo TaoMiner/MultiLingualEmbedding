@@ -100,7 +100,7 @@ class Candidate:
         return count
 
 if __name__ == '__main__':
-    wiki_id_file = '/Users/ethan/Downloads/datasets/wiki/enwiki-ID.dat'
+    wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
     conll_candidate = Candidate()
     conll_candidate.loadWikiId(wiki_id_file)
     print("successfully load %d wiki id!" %  len(conll_candidate.wiki_id))
@@ -114,8 +114,8 @@ if __name__ == '__main__':
     print("total %d candidates, each mention has %d candidates on average." % (count, count/len(conll_candidate.candidate)))
     '''
     #ppr_candidate
-    output_file = './ppr_candidate'
-    ppr_path = ''
+    output_file = '/home/caoyx/data/conll/ppr_candidate'
+    ppr_path = '/home/caoyx/data/conll/PPRforNED-master/AIDA_candidates/'
     conll_candidate.findPPRCand(ppr_path)
     print("successfully load %d mentions" %  len(conll_candidate.candidate))
     count = conll_candidate.saveCandidates(output_file)

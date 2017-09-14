@@ -103,8 +103,8 @@ class Evaluator:
 
 if __name__ == '__main__':
 
-    intput_path = '/data/m1/cyx/etc/expdata/conll/'
-    output_path = '/data/m1/cyx/etc/expdata/conll/log/'
+    intput_path = '/home/caoyx/data/conll/'
+    output_path = '/home/caoyx/data/conll/log/'
     conll_file = intput_path + 'ppr_conll_file.csv'
     ans_file = output_path + 'conll_ans.mpme'
     predict_file = output_path + 'conll_pred.mpme'

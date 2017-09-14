@@ -3,7 +3,7 @@ import regex as re
 import Levenshtein
 from Entity import Entity
 from Word import Word
-from Title import Title
+from Sense import Sense
 import numpy as np
 from scipy import spatial
 import os
@@ -23,21 +23,17 @@ class Features:
         self.skip = 0
         self.m_count = {}
         self.punc = re.compile('[%s]' % re.escape(string.punctuation))
-        self.is_mpme = False
-        self.is_me = False
         self.log_file = ''
 
     def loadWEVec(self, word, entity):
         self.tr_word = word
         self.tr_entity = entity
-        self.id_wiki = self.tr_entity.id_wiki
+
+    def loadIdWiki(self, id_wiki_file):
+        self.id_wiki = Entity.loadEntityIdDic(id_wiki_file)
 
     def loadTitle(self, title, has_sense=True):
         self.tr_title = title
-        if has_sense:
-            self.is_mpme = True
-        else:
-            self.is_me = True
 
     def loadPrior(self, filename):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
@@ -168,14 +164,9 @@ class Features:
 
                 has_word = True if norm_ment_name in self.tr_word.vectors else False
                 has_entity = True if entity_label in self.tr_entity.vectors else False
-                has_sense = False
-                has_etitle = False
-                if self.is_mpme and entity_label in self.tr_title.ent_vectors:
-                    has_sense = True
-                if self.is_me and entity_title in self.tr_title.vectors:
-                    has_etitle = True
+                has_sense = True if entity_label in self.tr_title.vectors else False
 
-                # 3 embedding similarity: esim1:(w,e), esim2:(tl,e) [only me], esim3:(w,tls) [only mpme]
+                # 3 embedding similarity: esim1:(w,e), esim2:(sense,e), esim3:(w,sense)
                 esim1 = 0
                 erank1 = 0
                 if has_word and has_entity:
@@ -183,13 +174,13 @@ class Features:
 
                 esim2 = 0
                 erank2 = 0
-                if has_etitle and has_entity:
-                    esim2 = self.cosSim(self.tr_title.vectors[entity_title], self.tr_entity.vectors[entity_label])
+                if has_sense and has_entity:
+                    esim2 = self.cosSim(self.tr_title.vectors[entity_label], self.tr_entity.vectors[entity_label])
 
                 esim3 = 0
                 erank3 = 0
                 if has_sense and has_word:
-                    esim3 = self.cosSim(self.tr_word.vectors[norm_ment_name], self.tr_title.ent_vectors[entity_label])
+                    esim3 = self.cosSim(self.tr_word.vectors[norm_ment_name], self.tr_title.vectors[entity_label])
 
                 # 4 contexual similarities for align, me and mpme: csim1:(c(w),e), csim2:(N(e),e), csim3:(tls,c(w)) [only mpme], csim4:(mu(tls),c(w)) [only mpme], csim5:(N(tls),tls)
                 # context vec
@@ -218,12 +209,12 @@ class Features:
                 csim3 = 0
                 crank3 = 0
                 if c_w_actual > 0 and has_sense:
-                    csim3 = self.cosSim(context_vec, self.tr_title.ent_vectors[entity_label])
+                    csim3 = self.cosSim(context_vec, self.tr_title.vectors[entity_label])
 
                 csim4 = 0
                 crank4 = 0
                 if has_sense and c_w_actual>0:
-                    csim4 = self.cosSim(context_vec, self.tr_title.ent_mu[entity_label])
+                    csim4 = self.cosSim(context_vec, self.tr_title.mu[entity_label])
 
                 csim5 = 0
                 crank5 = 0
@@ -266,14 +257,14 @@ class Features:
                     df_vec.loc[row[0], 'csim2'] = self.cosSim(c_ent_vec, entity_vec)
 
             # update context entity features by entity title
-            if self.is_mpme and len(c_entities) > 0 and entity_label in self.tr_title.ent_vectors:
+            if len(c_entities) > 0 and entity_label in self.tr_title.vectors:
                 c_title_vec = np.zeros(self.tr_word.layer_size)
                 c_title_num = 0
                 for ent in c_entities:
-                    if ent in self.tr_title.ent_vectors:
-                        c_title_vec += self.tr_title.ent_vectors[ent]
+                    if ent in self.tr_title.vectors:
+                        c_title_vec += self.tr_title.vectors[ent]
                         c_title_num += 1
-                title_vec = self.tr_title.ent_vectors[entity_label]
+                title_vec = self.tr_title.vectors[entity_label]
                 if c_title_num > 0:
                     c_title_vec /= c_title_num
                     df_vec.loc[row[0], 'csim5'] = self.cosSim(c_title_vec, title_vec)
@@ -375,17 +366,17 @@ class Features:
 
 
 if __name__ == '__main__':
-    aida_file = '/data/m1/cyx/etc/expdata/conll/AIDA-YAGO2-dataset.tsv'
-    candidate_file = '/data/m1/cyx/etc/ppr/ppr_candidate'
-    wiki_id_file = '/data/m1/cyx/etc/enwiki/wiki_title_cl'
-    count_mention_file = '/data/m1/cyx/etc/enwiki/count_mentions'
-    output_file = '/data/m1/cyx/etc/expdata/conll/ppr_conll_file2.csv'
-    input_path = '/data/m1/cyx/etc/output/exp10/'
-    entity_vector_file = input_path + 'vectors_entity10.dat'
-    word_vector_file = input_path + 'vectors_word10.dat'
-    title_vector_file = input_path + 'vectors_title10.dat'
-    log_file = '/data/m1/cyx/etc/expdata/conll/log/log_feature'
-    res_file = '/data/m1/cyx/etc/expdata/conll/log/conll_pred.mpme'
+    aida_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
+    candidate_file = '/home/caoyx/data/conll/ppr_candidate'
+    wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
+    count_mention_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
+    output_file = '/home/caoyx/data/conll/ppr_conll_file.csv'
+    input_path = '/home/caoyx/data/etc/exp8/envec/'
+    entity_vector_file = input_path + 'vectors1_entity5'
+    word_vector_file = input_path + 'vectors1_word5'
+    title_vector_file = input_path + 'vectors1_senses5'
+    log_file = '/home/caoyx/data/log/log_feature'
+    res_file = '/home/caoyx/data/log/conll_pred.mpme'
     has_title = True
     has_sense = True
 
@@ -393,11 +384,10 @@ if __name__ == '__main__':
     wiki_word.loadVector(word_vector_file)
 
     wiki_entity = Entity()
-    wiki_entity.loadWikiId(wiki_id_file)
     wiki_entity.loadVector(entity_vector_file)
 
     if has_title and has_sense:
-        wiki_title = Title()
+        wiki_title = Sense()
         wiki_title.loadVector(title_vector_file)
 
     if has_title and not has_sense:
@@ -408,6 +398,7 @@ if __name__ == '__main__':
     features.log_file = log_file
     features.loadResult(res_file)
     features.loadWEVec(wiki_word, wiki_entity)
+    features.loadIdWiki(wiki_id_file)
 
     if has_title:
         features.loadTitle(wiki_title, has_sense)
