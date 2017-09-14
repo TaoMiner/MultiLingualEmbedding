@@ -28,7 +28,7 @@ class evaluator():
             self.words[0].loadVector(self.es_word_file)
 
     def loadBiLexicon(self):
-        with codecs.open(self.lex_file, 'r', 'gbk') as fin:
+        with codecs.open(self.lex_file, 'r', 'utf8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 : continue
