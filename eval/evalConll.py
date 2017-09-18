@@ -105,14 +105,16 @@ class Evaluator:
 if __name__ == '__main__':
 
     intput_path = '/home/caoyx/data/conll/'
-    output_path = '/home/caoyx/data/conll/log/'
+    output_path = '/home/caoyx/data/log/'
     conll_file = intput_path + 'ppr_conll_file.csv'
     ans_file = output_path + 'conll_ans.mpme'
     predict_file = output_path + 'conll_pred.mpme'
     log_file = output_path + 'conll_log'
     eval = Evaluator()
     eval.ans_file = ans_file
-    eval.predict_file = predict_file
+    # the second round
+    # eval.predict_file = predict_file
+    eval.predict_file = ''
     eval.log_file = log_file
     eval.feature_file = conll_file
     eval.loadFeatures()
