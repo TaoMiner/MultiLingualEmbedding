@@ -9,19 +9,25 @@ class formatter:
 
     def readDoc(self, file, start_p, end_p):
         isDoc = False
-        count = 0
+        count = -1
         with codecs.open(file, 'r', encoding='UTF-8') as fin:
             for line in fin:
+                sent_len = len(line)
+                count += sent_len
                 line = line.strip()
                 if len(line) < 1 : continue
                 head_m = self.textHeadRE.match(line)
                 tail_m = self.textTailRE.match(line)
-                if head_m != None : isDoc = True
+                if head_m != None :
+                    isDoc = True
+                    continue
                 if isDoc:
                     tail_m = self.textTailRE.match(line)
-                    if tail_m != None : isDoc = False
-                    if count + len(line) >= end_p:
-                        print line[start_p-count:end_p-count]
+                    if tail_m != None :
+                        isDoc = False
+                        continue
+                    if count-sent_len >= start_p and count <= end_p:
+                        print line[start_p-count+sent_len:end_p-count+sent_len]
 
 
 
