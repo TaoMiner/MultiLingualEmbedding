@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import codecs
 import regex as re
 import string
@@ -14,9 +12,9 @@ CONLL = 1
 
 textHeadRE = re.compile(r'<TEXT>')
 textTailRE = re.compile(r'</TEXT>')
-puncRE = re.compile(ur'[%s]' % re.escape(string.punctuation))
+puncRE = re.compile("[{0}]".format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
-zhpunc = re.compile(ur'[%s]' % re.escape(zh_punctuation.decode('utf-8')))
+zhpunc = re.compile("[{0}]".format(re.escape(zh_punctuation)))
 tagRE = re.compile(r'<.*?>')
 
 class Doc:
@@ -37,6 +35,7 @@ class DataReader:
         self.nlp = StanfordCoreNLP(path)
         self.en_props = {'annotators': 'tokenize,lemma', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
         self.es_props = {'annotators': 'tokenize,lemma', 'pipelineLanguage': 'es', 'outputFormat': 'json'}
+        print("set nlp tool!")
 
     # doc_type: 1 -- conll; 2 -- kbp15; 3 -- kbp16
     def readDoc(self, doc_type):
@@ -45,7 +44,8 @@ class DataReader:
         else: print "No reader for such doc!"
 
     def loadKbpMentions(self, file):
-        with codecs.open(file, 'r', encoding='UTF-8') as fin:
+        count = 0
+        with codecs.open(file, 'r') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 5 : continue
@@ -59,6 +59,8 @@ class DataReader:
                 doc_mentions = [] if doc_id not in self.kbpMentions else self.kbpMentions[doc_id]
                 doc_mentions.append(tmp_mention)
                 self.kbpMentions[doc_id] = doc_mentions
+                count += 1
+        print("load {0} mentions for {1} docs!".format(count, len(self.kbpMentions)))
 
 
     def readKbp16(self, en_path):
@@ -68,6 +70,7 @@ class DataReader:
         files = os.listdir(en_path)
         for f in files:
             if f[:-4] in self.kbpMentions:
+                print("processing {0}!".format(f[:-4]))
                 tmp_mentions = copy.deepcopy(self.kbpMentions[f[:-4]])
                 self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), tmp_mentions))
 
@@ -76,7 +79,7 @@ class DataReader:
         doc = Doc()
         isDoc = False
         cur_pos = -1
-        with codecs.open(file, 'r', encoding='UTF-8') as fin:
+        with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
                 if len(line) < 1: continue
@@ -93,7 +96,7 @@ class DataReader:
                         isDoc = False
                         cur_pos += cur_len
                         continue
-                    seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_corpus))
+                    seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
                     tokens = seg_lines['sentences'][0]['tokens']
                     # iterate each token such as
                     # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
@@ -118,7 +121,8 @@ class DataReader:
 
 if __name__ == '__main__':
     eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
-
+    stanfordNlp_path = '/home/caoyx/stanford-corenlp_38'
     dr = DataReader()
     dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
+    dr.setNlpTool(stanfordNlp_path)
     dr.readKbp16(eval_path+'2016/eval/source_documents/eng/nw/')

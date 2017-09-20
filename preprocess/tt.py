@@ -14,11 +14,5 @@ sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
 
-s = ['a','b', 'c']
-for i in s:
-    print i
-    s.remove(i)
-    break
-
-
-print s
+s = '\u2019'
+print s.decode('unicode_escape')
