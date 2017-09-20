@@ -41,7 +41,7 @@ class DataReader:
     def readDoc(self, doc_type):
         if doc_type == 3:
             self.readKbp16()
-        else: print "No reader for such doc!"
+        else: print("No reader for such doc!")
 
     def loadKbpMentions(self, file):
         count = 0
@@ -65,7 +65,7 @@ class DataReader:
 
     def readKbp16(self, en_path):
         if len(self.kbpMentions) < 1 or not os.path.isdir(en_path) :
-            print "please check kbp mentions and input path!"
+            print("please check kbp mentions and input path!")
             return
         files = os.listdir(en_path)
         for f in files:
@@ -97,10 +97,11 @@ class DataReader:
                         cur_pos += cur_len
                         continue
                     seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
+                    print(seg_lines)
                     tokens = seg_lines['sentences'][0]['tokens']
                     # iterate each token such as
                     # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
-                    for i in xrange(len(tokens)):
+                    for i in range(len(tokens)):
                         token = tokens[i]
                         doc.text.append(token['lemma'])
                         for m in mentions:
@@ -108,7 +109,7 @@ class DataReader:
                                 hasFind = False
                                 ent_len = 0
                                 boundry_index = i-1
-                                for j in xrange(i, len(tokens), 1):
+                                for j in range(i, len(tokens), 1):
                                     if cur_pos+tokens[j]['characterOffsetEnd'] == m[1]:
                                         hasFind = True
                                         boundry_index = j
