@@ -1,11 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import codecs
 import regex as re
+import string
+
+textHeadRE = re.compile(r'<TEXT>')
+textTailRE = re.compile(r'</TEXT>')
+puncRE = re.compile(ur'[%s]' % re.escape(string.punctuation))
+zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
+zhpunc = re.compile(ur'[%s]' % re.escape(zh_punctuation.decode('utf-8')))
+tagRE = re.compile(r'<.*?>')
+
 
 class formatter:
     def __init__(self):
         self.eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
-        self.textHeadRE = re.compile(r'<TEXT>')
-        self.textTailRE = re.compile(r'</TEXT>')
+
 
     def readDoc(self, file, start_p, end_p):
         isDoc = False
@@ -16,20 +26,18 @@ class formatter:
                 count += sent_len
                 line = line.strip()
                 if len(line) < 1 : continue
-                head_m = self.textHeadRE.match(line)
-                tail_m = self.textTailRE.match(line)
+                head_m = textHeadRE.match(line)
+                tail_m = textTailRE.match(line)
                 if head_m != None :
                     isDoc = True
                     continue
                 if isDoc:
-                    tail_m = self.textTailRE.match(line)
+                    tail_m = textTailRE.match(line)
                     if tail_m != None :
                         isDoc = False
                         continue
-                    if count-sent_len >= start_p and count <= end_p:
-                        print line[start_p-count+sent_len:end_p-count+sent_len]
-
-
+                    if count >= end_p:
+                        print line[start_p-count+sent_len-1:end_p-count+sent_len]
 
     def loadAnswers(self, file):
         print ''
