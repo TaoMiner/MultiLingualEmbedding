@@ -10,8 +10,8 @@ KBP16 = 3
 KBP15 = 2
 CONLL = 1
 
-textHeadRE = re.compile(r'<TEXT>')
-textTailRE = re.compile(r'</TEXT>')
+textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
+textTailRE = re.compile(r'</TEXT>|</HEADLINE>')
 puncRE = re.compile("[{0}]".format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
 zhpunc = re.compile("[{0}]".format(re.escape(zh_punctuation)))
@@ -55,6 +55,7 @@ class DataReader:
                 start_p = int(tmp_items[1])
                 end_p = int(tmp_items[2])
                 freebase_id = items[4]
+                if freebase_id.startswith('NIL') : continue
                 tmp_mention = [start_p, end_p, freebase_id]
                 doc_mentions = [] if doc_id not in self.kbpMentions else self.kbpMentions[doc_id]
                 doc_mentions.append(tmp_mention)
@@ -71,8 +72,9 @@ class DataReader:
         for f in files:
             if f[:-4] in self.kbpMentions:
                 print("processing {0}!".format(f))
-                tmp_mentions = copy.deepcopy(self.kbpMentions[f[:-4]])
-                self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), tmp_mentions))
+                self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), self.kbpMentions[f[:-4]]))
+
+    # return original text and its count, according to dataset year
 
     # return class doc for kbp16
     def readEnDoc(self, file, mentions):
@@ -92,7 +94,7 @@ class DataReader:
                         continue
                     seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
                     for sent in seg_lines['sentences']:
-                        tokens = sent[0]['tokens']
+                        tokens = sent['tokens']
                         # iterate each token such as
                         # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
                         for i in range(len(tokens)):
@@ -111,8 +113,6 @@ class DataReader:
                                     if hasFind:
                                         ent_len = boundry_index-i+1
                                         doc.mentions.append([len(doc.text)-1, ent_len, m[2], ''])
-                                        mentions.remove(m)
-                                        break
                         doc.text.append('')
                 else:
                     head_m = textHeadRE.match(line.strip())

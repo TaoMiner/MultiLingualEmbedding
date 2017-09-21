@@ -13,6 +13,7 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-
-s = '\u2019'
-print s.decode('unicode_escape')
+ss = "<TEXT>"
+textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
+m = textHeadRE.match(ss)
+print m
