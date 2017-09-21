@@ -91,27 +91,29 @@ class DataReader:
                         cur_pos += cur_len
                         continue
                     seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
-                    tokens = seg_lines['sentences'][0]['tokens']
-                    # iterate each token such as
-                    # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
-                    for i in range(len(tokens)):
-                        token = tokens[i]
-                        doc.text.append(token['lemma'])
-                        for m in mentions:
-                            if cur_pos+token['characterOffsetBegin']+1 == m[0]:
-                                hasFind = False
-                                ent_len = 0
-                                boundry_index = i-1
-                                for j in range(i, len(tokens), 1):
-                                    if cur_pos+tokens[j]['characterOffsetEnd'] == m[1]:
-                                        hasFind = True
-                                        boundry_index = j
+                    for sent in seg_lines['sentences']:
+                        tokens = sent[0]['tokens']
+                        # iterate each token such as
+                        # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
+                        for i in range(len(tokens)):
+                            token = tokens[i]
+                            doc.text.append(token['lemma'])
+                            for m in mentions:
+                                if cur_pos+token['characterOffsetBegin']+1 == m[0]:
+                                    hasFind = False
+                                    ent_len = 0
+                                    boundry_index = i-1
+                                    for j in range(i, len(tokens), 1):
+                                        if cur_pos+tokens[j]['characterOffsetEnd'] == m[1]:
+                                            hasFind = True
+                                            boundry_index = j
+                                            break
+                                    if hasFind:
+                                        ent_len = boundry_index-i+1
+                                        doc.mentions.append([len(doc.text)-1, ent_len, m[2], ''])
+                                        mentions.remove(m)
                                         break
-                                if hasFind:
-                                    ent_len = boundry_index-i+1
-                                    doc.mentions.append([len(doc.text)-1, ent_len, m[2], ''])
-                                    mentions.remove(m)
-                                    break
+                        doc.text.append('')
                 else:
                     head_m = textHeadRE.match(line.strip())
                     # text starts
