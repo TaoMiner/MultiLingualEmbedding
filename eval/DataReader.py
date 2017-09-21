@@ -84,7 +84,9 @@ class DataReader:
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
-                if len(line.strip()) < 1: continue
+                if len(line.strip()) < 1:
+                    cur_pos += cur_len
+                    continue
                 if isDoc:
                     # text ends
                     tail_m = textTailRE.match(line.strip())
