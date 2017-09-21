@@ -70,7 +70,7 @@ class DataReader:
         files = os.listdir(en_path)
         for f in files:
             if f[:-4] in self.kbpMentions:
-                print("processing {0}!".format(f[:-4]))
+                print("processing {0}!".format(f))
                 tmp_mentions = copy.deepcopy(self.kbpMentions[f[:-4]])
                 self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), tmp_mentions))
 
@@ -82,13 +82,7 @@ class DataReader:
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
-                if len(line) < 1: continue
-                head_m = textHeadRE.match(line.strip())
-                # text starts
-                if head_m != None:
-                    isDoc = True
-                    cur_pos += cur_len
-                    continue
+                if len(line.strip()) < 1: continue
                 if isDoc:
                     # text ends
                     tail_m = textTailRE.match(line.strip())
@@ -97,7 +91,6 @@ class DataReader:
                         cur_pos += cur_len
                         continue
                     seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
-                    print(seg_lines)
                     tokens = seg_lines['sentences'][0]['tokens']
                     # iterate each token such as
                     # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
@@ -119,6 +112,13 @@ class DataReader:
                                     doc.mentions.append([len(doc.text)-1, ent_len, m[2], ''])
                                     mentions.remove(m)
                                     break
+                else:
+                    head_m = textHeadRE.match(line.strip())
+                    # text starts
+                    if head_m != None:
+                        isDoc = True
+                cur_pos += cur_len
+        return doc
 
 if __name__ == '__main__':
     eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
