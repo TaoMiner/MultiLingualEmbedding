@@ -13,7 +13,6 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-ss = "<TEXT>"
-textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
-m = textHeadRE.match(ss)
-print m
+ss = [0,1,2,3,4]
+ss.insert(6,5)
+print ss

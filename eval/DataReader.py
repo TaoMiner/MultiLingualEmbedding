@@ -58,7 +58,12 @@ class DataReader:
                 if freebase_id.startswith('NIL') : continue
                 tmp_mention = [start_p, end_p, freebase_id]
                 doc_mentions = [] if doc_id not in self.kbpMentions else self.kbpMentions[doc_id]
-                doc_mentions.append(tmp_mention)
+                index = 0
+                for m in doc_mentions:
+                    if tmp_mention[0] <= m[0]:
+                        break
+                    index += 1
+                doc_mentions.insert(index, tmp_mention)
                 self.kbpMentions[doc_id] = doc_mentions
                 count += 1
         print("load {0} mentions for {1} docs!".format(count, len(self.kbpMentions)))
