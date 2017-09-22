@@ -81,20 +81,14 @@ class DataReader:
                 self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), self.kbpMentions[f[:-4]]))
 
     # return original text and its count, according to dataset year
-
-    # return class doc for kbp16
-    def readEnDoc(self, file, mentions):
-        doc = Doc()
+    # sents: [[sent,start_pos, sent_line]]
+    def extractKBP16Text(self, file):
+        sents = []
         isDoc = False
         cur_pos = -1
-        mention_index = 0
-        tmp_map = {}
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
-                if len(line.strip()) < 1:
-                    cur_pos += cur_len
-                    continue
                 if isDoc:
                     # text ends or <P>
                     text_m = nonTextRE.match(line.strip())
@@ -103,46 +97,58 @@ class DataReader:
                         cur_pos += cur_len
                         if tail_m != None : isDoc = False
                         continue
-                    seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
-                    for sent in seg_lines['sentences']:
-                        tokens = sent['tokens']
-                        # iterate each token such as
-                        # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
-                        # segment the tokens according to mention boundary
-                        for i in range(len(tokens)):
-                            token = tokens[i]
-                            t_start = cur_pos+token['characterOffsetBegin']+1
-                            t_end = cur_pos + token['characterOffsetEnd'] +1
-                            tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
-                            # put all the mention boundary into the set
-                            for j in range(mention_index, len(mentions),1):
-                                if mentions[j][0] > t_end-1 : break
-                                if mentions[j][0] >= t_start and mentions[j][0] < t_end:
-                                    tmp_seg.append([mentions[j][0]-t_start, j, 0])
-                                if mentions[j][1] >= t_start and mentions[j][1] < t_end:
-                                    tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
-                            if len(tmp_seg) <= 2 :       # if no mention is in this token
-                                doc.text.append(token['lemma'])
-                            else:
-                                tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
-                                for j in range(len(tmp_seg)-1):
-                                    m_index = tmp_seg[j][1]
-                                    if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(token['word']) :
-                                        doc.text.append(token['lemma'])
-                                    elif tmp_seg[j+1][0] > tmp_seg[j][0]:
-                                        doc.text.append(token['word'][tmp_seg[j][0]:tmp_seg[j+1][0]])
-                                    if m_index == -1: continue
-                                    if tmp_seg[j][2] == 0:
-                                        tmp_map[m_index] = len(doc.text)-1
-                                    else:
-                                        doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index], mentions[m_index][2], ''])
-                        doc.text.append('')
+                    sents.append([cur_pos, cur_len, line])
                 else:
                     head_m = textHeadRE.match(line.strip())
                     # text starts
                     if head_m != None:
                         isDoc = True
                 cur_pos += cur_len
+        return sents
+    # return class doc for kbp16
+    def readEnDoc(self, file, mentions):
+        doc = Doc()
+        isDoc = False
+        cur_pos = -1
+        mention_index = 0
+        tmp_map = {}
+        sents = self.extractKBP16Text(file)
+        for sent in sents:
+            cur_pos = sent[1]
+            seg_lines = simplejson.loads(self.nlp.annotate(sent[2], properties=self.en_props))
+            for sent in seg_lines['sentences']:
+                tokens = sent['tokens']
+                # iterate each token such as
+                # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
+                # segment the tokens according to mention boundary
+                for i in range(len(tokens)):
+                    token = tokens[i]
+                    t_start = cur_pos+token['characterOffsetBegin']+1
+                    t_end = cur_pos + token['characterOffsetEnd'] +1
+                    tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
+                    # put all the mention boundary into the set
+                    for j in range(mention_index, len(mentions),1):
+                        if mentions[j][0] > t_end-1 : break
+                        if mentions[j][0] >= t_start and mentions[j][0] < t_end:
+                            tmp_seg.append([mentions[j][0]-t_start, j, 0])
+                        if mentions[j][1] >= t_start and mentions[j][1] < t_end:
+                            tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
+                    if len(tmp_seg) <= 2 :       # if no mention is in this token
+                        doc.text.append(token['lemma'])
+                    else:
+                        tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
+                        for j in range(len(tmp_seg)-1):
+                            m_index = tmp_seg[j][1]
+                            if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(token['word']) :
+                                doc.text.append(token['lemma'])
+                            elif tmp_seg[j+1][0] > tmp_seg[j][0]:
+                                doc.text.append(token['word'][tmp_seg[j][0]:tmp_seg[j+1][0]])
+                            if m_index == -1: continue
+                            if tmp_seg[j][2] == 0:
+                                tmp_map[m_index] = len(doc.text)-1
+                            else:
+                                doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index], mentions[m_index][2], ''])
+                doc.text.append('')
         return doc
 
 if __name__ == '__main__':
