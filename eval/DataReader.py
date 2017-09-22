@@ -12,6 +12,7 @@ CONLL = 1
 
 textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
 textTailRE = re.compile(r'</TEXT>|</HEADLINE>')
+nonTextRE = re.compile(r'^<[^<>]+?>$')
 puncRE = re.compile("[{0}]".format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
 zhpunc = re.compile("[{0}]".format(re.escape(zh_punctuation)))
@@ -86,6 +87,8 @@ class DataReader:
         doc = Doc()
         isDoc = False
         cur_pos = -1
+        mention_index = 0
+        tmp_map = {}
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
@@ -93,33 +96,43 @@ class DataReader:
                     cur_pos += cur_len
                     continue
                 if isDoc:
-                    # text ends
+                    # text ends or <P>
+                    text_m = nonTextRE.match(line.strip())
                     tail_m = textTailRE.match(line.strip())
-                    if tail_m != None:
-                        isDoc = False
+                    if text_m != None or tail_m != None:
                         cur_pos += cur_len
+                        if tail_m != None : isDoc = False
                         continue
                     seg_lines = simplejson.loads(self.nlp.annotate(line, properties=self.en_props))
                     for sent in seg_lines['sentences']:
                         tokens = sent['tokens']
                         # iterate each token such as
                         # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
+                        # segment the tokens according to mention boundary
                         for i in range(len(tokens)):
                             token = tokens[i]
-                            doc.text.append(token['lemma'])
-                            for m in mentions:
-                                if cur_pos+token['characterOffsetBegin']+1 == m[0]:
-                                    hasFind = False
-                                    ent_len = 0
-                                    boundry_index = i-1
-                                    for j in range(i, len(tokens), 1):
-                                        if cur_pos+tokens[j]['characterOffsetEnd'] == m[1]:
-                                            hasFind = True
-                                            boundry_index = j
-                                            break
-                                    if hasFind:
-                                        ent_len = boundry_index-i+1
-                                        doc.mentions.append([len(doc.text)-1, ent_len, m[2], ''])
+                            t_start = cur_pos+token['characterOffsetBegin']+1
+                            t_end = cur_pos + token['characterOffsetEnd']
+                            tmp_seg = []
+                            for j in range(mention_index, len(mentions),1):
+                                if mentions[j][0] > t_end : break
+                                for k in range(2):
+                                    if mentions[j][k] > t_start and mentions[j][k] < t_end:
+                                        tmp_seg.append([mentions[j][k]-t_start, j, k])
+                            if len(tmp_seg) < 1 :
+                                doc.text.append(token['lemma'])
+                            else:
+                                tmp_seg = sorted(tmp_seg, key=lambda x:x[0])
+                                doc.text.append(token['word'][0:tmp_seg[0][0]])
+                                for j in range(len(tmp_seg)-1):
+                                    m_index = tmp_seg[j][1]
+                                    if tmp_seg[j][2] == 0:
+                                        tmp_map[m_index] = len(doc.text)
+                                    else:
+                                        doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index], mentions[m_index][2], ''])
+                                    if tmp_seg[j+1][0] > tmp_seg[j][0]:
+                                        doc.text.append(token['word'][tmp_seg[j][0]:tmp_seg[j+1][0]])
+                                doc.text.append(token['word'][tmp_seg[len(tmp_seg)-1][0]:])
                         doc.text.append('')
                 else:
                     head_m = textHeadRE.match(line.strip())

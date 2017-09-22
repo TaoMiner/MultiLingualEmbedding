@@ -13,6 +13,8 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-ss = [0,1,2,3,4]
-ss.insert(6,5)
-print ss
+nonTextRE = re.compile(r'^<[^<>]+?>$')
+
+ss = '<a hrefsfef>'
+m = nonTextRE.match(ss)
+print m
