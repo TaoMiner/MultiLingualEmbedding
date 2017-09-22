@@ -113,26 +113,28 @@ class DataReader:
                             token = tokens[i]
                             t_start = cur_pos+token['characterOffsetBegin']+1
                             t_end = cur_pos + token['characterOffsetEnd']
-                            tmp_seg = []
+                            tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
+                            # put all the mention boundary into the set
                             for j in range(mention_index, len(mentions),1):
                                 if mentions[j][0] > t_end : break
                                 for k in range(2):
-                                    if mentions[j][k] > t_start and mentions[j][k] < t_end:
+                                    if mentions[j][k] >= t_start and mentions[j][k] <= t_end:
                                         tmp_seg.append([mentions[j][k]-t_start, j, k])
-                            if len(tmp_seg) < 1 :
+                            if len(tmp_seg) <= 2 :       # if no mention is in this token
                                 doc.text.append(token['lemma'])
                             else:
-                                tmp_seg = sorted(tmp_seg, key=lambda x:x[0])
-                                doc.text.append(token['word'][0:tmp_seg[0][0]])
+                                tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
                                 for j in range(len(tmp_seg)-1):
                                     m_index = tmp_seg[j][1]
-                                    if tmp_seg[j][2] == 0:
-                                        tmp_map[m_index] = len(doc.text)
-                                    else:
-                                        doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index], mentions[m_index][2], ''])
-                                    if tmp_seg[j+1][0] > tmp_seg[j][0]:
+                                    if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(token['word']) :
+                                        doc.text.append(token['lemma'])
+                                    elif tmp_seg[j+1][0] > tmp_seg[j][0]:
                                         doc.text.append(token['word'][tmp_seg[j][0]:tmp_seg[j+1][0]])
-                                doc.text.append(token['word'][tmp_seg[len(tmp_seg)-1][0]:])
+                                    if m_index == -1: continue
+                                    if tmp_seg[j][2] == 0:
+                                        tmp_map[m_index] = len(doc.text)-1
+                                    else:
+                                        doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index], mentions[m_index][2], ''])
                         doc.text.append('')
                 else:
                     head_m = textHeadRE.match(line.strip())
