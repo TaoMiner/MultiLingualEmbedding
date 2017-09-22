@@ -13,8 +13,9 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-nonTextRE = re.compile(r'^<[^<>]+?>$')
+eleTagRE = re.compile(r'(<[^<>]+?>)([^<>]+?)(</[^<>]+?>)')
+propTagRE = re.compile(r'(<[^<>]+?/>)')
 
-ss = '<a hrefsfef>'
-m = nonTextRE.match(ss)
-print m
+ss = 'w<wefjioawe/>wefkp<wefef/>'
+for m in propTagRE.finditer(ss):
+    print m.span(1)[1]

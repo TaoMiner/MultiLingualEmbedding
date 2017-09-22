@@ -13,10 +13,12 @@ CONLL = 1
 textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
 textTailRE = re.compile(r'</TEXT>|</HEADLINE>')
 nonTextRE = re.compile(r'^<[^<>]+?>$')
+eleTagRE = re.compile(r'(<[^<>]+?>)([^<>]+?)(</[^<>]+?>)')
+propTagRE = re.compile(r'(<[^<>]+?/>)')
 puncRE = re.compile("[{0}]".format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
 zhpunc = re.compile("[{0}]".format(re.escape(zh_punctuation)))
-tagRE = re.compile(r'<.*?>')
+
 
 class Doc:
     def __init__(self):
@@ -81,8 +83,7 @@ class DataReader:
                 self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), self.kbpMentions[f[:-4]]))
 
     # return original text and its count, according to dataset year
-    # sents: [[sent,start_pos, sent_line]]
-    def extractKBP16Text(self, file):
+    def extractKBP16DfText(self, file):
         sents = []
         isDoc = False
         cur_pos = -1
@@ -97,7 +98,31 @@ class DataReader:
                         cur_pos += cur_len
                         if tail_m != None : isDoc = False
                         continue
-                    sents.append([cur_pos, cur_len, line])
+                    sents.append([cur_pos, line])
+                else:
+                    head_m = textHeadRE.match(line.strip())
+                    # text starts
+                    if head_m != None:
+                        isDoc = True
+                cur_pos += cur_len
+        return sents
+    # sents: [[sent,start_pos, sent_line]]
+    def extractKBP16NwText(self, file):
+        sents = []
+        isDoc = False
+        cur_pos = -1
+        with codecs.open(file, 'r') as fin:
+            for line in fin:
+                cur_len = len(line)
+                if isDoc:
+                    # text ends or <P>
+                    text_m = nonTextRE.match(line.strip())
+                    tail_m = textTailRE.match(line.strip())
+                    if text_m != None or tail_m != None:
+                        cur_pos += cur_len
+                        if tail_m != None : isDoc = False
+                        continue
+                    sents.append([cur_pos, line])
                 else:
                     head_m = textHeadRE.match(line.strip())
                     # text starts
@@ -108,14 +133,29 @@ class DataReader:
     # return class doc for kbp16
     def readEnDoc(self, file, mentions):
         doc = Doc()
-        isDoc = False
-        cur_pos = -1
         mention_index = 0
         tmp_map = {}
-        sents = self.extractKBP16Text(file)
+        sents = self.extractKBP16NwText(file)
         for sent in sents:
-            cur_pos = sent[1]
-            seg_lines = simplejson.loads(self.nlp.annotate(sent[2], properties=self.en_props))
+            cur_pos = sent[0]
+            line = sent[1]
+            # some line contains <>..</>   or  <.../>
+            tag_pos = []
+            tag_len = 0
+            tag_index = 0
+            for etm in eleTagRE.finditer(line):
+                tag_pos.append(etm.span(1)).append(etm.span(3))
+            for ptm in propTagRE.finditer(line):
+                tag_pos.append(ptm.span(1))
+            if len(tag_pos) > 0:
+                tag_pos = sorted(tag_pos, key=lambda x:x[0])
+                tmp_line = line[0:tag_pos[0][0]]
+                for i in range(len(tag_pos)-1):
+                    tmp_line += line[tag_pos[i][1]:tag_pos[i+1][0]]
+                tmp_line += line[tag_pos[len(tag_pos)][1]:]
+                seg_lines = simplejson.loads(self.nlp.annotate(sent[1], properties=self.en_props))
+            else:
+                seg_lines = simplejson.loads(self.nlp.annotate(sent[1], properties=self.en_props))
             for sent in seg_lines['sentences']:
                 tokens = sent['tokens']
                 # iterate each token such as
@@ -123,8 +163,14 @@ class DataReader:
                 # segment the tokens according to mention boundary
                 for i in range(len(tokens)):
                     token = tokens[i]
-                    t_start = cur_pos+token['characterOffsetBegin']+1
-                    t_end = cur_pos + token['characterOffsetEnd'] +1
+                    t_start = cur_pos + token['characterOffsetBegin'] + 1
+                    t_end = cur_pos + token['characterOffsetEnd'] + 1
+                    if tag_index < len(tag_pos) and t_start >= tag_pos[tag_index][0]:
+                        tag_len += tag_pos[tag_index][1] - tag_pos[tag_index][0]
+                        tag_index += 1
+                    if len(tag_pos) > 0:
+                        t_start += tag_len
+                        t_end += tag_len
                     tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
                     # put all the mention boundary into the set
                     for j in range(mention_index, len(mentions),1):
