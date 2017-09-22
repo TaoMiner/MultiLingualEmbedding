@@ -112,14 +112,15 @@ class DataReader:
                         for i in range(len(tokens)):
                             token = tokens[i]
                             t_start = cur_pos+token['characterOffsetBegin']+1
-                            t_end = cur_pos + token['characterOffsetEnd']
+                            t_end = cur_pos + token['characterOffsetEnd'] +1
                             tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
                             # put all the mention boundary into the set
                             for j in range(mention_index, len(mentions),1):
-                                if mentions[j][0] > t_end : break
-                                for k in range(2):
-                                    if mentions[j][k] >= t_start and mentions[j][k] <= t_end:
-                                        tmp_seg.append([mentions[j][k]-t_start, j, k])
+                                if mentions[j][0] > t_end-1 : break
+                                if mentions[j][0] >= t_start and mentions[j][0] < t_end:
+                                    tmp_seg.append([mentions[j][0]-t_start, j, 0])
+                                if mentions[j][1] >= t_start and mentions[j][1] < t_end:
+                                    tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
                             if len(tmp_seg) <= 2 :       # if no mention is in this token
                                 doc.text.append(token['lemma'])
                             else:
