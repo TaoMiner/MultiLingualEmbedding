@@ -80,9 +80,11 @@ class DataReader:
         for f in files:
             if f[:-4] in self.kbpMentions:
                 print("processing {0}!".format(f))
-                self.en_corpus.append(self.readEnDoc(os.path.join(en_path, f), self.kbpMentions[f[:-4]]))
+                sents = self.extractKBP16DfText(os.path.join(en_path, f))
+                self.en_corpus.append(self.readEnDoc(sents, self.kbpMentions[f[:-4]]))
 
     # return original text and its count, according to dataset year
+    # skip all the lines <...>
     def extractKBP16DfText(self, file):
         sents = []
         isDoc = False
@@ -90,20 +92,9 @@ class DataReader:
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 cur_len = len(line)
-                if isDoc:
-                    # text ends or <P>
-                    text_m = nonTextRE.match(line.strip())
-                    tail_m = textTailRE.match(line.strip())
-                    if text_m != None or tail_m != None:
-                        cur_pos += cur_len
-                        if tail_m != None : isDoc = False
-                        continue
+                m = nonTextRE.match(line.strip())
+                if m == None :
                     sents.append([cur_pos, line])
-                else:
-                    head_m = textHeadRE.match(line.strip())
-                    # text starts
-                    if head_m != None:
-                        isDoc = True
                 cur_pos += cur_len
         return sents
     # sents: [[sent,start_pos, sent_line]]
@@ -131,11 +122,10 @@ class DataReader:
                 cur_pos += cur_len
         return sents
     # return class doc for kbp16
-    def readEnDoc(self, file, mentions):
+    def readEnDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
         tmp_map = {}
-        sents = self.extractKBP16NwText(file)
         for sent in sents:
             cur_pos = sent[0]
             line = sent[1]
@@ -203,4 +193,4 @@ if __name__ == '__main__':
     dr = DataReader()
     dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
     dr.setNlpTool(stanfordNlp_path)
-    dr.readKbp16(eval_path+'2016/eval/source_documents/eng/nw/')
+    dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/')
