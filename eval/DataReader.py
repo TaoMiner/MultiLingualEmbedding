@@ -187,7 +187,7 @@ class DataReader:
                     if mentions[j][0] > t_end-1 : break
                     if mentions[j][0] >= t_start and mentions[j][0] < t_end:
                         tmp_seg.append([mentions[j][0]-t_start, j, 0])
-                    if mentions[j][1] >= t_start and mentions[j][1] <= t_end:
+                    if mentions[j][1] >= t_start and mentions[j][1] < t_end:
                         tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
                 if len(tmp_seg) <= 2 :       # if no mention is in this token
                     doc.text.append(lemma)
@@ -196,17 +196,20 @@ class DataReader:
                     print("ts:{0},te:{1},seg:{2}".format(t_start, t_end, tmp_seg))
                     for j in range(len(tmp_seg)-1):
                         m_index = tmp_seg[j][1]
+                        add_text = 1
                         if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(w) :
                             doc.text.append(lemma)
                         elif tmp_seg[j+1][0] > tmp_seg[j][0]:
                             doc.text.append(w[tmp_seg[j][0]:tmp_seg[j+1][0]])
+                        else:
+                            add_text = 0
                         if m_index == -1 or m_index >= 1000: continue
                         if tmp_seg[j][2] == 0:
                             tmp_map[m_index] = len(doc.text)-1
-                        else:
-                            if m_index in tmp_map:
-                                doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index] - 1, mentions[m_index][2], doc.text[tmp_map[m_index]:len(doc.text)-1]])
+                        elif m_index in tmp_map:
+                            doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text]])
         print(doc.mentions)
+        print(doc.text)
         return doc
 
 if __name__ == '__main__':
