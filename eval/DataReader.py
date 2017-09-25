@@ -3,12 +3,11 @@ import regex as re
 import string
 import os
 import copy
-from stanfordcorenlp import StanfordCoreNLP
+from pycorenlp import StanfordCoreNLP
 import simplejson
+import jieba
 
-KBP16 = 3
-KBP15 = 2
-CONLL = 1
+# jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
 
 textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
 textTailRE = re.compile(r'</TEXT>|</HEADLINE>')
@@ -28,26 +27,39 @@ class Doc:
 
 class DataReader:
     def __init__(self):
-        self.en_corpus = []        # [doc, ...]
-        self.zh_corpus = []         # [doc, ...]
-        self.es_corpus = []         # [doc, ...]
-        self.kbpMentions = {}          # {doc_id:[[startP, endP, wikiId],...], ...}
+        self.lang = ''
         self.nlp = None
+        self.prop = None
 
-    def setNlpTool(self, path):
-        self.nlp = StanfordCoreNLP(path)
-        self.en_props = {'annotators': 'tokenize,lemma', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
-        self.es_props = {'annotators': 'tokenize,lemma', 'pipelineLanguage': 'es', 'outputFormat': 'json'}
+    def initNlpTool(self, url, lang):
+        if not isinstance(self.nlp, None):return
+        self.lang = lang
+        if lang != 'zh':
+            self.nlp = StanfordCoreNLP(url)
+            self.prop = {'annotators': 'tokenize', 'outputFormat': 'json'}
+        elif os.path.isfile(url):
+            jieba.set_dictionary(url)
+            self.nlp = jieba
         print("set nlp tool!")
 
-    # doc_type: 1 -- conll; 2 -- kbp15; 3 -- kbp16
-    def readDoc(self, doc_type):
-        if doc_type == 3:
-            self.readKbp16()
-        else: print("No reader for such doc!")
+    def tokenize(self, sent):
+        if isinstance(self.nlp, None):
+            print("please init nlp tool!")
+            return
+        tokens = []
+        if self.lang == 'zh':
+            tokens = self.nlp.tokenize(sent)
+        else:
+            results = self.nlp.annotate(sent, properties=self.prop)
+            for sent in results['sentences']:
+                for token in sent:
+                    tokens.append([token['word'], token['characterOffsetBegin'], token['characterOffsetEnd'], token['lemma']])
+        return tokens
 
+    # {doc_id:[[startP, endP, wikiId, mention_str],...], ...}
     def loadKbpMentions(self, file):
         count = 0
+        mentions = {}
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -58,36 +70,45 @@ class DataReader:
                 start_p = int(tmp_items[1])
                 end_p = int(tmp_items[2])
                 freebase_id = items[4]
+                mention_str = items[2]
                 if freebase_id.startswith('NIL') : continue
-                tmp_mention = [start_p, end_p, freebase_id]
-                doc_mentions = [] if doc_id not in self.kbpMentions else self.kbpMentions[doc_id]
+                tmp_mention = [start_p, end_p, freebase_id, mention_str]
+                doc_mentions = [] if doc_id not in mentions else mentions[doc_id]
                 index = 0
                 for m in doc_mentions:
                     if tmp_mention[0] <= m[0]:
                         break
                     index += 1
                 doc_mentions.insert(index, tmp_mention)
-                self.kbpMentions[doc_id] = doc_mentions
+                mentions[doc_id] = doc_mentions
                 count += 1
-        print("load {0} mentions for {1} docs!".format(count, len(self.kbpMentions)))
+        print("load {0} mentions for {1} docs!".format(count, len(mentions)))
+        return mentions
 
-
-    def readKbp16(self, en_path):
-        if len(self.kbpMentions) < 1 or not os.path.isdir(en_path) :
+    def readKbp16(self, path, mentions, doc_type):
+        if len(mentions) < 1 or not os.path.isdir(path) :
             print("please check kbp mentions and input path!")
             return
-        files = os.listdir(en_path)
+        files = os.listdir(path)
+        corpus = []
         for f in files:
-            if f[:-4] in self.kbpMentions:
+            if f[:-4] in mentions:
                 print("processing {0}!".format(f))
-                sents = self.extractKBP16DfText(os.path.join(en_path, f))
-                self.en_corpus.append(self.readEnDoc(sents, self.kbpMentions[f[:-4]]))
+                if doc_type=='df':
+                    sents = self.extractKBP16DfText(os.path.join(path, f))
+                elif doc_type == 'nw':
+                    sents = self.extractKBP16NwText(os.path.join(path, f))
+                else:
+                    sents = self.extractKBP15Text(os.path.join(path, f))
+                corpus.append(self.readDoc(sents, mentions[f[:-4]]))
 
     # return original text and its count, according to dataset year
+    def extractKBP15Text(self, file):
+        sents = []
+        return sents
     # skip all the lines <...>
     def extractKBP16DfText(self, file):
         sents = []
-        isDoc = False
         cur_pos = -1
         with codecs.open(file, 'r') as fin:
             for line in fin:
@@ -121,8 +142,8 @@ class DataReader:
                         isDoc = True
                 cur_pos += cur_len
         return sents
-    # return class doc for kbp16
-    def readEnDoc(self, sents, mentions):
+    # return class doc
+    def readDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
         tmp_map = {}
@@ -134,63 +155,62 @@ class DataReader:
             tag_len = 0
             tag_index = 0
             for etm in eleTagRE.finditer(line):
-                tag_pos.append(etm.span(1)).append(etm.span(3))
+                tag_pos.append(etm.span(1))
+                tag_pos.append(etm.span(3))
             for ptm in propTagRE.finditer(line):
                 tag_pos.append(ptm.span(1))
+            tmp_line = line
             if len(tag_pos) > 0:
                 tag_pos = sorted(tag_pos, key=lambda x:x[0])
                 tmp_line = line[0:tag_pos[0][0]]
                 for i in range(len(tag_pos)-1):
                     tmp_line += line[tag_pos[i][1]:tag_pos[i+1][0]]
-                tmp_line += line[tag_pos[len(tag_pos)][1]:]
-                seg_lines = simplejson.loads(self.nlp.annotate(sent[1], properties=self.en_props))
-            else:
-                seg_lines = simplejson.loads(self.nlp.annotate(sent[1], properties=self.en_props))
-            for sent in seg_lines['sentences']:
-                tokens = sent['tokens']
-                # iterate each token such as
-                # {u'index': 1, u'word': u'we', u'lemma': u'we', u'after': u' ', u'pos': u'PRP', u'characterOffsetEnd': 2, u'characterOffsetBegin': 0, u'originalText': u'we', u'before': u''}
-                # segment the tokens according to mention boundary
-                for i in range(len(tokens)):
-                    token = tokens[i]
-                    t_start = cur_pos + token['characterOffsetBegin'] + 1
-                    t_end = cur_pos + token['characterOffsetEnd'] + 1
-                    if tag_index < len(tag_pos) and t_start >= tag_pos[tag_index][0]:
-                        tag_len += tag_pos[tag_index][1] - tag_pos[tag_index][0]
-                        tag_index += 1
-                    if len(tag_pos) > 0:
-                        t_start += tag_len
-                        t_end += tag_len
-                    tmp_seg = [[0, -1, 0], [len(token['word']), 1000, 1]]
-                    # put all the mention boundary into the set
-                    for j in range(mention_index, len(mentions),1):
-                        if mentions[j][0] > t_end-1 : break
-                        if mentions[j][0] >= t_start and mentions[j][0] < t_end:
-                            tmp_seg.append([mentions[j][0]-t_start, j, 0])
-                        if mentions[j][1] >= t_start and mentions[j][1] < t_end:
-                            tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
-                    if len(tmp_seg) <= 2 :       # if no mention is in this token
-                        doc.text.append(token['lemma'])
-                    else:
-                        tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
-                        for j in range(len(tmp_seg)-1):
-                            m_index = tmp_seg[j][1]
-                            if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(token['word']) :
-                                doc.text.append(token['lemma'])
-                            elif tmp_seg[j+1][0] > tmp_seg[j][0]:
-                                doc.text.append(token['word'][tmp_seg[j][0]:tmp_seg[j+1][0]])
-                            if m_index == -1: continue
-                            if tmp_seg[j][2] == 0:
-                                tmp_map[m_index] = len(doc.text)-1
-                            else:
+                tmp_line += line[tag_pos[len(tag_pos)-1][1]:]
+            tokens = self.tokenize(tmp_line)
+            # tokens : [[word, start, end, lemma],...]  no lemma for chinese
+            for i in range(len(tokens)):
+                token = tokens[i]
+                w = token[0]
+                lemma = w if self.lang=='zh' else token[3]
+                t_start = cur_pos + token[1] + 1
+                t_end = cur_pos + token[2] + 1
+                if tag_index < len(tag_pos) and t_start + tag_len >= tag_pos[tag_index][0] + cur_pos +1:
+                    tag_len += tag_pos[tag_index][1] - tag_pos[tag_index][0]
+                    tag_index += 1
+                if len(tag_pos) > 0:
+                    t_start += tag_len
+                    t_end += tag_len
+                tmp_seg = [[0, -1, 0], [len(w), 1000, 1]]
+                # put all the mention boundary into the set
+                for j in range(mention_index, len(mentions),1):
+                    if mentions[j][0] > t_end-1 : break
+                    if mentions[j][0] >= t_start and mentions[j][0] < t_end:
+                        tmp_seg.append([mentions[j][0]-t_start, j, 0])
+                    if mentions[j][1] >= t_start and mentions[j][1] < t_end:
+                        tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
+                if len(tmp_seg) <= 2 :       # if no mention is in this token
+                    doc.text.append(lemma)
+                else:
+                    tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
+                    for j in range(len(tmp_seg)-1):
+                        m_index = tmp_seg[j][1]
+                        if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(w) :
+                            doc.text.append(lemma)
+                        elif tmp_seg[j+1][0] > tmp_seg[j][0]:
+                            doc.text.append(w[tmp_seg[j][0]:tmp_seg[j+1][0]])
+                        if m_index == -1: continue
+                        if tmp_seg[j][2] == 0:
+                            tmp_map[m_index] = len(doc.text)-1
+                        else:
+                            if m_index in tmp_map:
                                 doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index], mentions[m_index][2], ''])
-                doc.text.append('')
         return doc
 
 if __name__ == '__main__':
     eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
-    stanfordNlp_path = '/home/caoyx/stanford-corenlp_38'
+    stanfordNlp_server = 'http://localhost:9001'
+    jieba_dict = '/home/caoyx/data/dict.txt.big'
     dr = DataReader()
-    dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
-    dr.setNlpTool(stanfordNlp_path)
-    dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/')
+    dr.initNlpTool(stanfordNlp_server, 'en')
+    mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
+    dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
