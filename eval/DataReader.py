@@ -227,8 +227,8 @@ if __name__ == '__main__':
     jieba_dict = '/home/caoyx/data/dict.txt.big'
     dr = DataReader()
     #dr.initNlpTool(stanfordNlp_server, 'en')
-    #dr.initNlpTool(jieba_dict, 'zh')
-    sents = dr.extractKBP15Text(eval_path+'2015/eval/source_documents/cmn/newswire/')
-    print(sents)
+    dr.initNlpTool(jieba_dict, 'zh')
     #mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
-    dr.readKbp(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
+    #dr.readKbp(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
+    mentions = dr.loadKbpMentions(eval_path+'2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab')
+    dr.readKbp(eval_path+'2015/eval/source_documents/cmn/newswire/', mentions, '15')
