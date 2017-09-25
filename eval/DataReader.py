@@ -89,31 +89,34 @@ class DataReader:
         print("load {0} mentions for {1} docs!".format(count, len(mentions)))
         return mentions
 
-    def readKbp16(self, path, mentions, doc_type):
+    def readKbp(self, path, mentions, doc_type):
         if len(mentions) < 1 or not os.path.isdir(path) :
             print("please check kbp mentions and input path!")
             return
         files = os.listdir(path)
         corpus = []
+        offset = -4
+        if doc_type == 'df':
+            extract = self.extractKBP16DfText
+        elif doc_type == 'nw':
+            extract = self.extractKBP16NwText
+        else:
+            extract = self.extractKBP15Text
+            offset = -11
         for f in files:
-            if f[:-4] in mentions:
+            if f[:offset] in mentions:
                 print("processing {0}!".format(f))
-                if doc_type=='df':
-                    sents = self.extractKBP16DfText(os.path.join(path, f))
-                elif doc_type == 'nw':
-                    sents = self.extractKBP16NwText(os.path.join(path, f))
-                else:
-                    sents = self.extractKBP15Text(os.path.join(path, f))
-                corpus.append(self.readDoc(sents, mentions[f[:-4]]))
+                sents = extract(os.path.join(path, f))
+                corpus.append(self.readDoc(sents, mentions[f[:offset]]))
 
     # return original text and its count, according to dataset year
     def extractKBP15Text(self, file):
         sents = []
         tree = ET.ElementTree(file=file)
-        for seg_e in tree.iterfind('TEXT/SEG'):
+        for seg_e in tree.iterfind('DOC/TEXT/SEG'):
             cur_pos = int(seg_e.attrib['start_char'])
             for text_e in seg_e.iter(tag='ORIGINAL_TEXT'):
-                sents.append([cur_pos, text_e.text])
+                sents.append([cur_pos-39, text_e.text])     # ignore the begining xml definition
         return sents
     # skip all the lines <...>
     def extractKBP16DfText(self, file):
@@ -228,4 +231,4 @@ if __name__ == '__main__':
     sents = dr.extractKBP15Text(eval_path+'2015/eval/source_documents/cmn/newswire/')
     print(sents)
     #mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
-    #dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
+    dr.readKbp(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
