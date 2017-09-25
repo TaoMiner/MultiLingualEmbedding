@@ -6,6 +6,10 @@ import copy
 from pycorenlp import StanfordCoreNLP
 import simplejson
 import jieba
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 # jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
 
@@ -105,6 +109,11 @@ class DataReader:
     # return original text and its count, according to dataset year
     def extractKBP15Text(self, file):
         sents = []
+        tree = ET.ElementTree(file=file)
+        for seg_e in tree.iterfind('TEXT/SEG'):
+            cur_pos = int(seg_e.attrib['start_char'])
+            for text_e in seg_e.iter(tag='ORIGINAL_TEXT'):
+                sents.append([cur_pos, text_e.text])
         return sents
     # skip all the lines <...>
     def extractKBP16DfText(self, file):
@@ -215,6 +224,8 @@ if __name__ == '__main__':
     jieba_dict = '/home/caoyx/data/dict.txt.big'
     dr = DataReader()
     #dr.initNlpTool(stanfordNlp_server, 'en')
-    dr.initNlpTool(jieba_dict, 'zh')
-    mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
-    dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
+    #dr.initNlpTool(jieba_dict, 'zh')
+    sents = dr.extractKBP15Text(eval_path+'2015/eval/source_documents/cmn/newswire/')
+    print(sents)
+    #mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
+    #dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
