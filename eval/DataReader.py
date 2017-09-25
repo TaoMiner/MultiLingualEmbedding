@@ -114,7 +114,7 @@ class DataReader:
             for line in fin:
                 cur_len = len(line)
                 m = nonTextRE.match(line.strip())
-                if m == None :
+                if m == None and len(line.strip()) > 0:
                     sents.append([cur_pos, line])
                 cur_pos += cur_len
         return sents
@@ -134,7 +134,8 @@ class DataReader:
                         cur_pos += cur_len
                         if tail_m != None : isDoc = False
                         continue
-                    sents.append([cur_pos, line])
+                    if len(line.strip()) > 0:
+                        sents.append([cur_pos, line])
                 else:
                     head_m = textHeadRE.match(line.strip())
                     # text starts
@@ -146,7 +147,6 @@ class DataReader:
     def readDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
-        print(mentions)
         tmp_map = {}
         for sent in sents:
             cur_pos = sent[0]
@@ -167,14 +167,14 @@ class DataReader:
                 for i in range(len(tag_pos)-1):
                     tmp_line += line[tag_pos[i][1]:tag_pos[i+1][0]]
                 tmp_line += line[tag_pos[len(tag_pos)-1][1]:]
+            lspace = len(tmp_line) - len(tmp_line.lstrip())
             tokens = self.tokenize(tmp_line)
             # tokens : [[word, start, end, lemma],...]  no lemma for chinese
             for token in tokens:
-                print("curpos:{0},token:{1}".format(cur_pos, token))
                 w = token[0]
                 lemma = w if self.lang=='zh' else token[3]
-                t_start = cur_pos + token[1] + 1
-                t_end = cur_pos + token[2] + 1
+                t_start = cur_pos + token[1] + 1 + lspace
+                t_end = cur_pos + token[2] + 1 + lspace
                 if tag_index < len(tag_pos) and t_start + tag_len >= tag_pos[tag_index][0] + cur_pos +1:
                     tag_len += tag_pos[tag_index][1] - tag_pos[tag_index][0]
                     tag_index += 1
@@ -193,7 +193,6 @@ class DataReader:
                     doc.text.append(lemma)
                 else:
                     tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
-                    print("ts:{0},te:{1},seg:{2}".format(t_start, t_end, tmp_seg))
                     for j in range(len(tmp_seg)-1):
                         m_index = tmp_seg[j][1]
                         add_text = 1
@@ -205,11 +204,9 @@ class DataReader:
                             add_text = 0
                         if m_index == -1 or m_index >= 1000: continue
                         if tmp_seg[j][2] == 0:
-                            tmp_map[m_index] = len(doc.text)-1
+                            tmp_map[m_index] = len(doc.text)-add_text
                         elif m_index in tmp_map:
                             doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text]])
-        print(doc.mentions)
-        print(doc.text)
         return doc
 
 if __name__ == '__main__':
