@@ -13,8 +13,11 @@ except ImportError:
 
 # jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
 
+xmlDefRE = re.compile(r'<?xml.*?>')
 textHeadRE = re.compile(r'<TEXT>|<HEADLINE>')
 textTailRE = re.compile(r'</TEXT>|</HEADLINE>')
+sourceRE = re.compile(r'<SOURCE>.*</SOURCE>')
+timeRE = re.compile(r'<DATE_TIME>.*</DATE_TIME>')
 nonTextRE = re.compile(r'^<[^<>]+?>$')
 eleTagRE = re.compile(r'(<[^<>]+?>)([^<>]+?)(</[^<>]+?>)')
 propTagRE = re.compile(r'(<[^<>]+?/>)')
@@ -116,7 +119,12 @@ class DataReader:
         for seg_e in tree.iterfind('DOC/TEXT/SEG'):
             cur_pos = int(seg_e.attrib['start_char'])
             for text_e in seg_e.iter(tag='ORIGINAL_TEXT'):
-                sents.append([cur_pos-39, text_e.text])     # ignore the begining xml definition
+                line = text_e.text
+                source_m = sourceRE.match(line.strip())
+                time_m = timeRE.match(line.strip())
+                m = nonTextRE.match(line.strip())
+                if m == None and len(line.strip()) > 0 and source_m!= None and time_m!=None:
+                    sents.append([cur_pos-40, text_e.text])     # ignore the begining xml definition
         return sents
     # skip all the lines <...>
     def extractKBP16DfText(self, file):
@@ -159,8 +167,10 @@ class DataReader:
     def readDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
+        print(len(mentions))
         tmp_map = {}
         for sent in sents:
+            print(sent)
             cur_pos = sent[0]
             line = sent[1]
             # some line contains <>..</>   or  <.../>
@@ -179,6 +189,7 @@ class DataReader:
                 for i in range(len(tag_pos)-1):
                     tmp_line += line[tag_pos[i][1]:tag_pos[i+1][0]]
                 tmp_line += line[tag_pos[len(tag_pos)-1][1]:]
+            if len(tmp_line.strip()) < 1: continue
             lspace = len(tmp_line) - len(tmp_line.lstrip())
             tokens = self.tokenize(tmp_line)
             # tokens : [[word, start, end, lemma],...]  no lemma for chinese
@@ -219,6 +230,7 @@ class DataReader:
                             tmp_map[m_index] = len(doc.text)-add_text
                         elif m_index in tmp_map:
                             doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text]])
+        print(len(doc.mentions))
         return doc
 
 if __name__ == '__main__':
