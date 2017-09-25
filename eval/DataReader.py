@@ -32,18 +32,18 @@ class DataReader:
         self.prop = None
 
     def initNlpTool(self, url, lang):
-        if not isinstance(self.nlp, None):return
+        if not isinstance(self.nlp, type(None)):return
         self.lang = lang
         if lang != 'zh':
             self.nlp = StanfordCoreNLP(url)
-            self.prop = {'annotators': 'tokenize', 'outputFormat': 'json'}
+            self.prop = {'annotators': 'tokenize, ssplit, lemma', 'outputFormat': 'json'}
         elif os.path.isfile(url):
             jieba.set_dictionary(url)
             self.nlp = jieba
         print("set nlp tool!")
 
     def tokenize(self, sent):
-        if isinstance(self.nlp, None):
+        if isinstance(self.nlp, type(None)):
             print("please init nlp tool!")
             return
         tokens = []
@@ -52,7 +52,7 @@ class DataReader:
         else:
             results = self.nlp.annotate(sent, properties=self.prop)
             for sent in results['sentences']:
-                for token in sent:
+                for token in sent['tokens']:
                     tokens.append([token['word'], token['characterOffsetBegin'], token['characterOffsetEnd'], token['lemma']])
         return tokens
 
@@ -146,6 +146,7 @@ class DataReader:
     def readDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
+        print(mentions)
         tmp_map = {}
         for sent in sents:
             cur_pos = sent[0]
@@ -168,8 +169,8 @@ class DataReader:
                 tmp_line += line[tag_pos[len(tag_pos)-1][1]:]
             tokens = self.tokenize(tmp_line)
             # tokens : [[word, start, end, lemma],...]  no lemma for chinese
-            for i in range(len(tokens)):
-                token = tokens[i]
+            for token in tokens:
+                print("curpos:{0},token:{1}".format(cur_pos, token))
                 w = token[0]
                 lemma = w if self.lang=='zh' else token[3]
                 t_start = cur_pos + token[1] + 1
@@ -186,24 +187,26 @@ class DataReader:
                     if mentions[j][0] > t_end-1 : break
                     if mentions[j][0] >= t_start and mentions[j][0] < t_end:
                         tmp_seg.append([mentions[j][0]-t_start, j, 0])
-                    if mentions[j][1] >= t_start and mentions[j][1] < t_end:
+                    if mentions[j][1] >= t_start and mentions[j][1] <= t_end:
                         tmp_seg.append([mentions[j][1]-t_start+1, j, 1])
                 if len(tmp_seg) <= 2 :       # if no mention is in this token
                     doc.text.append(lemma)
                 else:
                     tmp_seg = sorted(tmp_seg, key=lambda x:(x[0], x[2], x[1]))
+                    print("ts:{0},te:{1},seg:{2}".format(t_start, t_end, tmp_seg))
                     for j in range(len(tmp_seg)-1):
                         m_index = tmp_seg[j][1]
                         if tmp_seg[j][0] == 0 and tmp_seg[j+1][0] == len(w) :
                             doc.text.append(lemma)
                         elif tmp_seg[j+1][0] > tmp_seg[j][0]:
                             doc.text.append(w[tmp_seg[j][0]:tmp_seg[j+1][0]])
-                        if m_index == -1: continue
+                        if m_index == -1 or m_index >= 1000: continue
                         if tmp_seg[j][2] == 0:
                             tmp_map[m_index] = len(doc.text)-1
                         else:
                             if m_index in tmp_map:
-                                doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index], mentions[m_index][2], ''])
+                                doc.mentions.append([tmp_map[m_index], len(doc.text) - tmp_map[m_index] - 1, mentions[m_index][2], doc.text[tmp_map[m_index]:len(doc.text)-1]])
+        print(doc.mentions)
         return doc
 
 if __name__ == '__main__':
@@ -211,6 +214,7 @@ if __name__ == '__main__':
     stanfordNlp_server = 'http://localhost:9001'
     jieba_dict = '/home/caoyx/data/dict.txt.big'
     dr = DataReader()
-    dr.initNlpTool(stanfordNlp_server, 'en')
+    #dr.initNlpTool(stanfordNlp_server, 'en')
+    dr.initNlpTool(jieba_dict, 'zh')
     mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
     dr.readKbp16(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
