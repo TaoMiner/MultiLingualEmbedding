@@ -49,10 +49,10 @@ def extractTitle(file, id_set, id_map):
                     id_map[id] = tmp_list
 
 kbid_re = re.compile(r'<http://rdf.basekb.com/ns/(.*?)>')
-label_re = re.compile(r'"(.*?)"@(en|es|zh)')
+enlabel_re = re.compile(r'^"(.*?)"@en$')
 wiki_link_re = re.compile(r'<http://(en|es|zh).wikipedia.org/(.*?)>')
 
-def extractTitleFromRefkb(path, id_set, id_map):
+def extractTitleFromRefkb(path, id_set, id_map, wiki_dic):
     if os.path.isdir(path):
         for root, dirs, list in os.walk(path):
             for l in list:
@@ -67,14 +67,24 @@ def extractTitleFromRefkb(path, id_set, id_map):
                         if m != None:
                             kbid = m.group(1)
                             if kbid not in id_set: continue
-                            tmp_list = set() if kbid not in id_map else id_map[kbid]
                             wikis = re.split(r'\t',items[2])
                             for wiki in wikis:
-                                label_m = label_re.match(wiki)
+                                label_m = enlabel_re.match(wiki)
                                 if label_m!= None:
-                                    tmp_list.add(wiki)
-                            id_map[kbid] = tmp_list
-    print "extracted %d ids!" % len(id_map)
+                                    wiki_label = label_m.group(1)
+                                    if wiki_label in wiki_dic:
+                                        id_map[kbid] = wiki_dic[wiki_label]
+
+def loadWikiDic(filename):
+    wiki_dic = {}
+    with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+        for line in fin:
+            items = re.split(r'\t', line.strip())
+            if len(items) < 2: continue
+            wiki_dic[items[1]] = items[0]
+    print("load {0} wiki dic!".format(len(wiki_dic)))
+    return wiki_dic
+
 
 id_set = set()
 id_map = {}
@@ -85,8 +95,10 @@ print "extracted %d different entities!" % len(id_set)
 with codecs.open(ids_file, 'w', encoding='UTF-8') as fout:
     for id in id_set:
         fout.write("%s\n" % id)
-extractTitleFromRefkb(ref_kb_path, id_set, id_map)
-print "extracted titles for %d entities!" % len(id_map)
+wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
+wiki_dic = loadWikiDic(wiki_id_file)
+extractTitleFromRefkb(ref_kb_path, id_set, id_map, wiki_dic)
+print "extracted enwiki ids for %d entities!" % len(id_map)
 with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
     for id in id_map:
         fout.write("%s\t%s\n" % (id.encode('utf8'), '\t'.join(id_map[id]).encode('utf8')))

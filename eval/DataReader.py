@@ -38,6 +38,15 @@ class DataReader:
         self.nlp = None
         self.prop = None
 
+    def loadKbidMap(self, filename):
+        id_map = {}
+        with codecs.open(file, 'r') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if len(items)!= 4: continue
+                id_map[items[0]] = items[1:]
+        print("load {0} kbids!".format(len(id_map)))
+
     def initNlpTool(self, url, lang):
         if not isinstance(self.nlp, type(None)):return
         self.lang = lang
@@ -331,6 +340,7 @@ if __name__ == '__main__':
     eval16_path = eval_path + '2016/eval/source_documents/'
     conll_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
     mention_dic_file = '/home/caoyx/data/eval_mention_dic'
+    kbid_map_file = ''
     en_server = 'http://localhost:9001'
     es_server = 'http://localhost:9002'
     jieba_dict = '/home/caoyx/data/dict.txt.big'

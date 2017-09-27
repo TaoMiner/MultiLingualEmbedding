@@ -13,9 +13,8 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-
-label_en = re.compile(r'"(.*?)"@(en|es|zh)')
-s = '"Heilongjiang"@zh'
-m = label_en.match(s)
+enlabel_re = re.compile(r'\\t\"(.*?)\"@en$')
+s = 'sfg    "Heilongjiang"@en'
+m = enlabel_re.search(s)
 if m!= None:
     print m.group(1)
