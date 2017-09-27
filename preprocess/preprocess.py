@@ -17,7 +17,7 @@ languages = ('en', 'zh', 'es')
 class options():
     def __init__(self, lang):
         if lang >= len(languages) or lang < 0 :
-            print "invalid lang id!"
+            print("invalid lang id!")
             exit()
         self.dump_path = '/home/caoyx/data/dump20170401/'
         self.lang = languages[lang]
@@ -91,7 +91,7 @@ class Preprocessor():
             with codecs.open(zhwiki_format_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     line_count += 1
-                    if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
+                    if line_count % 1000000 == 0: print("has processed {0} lines!".format(line_count))
                     line = line.decode('utf-8', 'ignore')
                     line = formatRE.sub('\g<label>', line)
                     fout.write(line)
@@ -105,7 +105,7 @@ class Preprocessor():
                     title = m.group(3)
                     self.total_entity_id[title] = id
                     self.total_id_entity[id] = title
-        print "successfully load %d wiki index!" % len(self.total_entity_id)
+        print("successfully load {0} wiki index!".format(len(self.total_entity_id)))
 
     # build wiki_aritle_title dict that doesnt contain any redirects
     def buildEntityDic(self, filename):
@@ -115,7 +115,7 @@ class Preprocessor():
                 if title in self.total_entity_id:
                     self.entity_id[title] = self.total_entity_id[title]
                     self.id_entity[self.total_entity_id[title]] = title
-        print "successfully build %d entities!" % len(self.entity_id)
+        print("successfully build {0} entities!".format(len(self.entity_id)))
 
 
     def parseRedirects(self, filename):
@@ -138,7 +138,7 @@ class Preprocessor():
                         if rd_id in self.id_entity:
                             del self.entity_id[self.id_entity[rd_id]]
                             del self.id_entity[rd_id]
-        print "successfully parse %d redirects for %d entities!" % (len(self.redirects), len(self.entity_id))
+        print("successfully parse {0} redirects for {1} entities!".format((len(self.redirects), len(self.entity_id))))
 
     def lowerTitleToRedirects(self):
         tmp_redirects = {}
@@ -151,20 +151,20 @@ class Preprocessor():
                     tmp_redirects[lower_ent] = ent
         for o in overlapped_set:
             del tmp_redirects[o]
-        print "lowered %d new redirects!" % len(tmp_redirects)
+        print("lowered {0} new redirects!".format(len(tmp_redirects)))
         self.redirects.update(tmp_redirects)
         del tmp_redirects
 
     def saveEntityDic(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for ent in self.entity_id:
-                fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent)))
+                fout.write('{0}\t{1}\n'.format((htmlparser.unescape(self.entity_id[ent]), htmlparser.unescape(ent))))
 
     def saveRedirects(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for r in self.redirects:
                 # r_title \t title
-                fout.write('%s\t%s\n' % (htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
+                fout.write('{0}\t{1}\n'.format(htmlparser.unescape(r), htmlparser.unescape(self.redirects[r])))
 
     @staticmethod
     def loadEntityDic(filename):
@@ -174,7 +174,7 @@ class Preprocessor():
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
                 entity_id[items[1]] = items[0]
-        print "successfully load %d entities!" % len(entity_id)
+        print("successfully load {0} entities!".format(len(entity_id)))
         return entity_id
 
     @staticmethod
@@ -185,7 +185,7 @@ class Preprocessor():
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
                 id_entity[items[0]] = items[1]
-        print "successfully load %d entities!" % len(id_entity)
+        print("successfully load {0] entities!".format(len(id_entity)))
         return id_entity
 
     @staticmethod
@@ -196,7 +196,7 @@ class Preprocessor():
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
                 redirects[items[0]] = items[1]
-        print "successfully load %d redirects!" % len(redirects)
+        print("successfully load {0} redirects!".format(len(redirects)))
         return redirects
 
     def parsePageLinks(self, filename):
@@ -230,7 +230,7 @@ class Preprocessor():
         outlink_num = 0
         for t in self.outlinks:
             outlink_num += len(self.outlinks[t])
-        print "successfully extract %d outlinks for %d entities!" % (outlink_num, len(self.outlinks))
+        print("successfully extract {0} outlinks for {1} entities!".format(outlink_num, len(self.outlinks)))
 
     def saveOutlinks(self,filename, isId = True):
             with codecs.open(filename, 'w', 'utf-8') as fout:
@@ -238,14 +238,14 @@ class Preprocessor():
                 for t in self.outlinks:
                     if t not in self.entity_id or len(self.entity_id[t]) < 1: continue
                     if not isId:
-                        fout.write('%s\t%s\n' % (htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
+                        fout.write('{0}\t{1}\n'.format(htmlparser.unescape(t), htmlparser.unescape('\t'.join(self.outlinks[t]))))
                     else:
                         tmp_line.append(self.entity_id[t])
                         for tt in self.outlinks[t]:
                             if tt in self.entity_id:
                                 tmp_line.append(self.entity_id[tt])
                         if len(tmp_line) > 1:
-                            fout.write('%s\n' % '\t'.join(tmp_line))
+                            fout.write('{0}\n'.format('\t'.join(tmp_line)))
                         del tmp_line[:]
 
 
@@ -255,15 +255,15 @@ class Preprocessor():
             linked_entities.add(t)
             for lt in self.outlinks[t]:
                 linked_entities.add(lt)
-        print "totally %d linked entities!" % len(linked_entities)
+        print("totally {0} linked entities!".format(len(linked_entities)))
         error_count = 0
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for t in linked_entities:
                 if t not in self.entity_id:
                     error_count += 1
                     continue
-                fout.write('%s\t%s\n' % (htmlparser.unescape(self.entity_id[t]), htmlparser.unescape(t)))
-        print "%d linked entities not in vocab!" % error_count
+                fout.write('{0}\t{1}\n'.format(htmlparser.unescape(self.entity_id[t]), htmlparser.unescape(t)))
+        print("{0} linked entities not in vocab!".format(error_count))
 
     def parseLangLinks(self, filename):
         with codecs.open(filename, 'rb') as fin:
@@ -274,7 +274,7 @@ class Preprocessor():
                 if m:
                     cur_lang = m.group(1)
                     self.cur_lang_index = languages.index(cur_lang)
-                    print "extract %s language links!" % cur_lang
+                    print("extract {0} language links!".format(cur_lang))
                 if self.cur_lang_index==-1: continue
                 line = line.replace('INSERT INTO `langlinks` VALUES (', '')
                 for i in line.strip().split('),('):
@@ -299,8 +299,8 @@ class Preprocessor():
                             self.addLangLink(cur_title, target_title, target_lang)
         out = ''
         for i in xrange(len(languages)):
-            out += "%d links to %s lang! " % (self.langlinksCount[i], languages[i] )
-        print "successfully parsed %d linked entity of %s lang, %s" % (len(self.langlinks), cur_lang, out)
+            out += "{0} links to {1} lang! ".format(self.langlinksCount[i], languages[i] )
+        print("successfully parsed {0} linked entity of {1} lang, {2}".format(len(self.langlinks), cur_lang, out))
 
     def addLangLink(self, cur_title, tar_title, tar_lang):
         if isinstance(self.langlinks, type(None)):
@@ -314,7 +314,7 @@ class Preprocessor():
             tmp_tarlinks = ['' for i in xrange(len(languages))]
             tmp_tarlinks[self.cur_lang_index] = cur_title
         if tmp_tarlinks[self.cur_lang_index] != cur_title:
-            print "error! different cur titles!"
+            print("error! different cur titles!")
         if len(tmp_tarlinks[tar_index]) < 1 and tmp_tarlinks[tar_index]!=tar_title:
             tmp_tarlinks[tar_index] = tar_title
             self.langlinksCount[tar_index] += 1
@@ -322,10 +322,10 @@ class Preprocessor():
 
     def saveLangLink(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
-            fout.write("%d\n" % len(self.langlinks))
-            fout.write("%s\n" % ' '.join(languages))
+            fout.write("{0}\n".format(len(self.langlinks)))
+            fout.write("{0}\n".format(' '.join(languages)))
             for ct in self.langlinks:
-                fout.write("%s\n" % '\t'.join(self.langlinks[ct]))
+                fout.write("{0}\n".format('\t'.join(self.langlinks[ct])))
 
     @staticmethod
     def loadCrossLinks(filename):
@@ -337,12 +337,12 @@ class Preprocessor():
                 for i in items:
                     if len(i) < 1: continue
                     link_set.add(i)
-        print "successfully load %d cross lingual entities!" % len(link_set)
+        print("successfully load {0} cross lingual entities!".format(len(link_set)))
         return link_set
 
-punc = re.compile(ur'[%s]' % re.escape(string.punctuation))
+punc = re.compile(ur'[{0}]'.format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
-zhpunc = re.compile(ur'[%s]' % re.escape(zh_punctuation.decode('utf-8')))
+zhpunc = re.compile(ur'[{0}]'.format(re.escape(zh_punctuation.decode('utf-8'))))
 
 numRE1 = re.compile(r'(?<=\s)[\d\s]+(?=($|\s))')
 numRE2 = re.compile(r'(?<=^)[\d\s]+(?=($|\s))')
@@ -358,7 +358,7 @@ class cleaner():
     def init(self, lang):
         self.lang = languages[lang]
         self.mentions = {}
-        print "cleaning %s language!" % self.lang
+        print("cleaning {0} language!".format(self.lang))
 
     # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
     def formatRawWiki(self, raw_anchor_file):
@@ -367,7 +367,7 @@ class cleaner():
             with codecs.open('./tmp', 'w', 'utf-8') as fout:
                 for line in fin:
                     line_count += 1
-                    if line_count % 1000000 == 0: print "has processed %d lines!" % line_count
+                    if line_count % 1000000 == 0: print("has processed {0} lines!".format(line_count))
                     line = self.formatRE.sub('\g<label>', line)
                     self.findBalanced(line)
                     fout.write(line)
@@ -396,7 +396,7 @@ class cleaner():
                 for line in fin:
                     line = self.regularize(line, self.lang)
                     if len(line) > 11:
-                        fout.write("%s\n" % line)
+                        fout.write("{0}\n".format(line))
 
     @staticmethod
     def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
@@ -573,7 +573,7 @@ class cleaner():
                     # isReplaceId = True, entity_id = None, redirects = None, mentions = None
                     res = cleaner.cleanAnchorSent(line.strip(), self.lang, isReplaceId = True, entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
                     if len(res) > 11:
-                        fout.write("%s\n" % res)
+                        fout.write("{0}\n".format(res))
         print 'process train text finished! start count anchors ...'
         if not mention_file:
             with codecs.open(mention_file, 'w', 'utf-8') as fout:
@@ -586,7 +586,7 @@ class cleaner():
                         del out_list[:]
                 if len(out_list) > 0:
                     fout.writelines(out_list)
-            print 'count mentions finished!'
+            print('count mentions finished!')
 
 def addClinks(clink, clink_dict):
     num_lang = len(clink)
@@ -632,8 +632,8 @@ def mergeCrossLinks(files):
                 addClinks(items, total_clinks)
         out = ''
         for i in xrange(len(total_clinks)):
-            out += "%d links to %s lang! " % (len(total_clinks[i]), languages[i])
-        print "successfully merged %s" % out
+            out += "{0} links to {1} lang! ".format(len(total_clinks[i]), languages[i])
+        print("successfully merged {0}".format(out))
 
     out_clinks = []
     for i in xrange(len(total_clinks)):
@@ -665,16 +665,16 @@ def mergeCrossLinks(files):
             out_clinks_id.append(out_link_id)
 
     with codecs.open(ops[0].dump_path+'cross_links_all.dat', 'w', 'utf-8') as fout:
-        fout.write("%d\n" % len(out_clinks))
-        fout.write("%s\n" % ' '.join(languages))
+        fout.write("{0}\n".format(len(out_clinks)))
+        fout.write("{0}\n".format(' '.join(languages)))
         for cl in out_clinks:
-            fout.write("%s\n" % '\t'.join(cl))
+            fout.write("{0}\n".format('\t'.join(cl)))
 
     with codecs.open(ops[0].dump_path + 'cross_links_all_id.dat', 'w', 'utf-8') as fout:
-        fout.write("%d\n" % len(out_clinks))
-        fout.write("%s\n" % ' '.join(languages))
+        fout.write("{0}\n".format(len(out_clinks)))
+        fout.write("{0}\n".format(' '.join(languages)))
         for cl_id in out_clinks_id:
-            fout.write("%s\n" % '\t'.join(cl_id))
+            fout.write("{0}\n".format('\t'.join(cl_id)))
 
 # clean into plain text
 def cleanT(lang):
@@ -751,7 +751,7 @@ def subCrossLinks(filename, outputfile, lang):
             if count_line == 2:
                 items = re.split(r' ', line.strip('\n'))
                 if len(items) != len(languages):
-                    print 'out of languages!'
+                    print('out of languages!')
                     return
                 indexes = [languages.index(lang[i]) for i in xrange(len(lang))]
                 continue
@@ -766,15 +766,15 @@ def subCrossLinks(filename, outputfile, lang):
             if id_count > 1:
                 out_clinks.append(tmp_ids)
     with codecs.open(outputfile, 'w', 'utf-8') as fout:
-        fout.write("%d\n" % len(out_clinks))
+        fout.write("{0}\n".format(len(out_clinks)))
         for clink in out_clinks:
-            fout.write("%s\n" % '\t'.join(clink))
+            fout.write("{0}\n".format('\t'.join(clink)))
 
 def mentionCount(filename, ment_count_file):
     ent_prior = {}
     ent_count = {}
     count = 0
-    with codecs.open(filename, 'r') as fin:
+    with codecs.open(filename, 'rb') as fin:
         for line in fin:
             line = line.strip().decode('utf-8', 'ignore')
             for s, e in cleaner.findBalanced(line):
