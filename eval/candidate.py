@@ -49,7 +49,6 @@ class Candidate:
 
     # for ppr and yago candidates for mention set, mentions are all lowered
     def loadCand(self, filename, mentions = None, entities = None):
-        count = 0
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -65,14 +64,16 @@ class Candidate:
                     tmp_cand |= set(items[1:])
                 if len(tmp_cand) > 0:
                     self.mention_dic[ment] = tmp_cand
-                    count += len(items)-1
-        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), filename))
+
+        cand_sum = 0
+        for ment in self.mention_dic:
+            cand_sum += len(self.mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), filename))
 
     def loadWikiCand(self, anchor_file, redirect_file, mentions = None, entities = None):
         if len(self.wiki_dic) == 0 :
             print("please load wiki dic!")
             return
-        count = 0
         with codecs.open(anchor_file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -86,9 +87,10 @@ class Candidate:
                     tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
                     tmp_cand.add(ent_id)
                     self.mention_dic[ment] = tmp_cand
-                    count += 1
-        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), anchor_file))
-        count = 0
+        cand_sum = 0
+        for ment in self.mention_dic:
+            cand_sum += len(self.mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), anchor_file))
         with codecs.open(redirect_file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -103,8 +105,10 @@ class Candidate:
                 tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
                 tmp_cand.add(ent_id)
                 self.mention_dic[ment] = tmp_cand
-                count += 1
-        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), redirect_file))
+        cand_sum = 0
+        for ment in self.mention_dic:
+            cand_sum += len(self.mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), redirect_file))
 
     def saveCandidates(self, filename):
         with codecs.open(filename, 'w', encoding='UTF-8') as fout:
@@ -201,7 +205,7 @@ if __name__ == '__main__':
 
     en_cand = Candidate()
     entity_vocab = en_cand.loadEntityVocab(enentity_vocab_file)
-    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file, entities=entity_vocab)
+    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file)
     en_cand.loadWikiDic(enwiki_id_file)
     en_cand.loadCand(ppr_candidate_file)
     en_cand.loadCand(yago_candidate_file)
