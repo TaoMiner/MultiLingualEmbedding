@@ -91,7 +91,7 @@ wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
 wiki_dic = loadWikiDic(wiki_id_file)
 extractTitleFromRefkb(ref_kb_path, id_set, id_map, wiki_dic)
 print "extracted enwiki ids for %d entities!" % len(id_map)
-extractTitle(ref_kb_path, id_set, id_map, wiki_dic)
+extractTitle(freebase_file, id_set, id_map, wiki_dic)
 print "extracted enwiki ids for %d entities!" % len(id_map)
 with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
     for id in id_map:

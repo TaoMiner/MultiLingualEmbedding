@@ -256,7 +256,7 @@ class DataReader:
                         corpus.append(doc)
                     doc_id += 1
                     if doc_id % 20 ==0:
-                        print 'has processed %d docs!' % doc_id
+                        print("has processed {0} docs!".format(doc_id))
                     doc = Doc()
                     doc.doc_id = doc_id
                     is_mention = False
@@ -281,6 +281,7 @@ class DataReader:
                     corpus.append(doc)
         return corpus
 
+    # {doc_id:[[startP, endP, wikiId, mention_str],...], ...}
     def extractMentionDic(self, ans15_file, ans15_train_file, ans16_file, conll_file):
         mentions15 = self.loadKbpMentions(ans15_file)
         mentions15_train = self.loadKbpMentions(ans15_train_file)
@@ -290,28 +291,31 @@ class DataReader:
         count = 0
         for doc in mentions15:
             tmp_mentions = mentions15[doc]
-            ment = tmp_mentions[3]
-            ent_id = tmp_mentions[2]
-            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
-            if ent_id not in tmp_ans: count += 1
-            tmp_ans.add(ent_id)
-            mention_dic[ment] = tmp_ans
+            for tmp_ment in tmp_mentions:
+                ment = tmp_ment[3]
+                ent_id = tmp_ment[2]
+                tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+                if ent_id not in tmp_ans: count += 1
+                tmp_ans.add(ent_id)
+                mention_dic[ment] = tmp_ans
         for doc in mentions15_train:
             tmp_mentions = mentions15_train[doc]
-            ment = tmp_mentions[3]
-            ent_id = tmp_mentions[2]
-            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
-            if ent_id not in tmp_ans: count += 1
-            tmp_ans.add(ent_id)
-            mention_dic[ment] = tmp_ans
+            for tmp_ment in tmp_mentions:
+                ment = tmp_ment[3]
+                ent_id = tmp_ment[2]
+                tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+                if ent_id not in tmp_ans: count += 1
+                tmp_ans.add(ent_id)
+                mention_dic[ment] = tmp_ans
         for doc in mentions16:
             tmp_mentions = mentions16[doc]
-            ment = tmp_mentions[3]
-            ent_id = tmp_mentions[2]
-            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
-            if ent_id not in tmp_ans: count += 1
-            tmp_ans.add(ent_id)
-            mention_dic[ment] = tmp_ans
+            for tmp_ment in tmp_mentions:
+                ment = tmp_ment[3]
+                ent_id = tmp_ment[2]
+                tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+                if ent_id not in tmp_ans: count += 1
+                tmp_ans.add(ent_id)
+                mention_dic[ment] = tmp_ans
         print("kbp has totally {0} mentions of {1} entities!".format(len(mention_dic), count))
         conll_corpus = self.readConll(conll_file)
         for doc in conll_corpus:
@@ -328,7 +332,7 @@ class DataReader:
     def saveMentionDic(self, mention_dic, mention_dic_file):
         with codecs.open(mention_dic_file, 'w', encoding='UTF-8') as fout:
             for ment in mention_dic:
-                fout.write("%s\t%s\n" % (ment, '\t'.join(mention_dic[ment])))
+                fout.write("{0}\t{1}\n".format(ment, '\t'.join(mention_dic[ment])))
 
 if __name__ == '__main__':
     eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'

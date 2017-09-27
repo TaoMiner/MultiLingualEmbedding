@@ -13,8 +13,7 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-enlabel_re = re.compile(r'\\t\"(.*?)\"@en$')
-s = 'sfg    "Heilongjiang"@en'
-m = enlabel_re.search(s)
-if m!= None:
-    print m.group(1)
+ment = 'wef'
+mention_dic = {}
+tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+print tmp_ans
