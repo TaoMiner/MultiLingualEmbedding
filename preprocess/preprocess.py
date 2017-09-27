@@ -774,9 +774,9 @@ def mentionCount(filename, ment_count_file):
     ent_prior = {}
     ent_count = {}
     count = 0
-    with codecs.open(filename, 'r', 'utf-8') as fin:
+    with codecs.open(filename, 'r') as fin:
         for line in fin:
-            line = line.strip()
+            line = line.strip().decode('utf-8', 'ignore')
             for s, e in cleaner.findBalanced(line):
                 tmp_anchor = line[s:e]
                 # extract title and label
@@ -785,6 +785,7 @@ def mentionCount(filename, ment_count_file):
                 if tmp_vbar <= 0: continue
                 tmp_id = tmp_anchor[2 :tmp_vbar]
                 tmp_label = tmp_anchor[tmp_vbar + 1:-2]
+                tmp_label = re.sub(r'\s+', '', tmp_label)
                 tmp_mentions = {} if tmp_id not in ent_prior else ent_prior[tmp_id]
                 if tmp_label in tmp_mentions:
                     tmp_mentions[tmp_label] += 1
