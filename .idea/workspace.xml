@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/candidate.py" afterPath="$PROJECT_DIR$/eval/candidate.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/DataReader.py" afterPath="$PROJECT_DIR$/eval/DataReader.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -38,11 +38,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DataReader.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="DataReader.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-6543">
-              <caret line="91" column="37" lean-forward="false" selection-start-line="91" selection-start-column="37" selection-end-line="91" selection-end-column="37" />
+            <state relative-caret-position="303">
+              <caret line="292" column="67" lean-forward="false" selection-start-line="292" selection-start-column="67" selection-end-line="292" selection-end-column="67" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -65,11 +65,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="candidate.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="candidate.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/candidate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="414">
-              <caret line="117" column="59" lean-forward="true" selection-start-line="117" selection-start-column="59" selection-end-line="117" selection-end-column="59" />
+            <state relative-caret-position="510">
+              <caret line="23" column="44" lean-forward="false" selection-start-line="23" selection-start-column="44" selection-end-line="23" selection-end-column="44" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
                 <marker date="1506538614000" expanded="false" signature="5653:6721" ph="..." />
@@ -145,8 +145,8 @@
         <option value="$PROJECT_DIR$/preprocess/WikiExtractor.py" />
         <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/preprocess/preprocess.py" />
-        <option value="$PROJECT_DIR$/eval/DataReader.py" />
         <option value="$PROJECT_DIR$/eval/candidate.py" />
+        <option value="$PROJECT_DIR$/eval/DataReader.py" />
       </list>
     </option>
   </component>
@@ -942,16 +942,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-6543">
-          <caret line="91" column="37" lean-forward="false" selection-start-line="91" selection-start-column="37" selection-end-line="91" selection-end-column="37" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/kbp_preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
@@ -962,12 +952,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/candidate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="414">
-          <caret line="117" column="59" lean-forward="true" selection-start-line="117" selection-start-column="59" selection-end-line="117" selection-end-column="59" />
+        <state relative-caret-position="510">
+          <caret line="23" column="44" lean-forward="false" selection-start-line="23" selection-start-column="44" selection-end-line="23" selection-end-column="44" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
             <marker date="1506538614000" expanded="false" signature="5653:6721" ph="..." />
             <marker date="1506538614000" expanded="false" signature="6760:7416" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="303">
+          <caret line="292" column="67" lean-forward="false" selection-start-line="292" selection-start-column="67" selection-end-line="292" selection-end-column="67" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>

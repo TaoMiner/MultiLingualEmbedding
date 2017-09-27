@@ -287,10 +287,10 @@ class DataReader:
         return corpus
 
     # {doc_id:[[startP, endP, wikiId, mention_str],...], ...}
-    def extractMentionDic(self, ans15_file, ans15_train_file, ans16_file, conll_file):
-        mentions15 = self.loadKbpMentions(ans15_file)
-        mentions15_train = self.loadKbpMentions(ans15_train_file)
-        mentions16 = self.loadKbpMentions(ans16_file)
+    def extractMentionDic(self, ans15_file, ans15_train_file, ans16_file, conll_file, id_map):
+        mentions15 = self.loadKbpMentions(ans15_file, id_map=id_map)
+        mentions15_train = self.loadKbpMentions(ans15_train_file, id_map=id_map)
+        mentions16 = self.loadKbpMentions(ans16_file,id_map=id_map)
 
         mention_endic = {}
         mention_esdic = {}
@@ -394,6 +394,7 @@ if __name__ == '__main__':
     languages = ['eng','cmn','spa']
     doc_type = ['nw','df','newswire','discussion_forum']
     dr = DataReader()
+    idmap = dr.loadKbidMap(kbid_map_file)
     enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file)
     dr.saveMentionDic(enmention_dic,enmention_dic_file)
     dr.saveMentionDic(esmention_dic, esmention_dic_file)
