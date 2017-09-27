@@ -106,7 +106,17 @@ class Candidate:
                 count += 1
         print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), redirect_file))
 
+    def saveCandidates(self, filename):
+        with codecs.open(filename, 'w', encoding='UTF-8') as fout:
+            count = 0
+            for mention in self.mention_dic:
+                if len(self.mention_dic[mention])>0 and len(mention)>1:
+                    count += len(self.mention_dic[mention])
+                    fout.write("%s\t%s\n" % (mention, '\t'.join(self.mention_dic[mention])))
+        print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
 
+
+'''
     def findPPRCand(self, path):
         if not os.path.isdir(path):
             return
@@ -175,14 +185,7 @@ class Candidate:
                 self.candidate[items[0]] = tmp_cand
             print("load %d mention from wiki pages!" % len(self.candidate))
 
-    def saveCandidates(self, filename):
-        with codecs.open(filename, 'w', encoding='UTF-8') as fout:
-            count = 0
-            for mention in self.mention_dic:
-                if len(self.mention_dic[mention])>0 and len(mention)>1:
-                    count += len(self.mention_dic[mention])
-                    fout.write("%s\t%s\n" % (mention, '\t'.join(self.mention_dic[mention])))
-        print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
+'''
 
 if __name__ == '__main__':
     enwiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'

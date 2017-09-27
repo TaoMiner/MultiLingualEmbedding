@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/DataReader.py" afterPath="$PROJECT_DIR$/eval/DataReader.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/candidate.py" afterPath="$PROJECT_DIR$/eval/candidate.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/preprocess.py" afterPath="$PROJECT_DIR$/preprocess/preprocess.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -71,13 +68,12 @@
       <file leaf-file-name="candidate.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/eval/candidate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="449">
-              <caret line="205" column="45" lean-forward="true" selection-start-line="205" selection-start-column="45" selection-end-line="205" selection-end-column="45" />
+            <state relative-caret-position="-954">
+              <caret line="115" column="92" lean-forward="false" selection-start-line="115" selection-start-column="92" selection-end-line="115" selection-end-column="92" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
-                <element signature="e#4976#6035#0" expanded="false" />
-                <element signature="e#6083#6730#0" expanded="false" />
-                <element signature="e#6807#8501#0" expanded="false" />
+                <marker date="1506537641000" expanded="false" signature="5464:6532" ph="..." />
+                <marker date="1506537641000" expanded="false" signature="6571:7227" ph="..." />
               </folding>
             </state>
           </provider>
@@ -966,13 +962,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/candidate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="449">
-          <caret line="205" column="45" lean-forward="true" selection-start-line="205" selection-start-column="45" selection-end-line="205" selection-end-column="45" />
+        <state relative-caret-position="-954">
+          <caret line="115" column="92" lean-forward="false" selection-start-line="115" selection-start-column="92" selection-end-line="115" selection-end-column="92" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#4976#6035#0" expanded="false" />
-            <element signature="e#6083#6730#0" expanded="false" />
-            <element signature="e#6807#8501#0" expanded="false" />
+            <marker date="1506537641000" expanded="false" signature="5464:6532" ph="..." />
+            <marker date="1506537641000" expanded="false" signature="6571:7227" ph="..." />
           </folding>
         </state>
       </provider>
