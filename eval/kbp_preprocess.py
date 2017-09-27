@@ -7,7 +7,7 @@ import gzip
 kbp_eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
 testfile16 = kbp_eval_path + '2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab'
 testfile15 = kbp_eval_path + '2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab'
-testfile14 = kbp_eval_path + '2014/eval/tac_kbp_2014_english_EDL_evaluation_KB_links.tab'
+trainfile15 = kbp_eval_path + '2015/training/tac_kbp_2015_tedl_training_gold_standard_entity_mentions.tab'
 
 ids_file = '/home/caoyx/data/kbp/eval_ids'
 title_file = '/home/caoyx/data/kbp/id_title'
@@ -48,8 +48,11 @@ def extractTitle(file, id_set, id_map):
                     tmp_list.append(title)
                     id_map[id] = tmp_list
 
-label_re = re.compile(r'<http://rdf.basekb.com/ns/(.*?)>')
-def extractTitle2(path, id_set, id_map):
+kbid_re = re.compile(r'<http://rdf.basekb.com/ns/(.*?)>')
+label_re = re.compile(r'"(.*?)"@(en|es|zh)')
+wiki_link_re = re.compile(r'<http://(en|es|zh).wikipedia.org/(.*?)>')
+
+def extractTitleFromRefkb(path, id_set, id_map):
     if os.path.isdir(path):
         for root, dirs, list in os.walk(path):
             for l in list:
@@ -60,12 +63,16 @@ def extractTitle2(path, id_set, id_map):
                         line = line.decode('utf8')
                         items = re.split(r'\t', line.strip())
                         if len(items) < 3: continue
-                        m = label_re.match(items[0])
+                        m = kbid_re.match(items[0])
                         if m != None:
                             kbid = m.group(1)
                             if kbid not in id_set: continue
-                            tmp_list = [] if kbid not in id_map else id_map[kbid]
-                            tmp_list.append(items[2])
+                            tmp_list = set() if kbid not in id_map else id_map[kbid]
+                            wikis = re.split(r'\t',items[2])
+                            for wiki in wikis:
+                                label_m = label_re.match(wiki)
+                                if label_m!= None:
+                                    tmp_list.add(wiki)
                             id_map[kbid] = tmp_list
     print "extracted %d ids!" % len(id_map)
 
@@ -73,11 +80,12 @@ id_set = set()
 id_map = {}
 extractIds(testfile15, id_set)
 extractIds(testfile16, id_set)
+extractIds(trainfile15, id_set)
 print "extracted %d different entities!" % len(id_set)
 with codecs.open(ids_file, 'w', encoding='UTF-8') as fout:
     for id in id_set:
         fout.write("%s\n" % id)
-extractTitle2(ref_kb_path, id_set, id_map)
+extractTitleFromRefkb(ref_kb_path, id_set, id_map)
 print "extracted titles for %d entities!" % len(id_map)
 with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
     for id in id_map:

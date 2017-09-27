@@ -30,7 +30,7 @@ class Doc:
     def __init__(self):
         self.doc_id = -1
         self.text = []          # [w, ..., w] token lists
-        self.mentions = []      # [[w_index, mention_lenth, ent_id, ent_label], ...]
+        self.mentions = []      # [[w_index, mention_lenth, ent_id, ment_str], ...]
 
 class DataReader:
     def __init__(self):
@@ -41,7 +41,7 @@ class DataReader:
     def initNlpTool(self, url, lang):
         if not isinstance(self.nlp, type(None)):return
         self.lang = lang
-        if lang != 'zh':
+        if lang != 'cmn':
             self.nlp = StanfordCoreNLP(url)
             self.prop = {'annotators': 'tokenize, ssplit, lemma', 'outputFormat': 'json'}
         elif os.path.isfile(url):
@@ -54,7 +54,7 @@ class DataReader:
             print("please init nlp tool!")
             return
         tokens = []
-        if self.lang == 'zh':
+        if self.lang == 'cmn':
             tokens = self.nlp.tokenize(sent)
         else:
             results = self.nlp.annotate(sent, properties=self.prop)
@@ -89,7 +89,7 @@ class DataReader:
                 doc_mentions.insert(index, tmp_mention)
                 mentions[doc_id] = doc_mentions
                 count += 1
-        print("load {0} mentions for {1} docs!".format(count, len(mentions)))
+        print("load {0} mentions for {1} docs from {2}!".format(count, len(mentions), file))
         return mentions
 
     def readKbp(self, path, mentions, doc_type):
@@ -110,7 +110,10 @@ class DataReader:
             if f[:offset] in mentions:
                 print("processing {0}!".format(f))
                 sents = extract(os.path.join(path, f))
-                corpus.append(self.readDoc(sents, mentions[f[:offset]]))
+                doc = self.readDoc(sents, mentions[f[:offset]])
+                doc.doc_id = f[:offset]
+                corpus.append(doc)
+        return corpus
 
     # return original text and its count, according to dataset year
     def extractKBP15Text(self, file):
@@ -123,7 +126,7 @@ class DataReader:
                 source_m = sourceRE.match(line.strip())
                 time_m = timeRE.match(line.strip())
                 m = nonTextRE.match(line.strip())
-                if m == None and len(line.strip()) > 0 and source_m!= None and time_m!=None:
+                if m == None and len(line.strip()) > 0 and source_m == None and time_m == None:
                     sents.append([cur_pos-40, text_e.text])     # ignore the begining xml definition
         return sents
     # skip all the lines <...>
@@ -167,7 +170,6 @@ class DataReader:
     def readDoc(self, sents, mentions):
         doc = Doc()
         mention_index = 0
-        print(len(mentions))
         tmp_map = {}
         for sent in sents:
             print(sent)
@@ -230,17 +232,117 @@ class DataReader:
                             tmp_map[m_index] = len(doc.text)-add_text
                         elif m_index in tmp_map:
                             doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text]])
-        print(len(doc.mentions))
         return doc
+
+    def readConll(self, file_name):
+        corpus = []
+        with codecs.open(file_name, 'r', encoding='UTF-8') as fin:
+            doc_id = 0
+            is_mention = False
+            doc = None
+            for line in fin:
+                line = line.strip()
+                if line.startswith('-DOCSTART-'):
+                    if doc_id > 0 and not isinstance(doc, type(None)) and len(doc.text) > 0 and len(doc.mentions) > 0:
+                        corpus.append(doc)
+                    doc_id += 1
+                    if doc_id % 20 ==0:
+                        print 'has processed %d docs!' % doc_id
+                    doc = Doc()
+                    doc.doc_id = doc_id
+                    is_mention = False
+                    continue
+                elif len(line) < 1:
+                    is_mention = False
+                    continue
+                else:
+                    items = re.split(r'\t', line)
+                    if len(items) > 4 and items[1] == 'B':
+                        doc.mentions.append([len(doc.text), 1, items[5], items[2]])
+                        doc.text.append(items[2])
+                        is_mention = True
+                    elif is_mention and len(items) > 2 and items[1] == 'I':
+                        doc.mentions[-1][1] += 1
+                        continue
+                    else:
+                        doc.text.append(items[0])
+                        is_mention = False
+                        continue
+                if doc_id > 0 and not isinstance(doc, type(None)) and len(doc.text) > 0 and len(doc.mentions) > 0:
+                    corpus.append(doc)
+        return corpus
+
+    def extractMentionDic(self, ans15_file, ans15_train_file, ans16_file, conll_file):
+        mentions15 = self.loadKbpMentions(ans15_file)
+        mentions15_train = self.loadKbpMentions(ans15_train_file)
+        mentions16 = self.loadKbpMentions(ans16_file)
+
+        mention_dic = {}
+        count = 0
+        for doc in mentions15:
+            tmp_mentions = mentions15[doc]
+            ment = tmp_mentions[3]
+            ent_id = tmp_mentions[2]
+            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+            if ent_id not in tmp_ans: count += 1
+            tmp_ans.add(ent_id)
+            mention_dic[ment] = tmp_ans
+        for doc in mentions15_train:
+            tmp_mentions = mentions15_train[doc]
+            ment = tmp_mentions[3]
+            ent_id = tmp_mentions[2]
+            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+            if ent_id not in tmp_ans: count += 1
+            tmp_ans.add(ent_id)
+            mention_dic[ment] = tmp_ans
+        for doc in mentions16:
+            tmp_mentions = mentions16[doc]
+            ment = tmp_mentions[3]
+            ent_id = tmp_mentions[2]
+            tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+            if ent_id not in tmp_ans: count += 1
+            tmp_ans.add(ent_id)
+            mention_dic[ment] = tmp_ans
+        print("kbp has totally {0} mentions of {1} entities!".format(len(mention_dic), count))
+        conll_corpus = self.readConll(conll_file)
+        for doc in conll_corpus:
+            for mention in doc.mentions:
+                ment = mention[3]
+                ent_id = mention[2]
+                tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
+                if ent_id not in tmp_ans: count += 1
+                tmp_ans.add(ent_id)
+                mention_dic[ment] = tmp_ans
+        print("Conll has totally {0} mentions of {1} entities!".format(len(mention_dic), count))
+        return mention_dic
+
+    def saveMentionDic(self, mention_dic, mention_dic_file):
+        with codecs.open(mention_dic_file, 'w', encoding='UTF-8') as fout:
+            for ment in mention_dic:
+                fout.write("%s\t%s\n" % (ment, '\t'.join(mention_dic[ment])))
 
 if __name__ == '__main__':
     eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
-    stanfordNlp_server = 'http://localhost:9001'
+    ans15_file = eval_path+'2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab'
+    ans15_train_file = eval_path + '2015/training/tac_kbp_2015_tedl_training_gold_standard_entity_mentions.tab'
+    ans16_file = eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab'
+    eval15_path = eval_path + '2015/eval/source_documents/'
+    train15_path = eval_path + '2015/training/source_docs/'
+    eval16_path = eval_path + '2016/eval/source_documents/'
+    conll_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
+    mention_dic_file = '/home/caoyx/data/eval_mention_dic'
+    en_server = 'http://localhost:9001'
+    es_server = 'http://localhost:9002'
     jieba_dict = '/home/caoyx/data/dict.txt.big'
+    languages = ['eng','cmn','spa']
+    doc_type = ['nw','df','newswire','discussion_forum']
     dr = DataReader()
-    #dr.initNlpTool(stanfordNlp_server, 'en')
-    dr.initNlpTool(jieba_dict, 'zh')
-    #mentions = dr.loadKbpMentions(eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab')
+    mention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file)
+    dr.saveMentionDic(mention_dic,mention_dic_file)
+    # 15 16 en
+    #dr.initNlpTool(en_server, languages[0])
+
+    #dr.initNlpTool(jieba_dict, 'zh')
+    #mentions = dr.loadKbpMentions(ans16_file)
     #dr.readKbp(eval_path+'2016/eval/source_documents/eng/df/', mentions, 'df')
-    mentions = dr.loadKbpMentions(eval_path+'2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab')
-    dr.readKbp(eval_path+'2015/eval/source_documents/cmn/newswire/', mentions, '15')
+    #dr.readKbp(eval_path+'2015/eval/source_documents/cmn/newswire/', mentions, '15')

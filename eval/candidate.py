@@ -1,26 +1,84 @@
 import codecs
 import regex as re
 import os
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
-
 
 class Candidate:
     "candidate generation"
+    def __init__(self):
+        self.wiki_dic = {}
+        self.wiki_id_dic = {}
+        self.mention_dic = {}       # {'mention':set(ent_id,..), ...}
 
-    candidate = {}      #{mention:{wiki_id\t...},...}
-    ids = set()
-    wiki_id = {}
-
-    def loadWikiId(self, filename):
+    # entities: id set
+    def loadWikiDic(self, filename, entities = None):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 : continue
-                self.ids.add(items[1])
-                self.wiki_id[items[0]] = items[1]
+                if not isinstance(entities, type(None)) and items[0] not in entities: continue
+                self.wiki_dic[items[1]] = items[0]
+                self.wiki_id_dic[items[0]] = items[1]
+        print("load {0} wiki dic!".format(len(self.wiki_dic)))
+
+    # for ppr and yago candidates for mention set, mentions are all lowered
+    def loadCand(self, filename, mentions = None, entities = None):
+        count = 0
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                ment = items[0].lower()
+                if len(items) < 2 : continue
+                if not isinstance(mentions, type(None)) and ment not in mentions: continue
+                tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                if not isinstance(entities, type(None)):
+                    for item in items[1:]:
+                        if item in entities:
+                            tmp_cand.add(item)
+                else:
+                    tmp_cand |= set(items[1:])
+                if len(tmp_cand) > 0:
+                    self.mention_dic[ment] = tmp_cand
+                    count += len(items)-1
+        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), filename))
+
+    def loadWikiCand(self, anchor_file, redirect_file, mentions = None, entities = None):
+        if len(self.wiki_dic) == 0 :
+            print("please load wiki dic!")
+            return
+        count = 0
+        with codecs.open(anchor_file, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if len(items) < 3 : continue
+                ent_id = items[0]
+                if not isinstance(entities, type(None)) and ent_id not in entities: continue
+                for item in items[2:]:
+                    ment_item = re.split(r'::=', item)
+                    ment = ment_item[0]
+                    if not isinstance(mentions, type(None)) and ment not in mentions: continue
+                    tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                    tmp_cand.add(ent_id)
+                    self.mention_dic[ment] = tmp_cand
+                    count += 1
+        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), anchor_file))
+        count = 0
+        with codecs.open(redirect_file, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if len(items) < 2 : continue
+                wiki_title = items[0]
+                ment = items[1]
+                if not isinstance(mentions, type(None)) and ment not in mentions: continue
+                if wiki_title in self.wiki_dic :
+                    ent_id = self.wiki_dic[wiki_title]
+                    if not isinstance(entities, type(None)) and ent_id not in entities: continue
+                else: return
+                tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                tmp_cand.add(ent_id)
+                self.mention_dic[ment] = tmp_cand
+                count += 1
+        print("load {0} candidates for {1} mentions from {2}!".format(count, len(self.mention_dic), redirect_file))
+
 
     def findPPRCand(self, path):
         if not os.path.isdir(path):
@@ -93,11 +151,11 @@ class Candidate:
     def saveCandidates(self, filename):
         with codecs.open(filename, 'w', encoding='UTF-8') as fout:
             count = 0
-            for mention in self.candidate:
-                if len(self.candidate[mention])>0 and len(mention)>1:
-                    count += len(self.candidate[mention])
-                    fout.write("%s\t%s\n" % (mention, '\t'.join(self.candidate[mention])))
-        return count
+            for mention in self.mention_dic:
+                if len(self.mention_dic[mention])>0 and len(mention)>1:
+                    count += len(self.mention_dic[mention])
+                    fout.write("%s\t%s\n" % (mention, '\t'.join(self.mention_dic[mention])))
+        print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
 
 if __name__ == '__main__':
     wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
