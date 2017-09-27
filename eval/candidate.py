@@ -9,6 +9,33 @@ class Candidate:
         self.wiki_id_dic = {}
         self.mention_dic = {}       # {'mention':set(ent_id,..), ...}
 
+    def loadMentionVocab(self, filename, entities = None):
+        mention_set = set()
+        miss = 0
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if len(items) < 2: continue
+                mention_set.add(items[0])
+                if not isinstance(entities, type(None)):
+                    for ent_id in items[1:]:
+                        if ent_id not in entities:
+                            miss += 1
+        print("lack of {0} entity in embeddings!".format(miss))
+        return mention_set
+
+    def loadEntityVocab(self, filename):
+        entity_set = set()
+        is_first = True
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                if is_first :
+                    is_first = False
+                    continue
+                items = re.split(r'\t', line.strip())
+                entity_set.add(items[0])
+        return entity_set
+
     # entities: id set
     def loadWikiDic(self, filename, entities = None):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
@@ -54,7 +81,7 @@ class Candidate:
                 if not isinstance(entities, type(None)) and ent_id not in entities: continue
                 for item in items[2:]:
                     ment_item = re.split(r'::=', item)
-                    ment = ment_item[0]
+                    ment = ment_item[0].lower()
                     if not isinstance(mentions, type(None)) and ment not in mentions: continue
                     tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
                     tmp_cand.add(ent_id)
@@ -67,7 +94,7 @@ class Candidate:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 : continue
                 wiki_title = items[0]
-                ment = items[1]
+                ment = items[1].lower()
                 if not isinstance(mentions, type(None)) and ment not in mentions: continue
                 if wiki_title in self.wiki_dic :
                     ent_id = self.wiki_dic[wiki_title]
@@ -158,34 +185,26 @@ class Candidate:
         print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
 
 if __name__ == '__main__':
-    wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
-    conll_candidate = Candidate()
-    conll_candidate.loadWikiId(wiki_id_file)
-    print("successfully load %d wiki id!" %  len(conll_candidate.wiki_id))
-    #yago_candidate
-    '''
-    output_file = './yago_candidate'
-    aida_mean_file = ''
-    conll_candidate.findYagoCand(aida_mean_file)
-    print("successfully load %d mentions" %  len(conll_candidate.candidate))
-    count = conll_candidate.saveCandidates(output_file)
-    print("total %d candidates, each mention has %d candidates on average." % (count, count/len(conll_candidate.candidate)))
-    '''
-    #ppr_candidate
-    output_file = '/home/caoyx/data/conll/ppr_candidate'
-    ppr_path = '/home/caoyx/data/conll/PPRforNED-master/AIDA_candidates/'
-    conll_candidate.findPPRCand(ppr_path)
-    print("successfully load %d mentions" %  len(conll_candidate.candidate))
-    count = conll_candidate.saveCandidates(output_file)
-    print("total %d candidates, each mention has %d candidates on average." % (count, count/len(conll_candidate.candidate)))
-    #wiki_candidate
-    '''
-    output_file = './wiki_candidate'
-    anchor_file = ''
-    redirect_file = ''
-    conll_candidate.findWikiCand(anchor_file, redirect_file, wiki_id_file)
-    print("successfully load %d mentions" %  len(conll_candidate.candidate))
-    count = conll_candidate.saveCandidates(output_file)
-    print("total %d candidates, each mention has %d candidates on average." % (count, count/len(conll_candidate.candidate)))
-    '''
+    enwiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
+    eswiki_id_file = '/home/caoyx/data/dump20170401/eswiki_cl/vocab_entity.dat'
+    zhwiki_id_file = '/home/caoyx/data/dump20170401/zhwiki_cl/vocab_entity.dat'
+    ppr_candidate_file = '/home/caoyx/data/conll/ppr_candidate'
+    yago_candidate_file = '/home/caoyx/JTextKgForEL/data/conll/yago_candidates'
+    enmention_count_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
+    enredirect_file = '/home/caoyx/data/dump20170401/enwiki_cl/redirect_article_title'
+    enmention_vocab_file = '/home/caoyx/data/eval_mention_dic.en'
+    enentity_vocab_file = '/home/caoyx/data/etc/exp8/envec/vocab1_entity.txt'
+    en_candidate_file = '/home/caoyx/data/candidates.en'
+
+    en_cand = Candidate()
+    entity_vocab = en_cand.loadEntityVocab(enentity_vocab_file)
+    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file, entities=entity_vocab)
+    en_cand.loadWikiDic(enwiki_id_file)
+    en_cand.loadCand(ppr_candidate_file)
+    en_cand.loadCand(yago_candidate_file)
+    en_cand.loadWikiCand(enmention_count_file,enredirect_file)
+    en_cand.saveCandidates(en_candidate_file)
+
+
+
 

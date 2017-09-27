@@ -785,7 +785,7 @@ def mentionCount(filename, ment_count_file):
                 if tmp_vbar <= 0: continue
                 tmp_id = tmp_anchor[2 :tmp_vbar]
                 tmp_label = tmp_anchor[tmp_vbar + 1:-2]
-                tmp_label = re.sub(r'\s+', '', tmp_label)
+                #tmp_label = re.sub(r'\s+', '', tmp_label)
                 tmp_mentions = {} if tmp_id not in ent_prior else ent_prior[tmp_id]
                 if tmp_label in tmp_mentions:
                     tmp_mentions[tmp_label] += 1
@@ -799,11 +799,12 @@ def mentionCount(filename, ment_count_file):
                     print("has processed {0} mentions!".format(count))
                 ent_prior[tmp_id] = tmp_mentions
     print("totally {0} mentions for {1} entities!".format(count, len(ent_prior)))
-    with codecs.open(ment_count_file, 'w', 'utf-8') as fout:
+    with codecs.open(ment_count_file, 'w') as fout:
         for id in ent_prior:
             mentions = ent_prior[id]
-            prior = 0 if id not in ent_count else float(ent_count[id])/float(count)
-            fout.write("{0}\t{1}\t{2}\n".format(id, prior,"\t".join(["%s::=%s" % (k, mentions[k]) for k in mentions])))
+            prior = 0 if id not in ent_count else float(ent_count[id])/float(count)*1000
+            ment_str = "\t".join(["%s::=%s" % (k, mentions[k]) for k in mentions]).encode('utf8')
+            fout.write("{0}\t{1}\t{2}\n".format(id, prior,ment_str))
 
 
 if __name__ == '__main__':

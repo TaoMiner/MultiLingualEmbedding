@@ -43,9 +43,10 @@ class DataReader:
         with codecs.open(file, 'r') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                if len(items)!= 4: continue
-                id_map[items[0]] = items[1:]
+                if len(items) < 2: continue
+                id_map[items[0]] = items[1]
         print("load {0} kbids!".format(len(id_map)))
+        return id_map
 
     def initNlpTool(self, url, lang):
         if not isinstance(self.nlp, type(None)):return
@@ -73,7 +74,7 @@ class DataReader:
         return tokens
 
     # {doc_id:[[startP, endP, wikiId, mention_str],...], ...}
-    def loadKbpMentions(self, file):
+    def loadKbpMentions(self, file, id_map=None):
         count = 0
         mentions = {}
         with codecs.open(file, 'r') as fin:
@@ -85,10 +86,14 @@ class DataReader:
                 doc_id = tmp_items[0]
                 start_p = int(tmp_items[1])
                 end_p = int(tmp_items[2])
-                freebase_id = items[4]
                 mention_str = items[2]
-                if freebase_id.startswith('NIL') : continue
-                tmp_mention = [start_p, end_p, freebase_id, mention_str]
+                if items[4].startswith('NIL') : continue
+                if isinstance(id_map, type(None)):
+                    ent_id = items[4]
+                elif items[4] in id_map:
+                    ent_id = id_map[items[4]]
+                else: continue
+                tmp_mention = [start_p, end_p, ent_id, mention_str]
                 doc_mentions = [] if doc_id not in mentions else mentions[doc_id]
                 index = 0
                 for m in doc_mentions:
@@ -382,7 +387,7 @@ if __name__ == '__main__':
     enmention_dic_file = '/home/caoyx/data/eval_mention_dic.en'
     esmention_dic_file = '/home/caoyx/data/eval_mention_dic.es'
     zhmention_dic_file = '/home/caoyx/data/eval_mention_dic.zh'
-    kbid_map_file = ''
+    kbid_map_file = '/home/caoyx/data/kbp/id.key'
     en_server = 'http://localhost:9001'
     es_server = 'http://localhost:9002'
     jieba_dict = '/home/caoyx/data/dict.txt.big'
@@ -394,6 +399,7 @@ if __name__ == '__main__':
     dr.saveMentionDic(esmention_dic, esmention_dic_file)
     dr.saveMentionDic(zhmention_dic, zhmention_dic_file)
     # 15 16 en
+    #id_map = dr.loadKbidMap(kbid_map_file)
     #dr.initNlpTool(en_server, languages[0])
 
     #dr.initNlpTool(jieba_dict, 'zh')
