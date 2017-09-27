@@ -27,7 +27,7 @@ def extractIds(file, id_set):
 
 headTitleRe = re.compile(r'<http://dbpedia.org/resource/(.*?)>')
 tailIdRe = re.compile(r'<http://rdf.freebase.com/ns/(.*?)>')
-def extractTitle(file, id_set, id_map):
+def extractTitle(file, id_set, id_map, wiki_dic):
     with codecs.open(file, 'r', encoding='UTF-8') as fin:
         for line in fin:
             items = re.split(r' ', line.strip())
@@ -37,16 +37,8 @@ def extractTitle(file, id_set, id_map):
             if headM != None and tailM != None :
                 title = headM.group(1)
                 id = tailM.group(1)
-                if id not in id_set or len(title) < 1: continue
-                tmp_list = [] if id not in id_map else id_map[id]
-                isRepeated = False
-                for l in tmp_list:
-                    if l == title :
-                        isRepeated = True
-                        break
-                if not isRepeated :
-                    tmp_list.append(title)
-                    id_map[id] = tmp_list
+                if id not in id_set or len(title) < 1 or title not in wiki_dic: continue
+                id_map[id] = wiki_dic[title]
 
 kbid_re = re.compile(r'<http://rdf.basekb.com/ns/(.*?)>')
 enlabel_re = re.compile(r'^"(.*?)"@en$')
@@ -99,6 +91,8 @@ wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
 wiki_dic = loadWikiDic(wiki_id_file)
 extractTitleFromRefkb(ref_kb_path, id_set, id_map, wiki_dic)
 print "extracted enwiki ids for %d entities!" % len(id_map)
+extractTitle(ref_kb_path, id_set, id_map, wiki_dic)
+print "extracted enwiki ids for %d entities!" % len(id_map)
 with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
     for id in id_map:
-        fout.write("%s\t%s\n" % (id.encode('utf8'), '\t'.join(id_map[id]).encode('utf8')))
+        fout.write("%s\t%s\n" % (id, id_map[id]))
