@@ -770,6 +770,40 @@ def subCrossLinks(filename, outputfile, lang):
         for clink in out_clinks:
             fout.write("%s\n" % '\t'.join(clink))
 
+def mentionCount(filename, ment_count_file):
+    ent_prior = {}
+    ent_count = {}
+    count = 0
+    with codecs.open(filename, 'r', 'utf-8') as fin:
+        for line in fin:
+            line = line.strip()
+            for s, e in cleaner.findBalanced(line):
+                tmp_anchor = line[s:e]
+                # extract title and label
+                # [_[_word_word_|_word_word_]_] or [_[_word_word_]_]
+                tmp_vbar = tmp_anchor.find('|')
+                if tmp_vbar <= 0: continue
+                tmp_id = tmp_anchor[2 :tmp_vbar]
+                tmp_label = tmp_anchor[tmp_vbar + 1:-2]
+                tmp_mentions = {} if tmp_id not in ent_prior else ent_prior[tmp_id]
+                if tmp_label in tmp_mentions:
+                    tmp_mentions[tmp_label] += 1
+                else:
+                    tmp_mentions[tmp_label] = 1
+                tmp_count = 0 if tmp_id not in ent_count else ent_count[tmp_id]
+                tmp_count += 1
+                ent_count[tmp_id] = tmp_count
+                count += 1
+                if count%100000 == 0:
+                    print("has processed {0} mentions!".format(count))
+                ent_prior[tmp_id] = tmp_mentions
+    print("totally {0} mentions for {1} entities!".format(count, len(ent_prior)))
+    with codecs.open(ment_count_file, 'w', 'utf-8') as fout:
+        for id in ent_prior:
+            mentions = ent_prior[id]
+            prior = 0 if id not in ent_count else float(ent_count[id])/float(count)
+            fout.write("{0}\t{1}\t{2}\n".format(id, prior,"\t".join(["%s::=%s" % (k, mentions[k]) for k in mentions])))
+
 
 if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
@@ -781,9 +815,13 @@ if __name__ == '__main__':
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    clean(lang_index)
+    # clean(lang_index)
     # cleanT(lang_index)
     # lang = ['en', 'zh']
     # cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     # sub_file = '/home/caoyx/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
     # subCrossLinks(cross_file, sub_file, lang)
+    # anchor_text_file = '/home/caoyx/data/dump20170401/eswiki_cl/anchor_text_cl.dat'
+    anchor_text_file = '/home/caoyx/data/dump20170401/eswiki_cl/text_anchor.dat'
+    mention_count_file = '/home/caoyx/data/dump20170401/eswiki_cl/ent_prior'
+    mentionCount(anchor_text_file,mention_count_file)

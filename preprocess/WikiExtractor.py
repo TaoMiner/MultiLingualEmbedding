@@ -2384,7 +2384,6 @@ def replaceInternalLinks(text):
 #     }
 #     return holders
 
-
 def makeInternalLink(title, label):
     colon = title.find(':')
     if colon > 0 and title[:colon] not in options.acceptedNamespaces:

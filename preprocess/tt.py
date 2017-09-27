@@ -13,7 +13,5 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-ment = 'wef'
-mention_dic = {}
-tmp_ans = set() if ment not in mention_dic else mention_dic[ment]
-print tmp_ans
+ment = {'a':1,'b':2}
+print "\t".join(["%s::=%s" % (k, ment[k]) for k in ment])
