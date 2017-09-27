@@ -287,10 +287,24 @@ class DataReader:
         mentions15_train = self.loadKbpMentions(ans15_train_file)
         mentions16 = self.loadKbpMentions(ans16_file)
 
-        mention_dic = {}
-        count = 0
+        mention_endic = {}
+        mention_esdic = {}
+        mention_zhdic = {}
+        encount = 0
+        escount = 0
+        zhcount = 0
         for doc in mentions15:
             tmp_mentions = mentions15[doc]
+            if doc.startswith('ENG') :
+                mention_dic = mention_endic
+                count = encount
+            elif doc.startswith('SPA') :
+                mention_dic = mention_esdic
+                count = escount
+            elif doc.startswith('CMN') :
+                mention_dic = mention_zhdic
+                count = zhcount
+            else: continue
             for tmp_ment in tmp_mentions:
                 ment = tmp_ment[3]
                 ent_id = tmp_ment[2]
@@ -300,6 +314,15 @@ class DataReader:
                 mention_dic[ment] = tmp_ans
         for doc in mentions15_train:
             tmp_mentions = mentions15_train[doc]
+            if doc.startswith('ENG') :
+                mention_dic = mention_endic
+                count = encount
+            elif doc.startswith('SPA') :
+                mention_dic = mention_esdic
+                count = escount
+            elif doc.startswith('CMN') :
+                mention_dic = mention_zhdic
+                count = zhcount
             for tmp_ment in tmp_mentions:
                 ment = tmp_ment[3]
                 ent_id = tmp_ment[2]
@@ -309,6 +332,15 @@ class DataReader:
                 mention_dic[ment] = tmp_ans
         for doc in mentions16:
             tmp_mentions = mentions16[doc]
+            if doc.startswith('ENG') :
+                mention_dic = mention_endic
+                count = encount
+            elif doc.startswith('SPA') :
+                mention_dic = mention_esdic
+                count = escount
+            elif doc.startswith('CMN') :
+                mention_dic = mention_zhdic
+                count = zhcount
             for tmp_ment in tmp_mentions:
                 ment = tmp_ment[3]
                 ent_id = tmp_ment[2]
@@ -316,8 +348,12 @@ class DataReader:
                 if ent_id not in tmp_ans: count += 1
                 tmp_ans.add(ent_id)
                 mention_dic[ment] = tmp_ans
-        print("kbp has totally {0} mentions of {1} entities!".format(len(mention_dic), count))
+        print("kbp has totally english {0} mentions of {1} entities!".format(len(mention_endic), encount))
+        print("kbp has totally spanish {0} mentions of {1} entities!".format(len(mention_esdic), escount))
+        print("kbp has totally Chinese {0} mentions of {1} entities!".format(len(mention_zhdic), zhcount))
         conll_corpus = self.readConll(conll_file)
+        mention_dic = mention_endic
+        count = encount
         for doc in conll_corpus:
             for mention in doc.mentions:
                 ment = mention[3]
@@ -326,8 +362,8 @@ class DataReader:
                 if ent_id not in tmp_ans: count += 1
                 tmp_ans.add(ent_id)
                 mention_dic[ment] = tmp_ans
-        print("Conll has totally {0} mentions of {1} entities!".format(len(mention_dic), count))
-        return mention_dic
+        print("Conll has totally english {0} mentions of {1} entities!".format(len(mention_dic), count))
+        return mention_endic, mention_esdic, mention_zhdic
 
     def saveMentionDic(self, mention_dic, mention_dic_file):
         with codecs.open(mention_dic_file, 'w', encoding='UTF-8') as fout:
@@ -343,7 +379,9 @@ if __name__ == '__main__':
     train15_path = eval_path + '2015/training/source_docs/'
     eval16_path = eval_path + '2016/eval/source_documents/'
     conll_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
-    mention_dic_file = '/home/caoyx/data/eval_mention_dic'
+    enmention_dic_file = '/home/caoyx/data/eval_mention_dic.en'
+    esmention_dic_file = '/home/caoyx/data/eval_mention_dic.es'
+    zhmention_dic_file = '/home/caoyx/data/eval_mention_dic.zh'
     kbid_map_file = ''
     en_server = 'http://localhost:9001'
     es_server = 'http://localhost:9002'
@@ -351,8 +389,10 @@ if __name__ == '__main__':
     languages = ['eng','cmn','spa']
     doc_type = ['nw','df','newswire','discussion_forum']
     dr = DataReader()
-    mention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file)
-    dr.saveMentionDic(mention_dic,mention_dic_file)
+    enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file)
+    dr.saveMentionDic(enmention_dic,enmention_dic_file)
+    dr.saveMentionDic(esmention_dic, esmention_dic_file)
+    dr.saveMentionDic(zhmention_dic, zhmention_dic_file)
     # 15 16 en
     #dr.initNlpTool(en_server, languages[0])
 
