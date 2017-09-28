@@ -219,16 +219,19 @@ if __name__ == '__main__':
     esredirect_file = '/home/caoyx/data/dump20170401/eswiki_cl/redirect_article_title'
     esmention_vocab_file = '/home/caoyx/data/eval_mention_dic.es'
     esentity_vocab_file = '/home/caoyx/data/etc/exp8/esvec/vocab2_entity.txt'
-    es_candidate_file = '/home/caoyx/data/candidates.es'
+    es_candidate_file1 = '/home/caoyx/data/candidates.es-en'
+    es_candidate_file2 = '/home/caoyx/data/candidates.es-es'
 
     cand = Candidate()
     entity_vocab = cand.loadEntityVocab(esentity_vocab_file)
-    mention_vocab = cand.loadMentionVocab(esmention_vocab_file, entities=entity_vocab)
-    cand.loadWikiDic(eswiki_id_file,mentions=mention_vocab, entities=entity_vocab)
-    cand.loadCand(ppr_candidate_file, mentions=mention_vocab, entities=entity_vocab)
-    cand.loadCand(yago_candidate_file, mentions=mention_vocab, entities=entity_vocab)
-    cand.loadWikiCand(esmention_count_file,esredirect_file, mentions=mention_vocab, entities=entity_vocab)
-    cand.saveCandidates(es_candidate_file)
+    mention_vocab = cand.loadMentionVocab(esmention_vocab_file)
+    cand.loadWikiDic(eswiki_id_file,mentions=mention_vocab)
+    cand.loadCand(ppr_candidate_file, mentions=mention_vocab)
+    cand.loadCand(yago_candidate_file, mentions=mention_vocab)
+    cand.saveCandidates(es_candidate_file1)
+    cand.mention_dic = {}
+    cand.loadWikiCand(esmention_count_file,esredirect_file, mentions=mention_vocab)
+    cand.saveCandidates(es_candidate_file2)
 
 
 
