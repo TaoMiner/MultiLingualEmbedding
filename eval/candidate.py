@@ -124,6 +124,13 @@ class Candidate:
                     fout.write("%s\t%s\n" % (mention, '\t'.join(self.mention_dic[mention])))
         print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
 
+    def loadCandidates(self, filename):
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                self.mention_dic[items[0]] = items[1:]
+
+
 
 '''
     def findPPRCand(self, path):
@@ -208,14 +215,20 @@ if __name__ == '__main__':
     enentity_vocab_file = '/home/caoyx/data/etc/exp8/envec/vocab1_entity.txt'
     en_candidate_file = '/home/caoyx/data/candidates.en'
 
-    en_cand = Candidate()
-    entity_vocab = en_cand.loadEntityVocab(enentity_vocab_file)
-    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file, entities=entity_vocab)
-    en_cand.loadWikiDic(enwiki_id_file,mentions=mention_vocab, entities=entity_vocab)
-    en_cand.loadCand(ppr_candidate_file, mentions=mention_vocab, entities=entity_vocab)
-    en_cand.loadCand(yago_candidate_file, mentions=mention_vocab, entities=entity_vocab)
-    en_cand.loadWikiCand(enmention_count_file,enredirect_file, mentions=mention_vocab, entities=entity_vocab)
-    en_cand.saveCandidates(en_candidate_file)
+    esmention_count_file = '/home/caoyx/data/dump20170401/eswiki_cl/entity_prior'
+    esredirect_file = '/home/caoyx/data/dump20170401/eswiki_cl/redirect_article_title'
+    esmention_vocab_file = '/home/caoyx/data/eval_mention_dic.es'
+    esentity_vocab_file = '/home/caoyx/data/etc/exp8/esvec/vocab2_entity.txt'
+    es_candidate_file = '/home/caoyx/data/candidates.es'
+
+    cand = Candidate()
+    entity_vocab = cand.loadEntityVocab(esentity_vocab_file)
+    mention_vocab = cand.loadMentionVocab(esmention_vocab_file, entities=entity_vocab)
+    cand.loadWikiDic(eswiki_id_file,mentions=mention_vocab, entities=entity_vocab)
+    cand.loadCand(ppr_candidate_file, mentions=mention_vocab, entities=entity_vocab)
+    cand.loadCand(yago_candidate_file, mentions=mention_vocab, entities=entity_vocab)
+    cand.loadWikiCand(esmention_count_file,esredirect_file, mentions=mention_vocab, entities=entity_vocab)
+    cand.saveCandidates(es_candidate_file)
 
 
 
