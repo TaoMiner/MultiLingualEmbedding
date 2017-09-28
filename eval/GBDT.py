@@ -317,8 +317,8 @@ if __name__ == '__main__':
     candidate_file = '/home/caoyx/data/conll/ppr_candidate'
     wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
     count_mention_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
-    train_feature_file = '/home/caoyx/data/train_file.csv'
-    eval_feature_file = '/home/caoyx/data/eval_file.csv'
+    train_feature_file = '/home/caoyx/data/train15_file.csv'
+    eval_feature_file = '/home/caoyx/data/eval15_file.csv'
     input_path = '/home/caoyx/data/etc/exp8/envec/'
     entity_vector_file = input_path + 'vectors1_entity5'
     word_vector_file = input_path + 'vectors1_word5'
@@ -363,9 +363,9 @@ if __name__ == '__main__':
     #mention's candidate entities {apple:{wiki ids}, ...}
     #p(e)
     features.loadPrior(count_mention_file)
-    print("load %d entities' priors!" % len(features.entity_prior))
+    print("load {0} entities' priors!".format(len(features.entity_prior)))
     #{m:{e1:1, e2:3, ...}} for calculating p(e|m)
-    print("load %d mention names with prob !" % len(features.me_prob))
+    print("load {0] mention names with prob !".format(len(features.me_prob)))
 
     # load doc
     languages = ['eng', 'cmn', 'spa']
