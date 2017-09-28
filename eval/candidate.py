@@ -2,6 +2,7 @@ import codecs
 import regex as re
 import os
 
+nonEngRE = re.compile(r'[\W]+')
 class Candidate:
     "candidate generation"
     def __init__(self):
@@ -23,6 +24,16 @@ class Candidate:
                             miss += 1
         print("totally {0} mentions! lack of {1} entity in embeddings!".format(len(mention_set), miss))
         return mention_set
+
+    def loadTranslateMention(self, filename, mentions):
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                line = nonEngRE.sub(' ', line)
+                line = re.sub(r'\s+',' ', line)
+                line = line.strip()
+                mentions.add(line)
+        print("totally {0} mentions".format(len(mentions)))
+
 
     def loadEntityVocab(self, filename):
         entity_set = set()
@@ -219,19 +230,46 @@ if __name__ == '__main__':
     esredirect_file = '/home/caoyx/data/dump20170401/eswiki_cl/redirect_article_title'
     esmention_vocab_file = '/home/caoyx/data/eval_mention_dic.es'
     esentity_vocab_file = '/home/caoyx/data/etc/exp8/esvec/vocab2_entity.txt'
-    es_candidate_file1 = '/home/caoyx/data/candidates.es-en'
-    es_candidate_file2 = '/home/caoyx/data/candidates.es-es'
+    es_candidate_file = '/home/caoyx/data/candidates.es'
+
+    zhmention_count_file = '/home/caoyx/data/dump20170401/zhwiki_cl/entity_prior'
+    zhredirect_file = '/home/caoyx/data/dump20170401/zhwiki_cl/redirect_article_title'
+    zhmention_vocab_file = '/home/caoyx/data/eval_mention_dic.zh'
+    zhentity_vocab_file = '/home/caoyx/data/etc/exp3/zhvec/vocab2_entity.txt'
+    zh_candidate_file = '/home/caoyx/data/candidates.zh'
+
+    zh_en_file = ''
+    es_en_file = ''
 
     cand = Candidate()
-    entity_vocab = cand.loadEntityVocab(esentity_vocab_file)
-    mention_vocab = cand.loadMentionVocab(esmention_vocab_file)
-    cand.loadWikiDic(eswiki_id_file,mentions=mention_vocab)
+    enmention_vocab = cand.loadMentionVocab(enmention_vocab_file)
+    cand.loadTranslateMention(zh_en_file,enmention_vocab)
+    cand.loadTranslateMention(es_en_file, enmention_vocab)
+
+    esmention_vocab = cand.loadMentionVocab(esmention_vocab_file)
+    zhmention_vocab = cand.loadMentionVocab(zhmention_vocab_file)
+
+    mention_vocab = enmention_vocab | esmention_vocab | zhmention_vocab
+
+    # eng candidate file
+    cand.mention_dic = {}
+    cand.loadWikiDic(enwiki_id_file,mentions=mention_vocab)
     cand.loadCand(ppr_candidate_file, mentions=mention_vocab)
     cand.loadCand(yago_candidate_file, mentions=mention_vocab)
-    cand.saveCandidates(es_candidate_file1)
+    cand.loadWikiCand(enmention_count_file,enredirect_file, mentions=mention_vocab)
+    cand.saveCandidates(en_candidate_file)
+
+    # es candidate file
     cand.mention_dic = {}
-    cand.loadWikiCand(esmention_count_file,esredirect_file, mentions=mention_vocab)
-    cand.saveCandidates(es_candidate_file2)
+    cand.loadWikiDic(eswiki_id_file, mentions=mention_vocab)
+    cand.loadWikiCand(esmention_count_file, esredirect_file, mentions=mention_vocab)
+    cand.saveCandidates(es_candidate_file)
+
+    # zh candidate file
+    cand.mention_dic = {}
+    cand.loadWikiDic(zhwiki_id_file, mentions=mention_vocab)
+    cand.loadWikiCand(zhmention_count_file, zhredirect_file, mentions=mention_vocab)
+    cand.saveCandidates(zh_candidate_file)
 
 
 

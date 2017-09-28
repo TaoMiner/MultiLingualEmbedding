@@ -13,6 +13,7 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-s = 'sdf sdf wefw  sdfwe'
-s = re.sub(r'\s+', '', s)
+nonEngRE = re.compile(r'[\W]+')
+s = 'sdf sdf wefw  sdfwe23 *&^'
+s = nonEngRE.sub(" ", s)
 print s
