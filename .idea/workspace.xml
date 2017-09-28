@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/GBDT.py" afterPath="$PROJECT_DIR$/eval/GBDT.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/candidate.py" afterPath="$PROJECT_DIR$/eval/candidate.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/tt.py" afterPath="$PROJECT_DIR$/preprocess/tt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -42,8 +42,8 @@
       <file leaf-file-name="DataReader.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="533">
-              <caret line="99" column="38" lean-forward="true" selection-start-line="99" selection-start-column="38" selection-end-line="99" selection-end-column="38" />
+            <state relative-caret-position="115">
+              <caret line="30" column="19" lean-forward="false" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="19" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -51,26 +51,28 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="candidate.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="candidate.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/candidate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="246">
-              <caret line="268" column="25" lean-forward="true" selection-start-line="268" selection-start-column="25" selection-end-line="268" selection-end-column="25" />
+            <state relative-caret-position="253">
+              <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
-                <marker date="1506569692000" expanded="false" signature="6741:7809" ph="..." />
-                <marker date="1506569692000" expanded="false" signature="7848:8504" ph="..." />
+                <marker date="1506587855000" expanded="false" signature="7033:8101" ph="..." />
+                <marker date="1506587855000" expanded="false" signature="8140:8796" ph="..." />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="GBDT.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="GBDT.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/eval/GBDT.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="598">
-              <caret line="37" column="34" lean-forward="true" selection-start-line="37" selection-start-column="34" selection-end-line="37" selection-end-column="34" />
-              <folding />
+            <state relative-caret-position="154">
+              <caret line="370" column="37" lean-forward="true" selection-start-line="370" selection-start-column="37" selection-end-line="370" selection-end-column="37" />
+              <folding>
+                <element signature="e#0#13#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -78,8 +80,8 @@
       <file leaf-file-name="features.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/features.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="234">
-              <caret line="116" column="8" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="413" selection-end-column="0" />
+            <state relative-caret-position="2438">
+              <caret line="117" column="16" lean-forward="true" selection-start-line="117" selection-start-column="16" selection-end-line="117" selection-end-column="16" />
               <folding />
             </state>
           </provider>
@@ -141,9 +143,9 @@
         <option value="$PROJECT_DIR$/preprocess/WikiExtractor.py" />
         <option value="$PROJECT_DIR$/preprocess/preprocess.py" />
         <option value="$PROJECT_DIR$/eval/DataReader.py" />
-        <option value="$PROJECT_DIR$/eval/GBDT.py" />
         <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/eval/candidate.py" />
+        <option value="$PROJECT_DIR$/eval/GBDT.py" />
       </list>
     </option>
   </component>
@@ -861,6 +863,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="72472">
           <caret line="3209" column="0" lean-forward="true" selection-start-line="3209" selection-start-column="0" selection-end-line="3209" selection-end-column="0" />
+          <folding>
+            <element signature="e#2093#2142#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -922,32 +927,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="533">
-          <caret line="99" column="38" lean-forward="true" selection-start-line="99" selection-start-column="38" selection-end-line="99" selection-end-column="38" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/features.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="116" column="8" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="413" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/GBDT.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="598">
-          <caret line="37" column="34" lean-forward="true" selection-start-line="37" selection-start-column="34" selection-end-line="37" selection-end-column="34" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="345">
@@ -958,14 +937,42 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/candidate.py">
+    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="246">
-          <caret line="268" column="25" lean-forward="true" selection-start-line="268" selection-start-column="25" selection-end-line="268" selection-end-column="25" />
+        <state relative-caret-position="115">
+          <caret line="30" column="19" lean-forward="false" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="19" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
-            <marker date="1506569692000" expanded="false" signature="6741:7809" ph="..." />
-            <marker date="1506569692000" expanded="false" signature="7848:8504" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/candidate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="253">
+          <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+            <marker date="1506587855000" expanded="false" signature="7033:8101" ph="..." />
+            <marker date="1506587855000" expanded="false" signature="8140:8796" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/features.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2438">
+          <caret line="117" column="16" lean-forward="true" selection-start-line="117" selection-start-column="16" selection-end-line="117" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/GBDT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="370" column="37" lean-forward="true" selection-start-line="370" selection-start-column="37" selection-end-line="370" selection-end-column="37" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>

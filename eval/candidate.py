@@ -9,6 +9,9 @@ class Candidate:
         self.wiki_dic = {}
         self.wiki_id_dic = {}
         self.mention_dic = {}       # {'mention':set(ent_id,..), ...}
+        self.en_mention_dic = {}
+        self.es_mention_dic = {}
+        self.zh_mention_dic = {}
 
     def loadMentionVocab(self, filename, entities = None):
         mention_set = set()
@@ -136,10 +139,15 @@ class Candidate:
         print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
 
     def loadCandidates(self, filename):
+        mention_dic = {}
+        count = 0
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                self.mention_dic[items[0]] = items[1:]
+                mention_dic[items[0]] = items[1:]
+                count += len(items[1:])
+        print("load {0} mentions with {1} candidates!".format(len(mention_dic), count))
+        return mention_dic
 
 
 
@@ -238,8 +246,8 @@ if __name__ == '__main__':
     zhentity_vocab_file = '/home/caoyx/data/etc/exp3/zhvec/vocab2_entity.txt'
     zh_candidate_file = '/home/caoyx/data/candidates.zh'
 
-    zh_en_file = ''
-    es_en_file = ''
+    zh_en_file = '/home/caoyx/data/kbp/zh-en'
+    es_en_file = '/home/caoyx/data/kbp/es-en'
 
     cand = Candidate()
     enmention_vocab = cand.loadMentionVocab(enmention_vocab_file)
@@ -270,7 +278,4 @@ if __name__ == '__main__':
     cand.loadWikiDic(zhwiki_id_file, mentions=mention_vocab)
     cand.loadWikiCand(zhmention_count_file, zhredirect_file, mentions=mention_vocab)
     cand.saveCandidates(zh_candidate_file)
-
-
-
 

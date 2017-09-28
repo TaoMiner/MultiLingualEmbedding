@@ -10,6 +10,8 @@ import os
 import pandas as pd
 import string
 import math
+from candidate import Candidate
+from DataReader import DataReader
 
 class Features:
     "construct (mention, entity) pair's feature vectors, including base feature, \
@@ -18,22 +20,23 @@ class Features:
         self.window = 5
         self.entity_prior = {}
         self.me_prob = {}
-        self.mention_cand = {}
         self.res1 = {}
         self.skip = 0
         self.m_count = {}
-        self.punc = re.compile('[%s]' % re.escape(string.punctuation))
+        self.punc = re.compile('[{0}]'.format(re.escape(string.punctuation)))
         self.log_file = ''
+        self.has_sense = False
+        self.candidate = None
 
-    def loadWEVec(self, word, entity):
+    def loadVec(self, word, entity, sense=None):
         self.tr_word = word
         self.tr_entity = entity
+        if not isinstance(sense, type(None)):
+            self.has_sense = True
+            self.tr_sense = sense
 
     def loadIdWiki(self, id_wiki_file):
         self.id_wiki = Entity.loadEntityIdDic(id_wiki_file)
-
-    def loadTitle(self, title, has_sense=True):
-        self.tr_title = title
 
     def loadPrior(self, filename):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
@@ -64,21 +67,7 @@ class Features:
     def savePrior(self, file):
         with codecs.open(file, 'w', encoding='UTF-8') as fout:
             for ent in self.entity_prior:
-                fout.write('%s\t%f\n' % (ent,self.entity_prior[ent]))
-
-    def loadCand(self, filename):
-        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
-            can_sum = 0
-            for line in fin:
-                items = re.split(r'\t', line.strip())
-                tmp_set = set()
-                for i in items[1:]:
-                    if i in self.id_wiki:
-                        tmp_set.add(i)
-                if len(tmp_set) > 0:
-                    self.mention_cand[items[0]] = tmp_set
-                    can_sum += len(tmp_set)
-        print("load %d mentions with %d candidates!" % (len(self.mention_cand),can_sum))
+                fout.write('{0}\t{1}\n'.format(ent,self.entity_prior[ent]))
 
     # load the predicted entity in the first step, or return None
     def loadResult(self, filename):
@@ -114,73 +103,72 @@ class Features:
         return re.sub(r'\(.*?\)$', '', entity_label).strip()
 
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
-    def getFVec(self, doc_id, doc, mentions, c_entities = []):
+    def getFVec(self, doc, lang, c_entities = []):
         vec = []
         largest_pe = -1.0
         mention_index = -1
         isFirstStep = True if len(c_entities) < 1 else False
-        for m in mentions:      #m [doc_index, sentence_index, wiki_id]
+        for m in doc.mentions:      #m [doc_index, sentence_index, wiki_id]     # [doc_index, ment_len, wiki_id, ment_str]
             mention_index += 1
-            ment_name = m[1]
-            if ment_name not in self.mention_cand:
+            ment_name = m[3]
+            if ment_name not in self.candidate.en_mention_dic:
                 self.skip += 1
                 if len(self.log_file) > 0:
-                    self.fout_log.write('miss mention:%s, for entity: %s\n' % (m[1], m[2]))
+                    self.fout_log.write('miss mention:{0}, for entity: {1}\n'.format(m[3], m[2]))
                 continue
-            cand_set = self.mention_cand[ment_name]
+            cand_set = self.candidate.en_mention_dic[ment_name]
             cand_size = len(cand_set)
-            norm_ment_name = doc[m[0]]
 
             for cand_id in cand_set:        #cand_id: m's candidates wiki id
-                entity_label = self.id_wiki[cand_id]    # check when load candidates
-                entity_title = self.getTitle(entity_label)
-                tmp_mc_vec = [doc_id]
+                if cand_id not in self.id_wiki : continue
+                entity_label = self.id_wiki[cand_id]
+                tmp_mc_vec = []
                 #get base features
                 pem = 0.0
-                if norm_ment_name not in self.me_prob:
+                if ment_name not in self.me_prob:
                     if len(self.log_file) > 0:
-                        self.fout_log.write('miss norm mention: %s, for %s, in anchors!\n' % (norm_ment_name, ment_name) )
-                elif cand_id not in self.me_prob[norm_ment_name]:
+                        self.fout_log.write('miss mention: {0} in anchors!\n'.format(ment_name) )
+                elif cand_id not in self.me_prob[ment_name]:
                     if len(self.log_file) > 0 :
-                        self.fout_log.write('miss entity %s, for %s!\n' % (cand_id, norm_ment_name))
+                        self.fout_log.write('miss entity {0}, for {1}!\n'.format(cand_id, ment_name))
                 else:
-                    pem = float(self.me_prob[norm_ment_name][cand_id])/self.m_count[norm_ment_name]
+                    pem = float(self.me_prob[ment_name][cand_id])/self.m_count[ment_name]
                 pe = 0.0
                 if cand_id not in self.entity_prior:
                     if len(self.log_file) > 0:
-                        self.fout_log.write('miss entity %s in prior!\n' % cand_id)
+                        self.fout_log.write('miss entity {0} in prior!\n'.format(cand_id))
                 else:
                     pe = self.entity_prior[cand_id]
                 largest_pe = pe if largest_pe < pe else largest_pe
                 tmp_mc_vec.extend([mention_index, m[2], cand_id, cand_size, pem, pe, 0])
 
                 #get string features
-                str_sim1 = Levenshtein.distance(ment_name, entity_title)
-                str_sim2 = 1 if ment_name == entity_title else 0
-                str_sim3 = 1 if entity_title.find(ment_name) else 0
-                str_sim4 = 1 if entity_title.startswith(ment_name) else 0
-                str_sim5 = 1 if entity_title.endswith(ment_name) else 0
+                str_sim1 = Levenshtein.distance(ment_name, entity_label)
+                str_sim2 = 1 if ment_name == entity_label else 0
+                str_sim3 = 1 if entity_label.find(ment_name) else 0
+                str_sim4 = 1 if entity_label.startswith(ment_name) else 0
+                str_sim5 = 1 if entity_label.endswith(ment_name) else 0
                 tmp_mc_vec.extend([str_sim1, str_sim2, str_sim3, str_sim4, str_sim5])
 
-                has_word = True if norm_ment_name in self.tr_word.vectors else False
+                has_word = True if ment_name in self.tr_word.vectors else False
                 has_entity = True if entity_label in self.tr_entity.vectors else False
-                has_sense = True if entity_label in self.tr_title.vectors else False
+                has_sense = True if entity_label in self.tr_sense.vectors else False
 
                 # 3 embedding similarity: esim1:(w,e), esim2:(sense,e), esim3:(w,sense)
                 esim1 = 0
                 erank1 = 0
                 if has_word and has_entity:
-                    esim1 = self.cosSim(self.tr_word.vectors[norm_ment_name],self.tr_entity.vectors[entity_label])
+                    esim1 = self.cosSim(self.tr_word.vectors[ment_name],self.tr_entity.vectors[entity_label])
 
                 esim2 = 0
                 erank2 = 0
                 if has_sense and has_entity:
-                    esim2 = self.cosSim(self.tr_title.vectors[entity_label], self.tr_entity.vectors[entity_label])
+                    esim2 = self.cosSim(self.tr_sense.vectors[entity_label], self.tr_entity.vectors[entity_label])
 
                 esim3 = 0
                 erank3 = 0
                 if has_sense and has_word:
-                    esim3 = self.cosSim(self.tr_word.vectors[norm_ment_name], self.tr_title.vectors[entity_label])
+                    esim3 = self.cosSim(self.tr_word.vectors[ment_name], self.tr_sense.vectors[entity_label])
 
                 # 4 contexual similarities for align, me and mpme: csim1:(c(w),e), csim2:(N(e),e), csim3:(tls,c(w)) [only mpme], csim4:(mu(tls),c(w)) [only mpme], csim5:(N(tls),tls)
                 # context vec
@@ -209,12 +197,12 @@ class Features:
                 csim3 = 0
                 crank3 = 0
                 if c_w_actual > 0 and has_sense:
-                    csim3 = self.cosSim(context_vec, self.tr_title.vectors[entity_label])
+                    csim3 = self.cosSim(context_vec, self.tr_sense.vectors[entity_label])
 
                 csim4 = 0
                 crank4 = 0
                 if has_sense and c_w_actual>0:
-                    csim4 = self.cosSim(context_vec, self.tr_title.mu[entity_label])
+                    csim4 = self.cosSim(context_vec, self.tr_sense.mu[entity_label])
 
                 csim5 = 0
                 crank5 = 0
@@ -257,14 +245,14 @@ class Features:
                     df_vec.loc[row[0], 'csim2'] = self.cosSim(c_ent_vec, entity_vec)
 
             # update context entity features by entity title
-            if len(c_entities) > 0 and entity_label in self.tr_title.vectors:
+            if len(c_entities) > 0 and entity_label in self.tr_sense.vectors:
                 c_title_vec = np.zeros(self.tr_word.layer_size)
                 c_title_num = 0
                 for ent in c_entities:
-                    if ent in self.tr_title.vectors:
-                        c_title_vec += self.tr_title.vectors[ent]
+                    if ent in self.tr_sense.vectors:
+                        c_title_vec += self.tr_sense.vectors[ent]
                         c_title_num += 1
-                title_vec = self.tr_title.vectors[entity_label]
+                title_vec = self.tr_sense.vectors[entity_label]
                 if c_title_num > 0:
                     c_title_vec /= c_title_num
                     df_vec.loc[row[0], 'csim5'] = self.cosSim(c_title_vec, title_vec)
@@ -314,53 +302,12 @@ class Features:
                 cand_size = 0
         return df_vec
 
-    def extFeatures(self, doc_file, feature_file):
+    def extFeatures(self, corpus, lang, feature_file):
         if len(self.log_file) > 0:
             self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
-        with codecs.open(doc_file, 'r', encoding='UTF-8') as fin:
-            doc_id = 0
-            doc = []
-            mentions = []
-            is_mention = False
-            for line in fin:
-                line = line.strip()
-                if line.startswith('-DOCSTART-'):
-                    if doc_id > 0 and len(mentions) > 0:
-                        if doc_id in self.res1:
-                            vec = self.getFVec(doc_id, doc, mentions, self.res1[doc_id])
-                        else:
-                            vec = self.getFVec(doc_id, doc, mentions)
-                        vec.to_csv(feature_file, mode='a', header=False, index=False)
-                    doc_id += 1
-                    if doc_id % 20 ==0:
-                        print 'has processed %d docs!' % doc_id
-                    del doc[:]
-                    del mentions[:]
-                    is_mention = False
-                    continue
-                elif len(line) < 1:
-                    is_mention = False
-                    continue
-                else:
-                    items = re.split(r'\t', line)
-                    if len(items) > 4 and items[1] == 'B' and items[2] in self.mention_cand and items[5] in self.mention_cand[items[2]]:
-                        mentions.append([len(doc), items[2], items[5]])
-                        doc.append(self.maprule(items[2]))
-                        is_mention = True
-                    elif is_mention and len(items) > 2 and items[1] == 'I':
-                        continue
-                    else:
-                        tmp_w = self.maprule(items[0])
-                        if tmp_w in self.tr_word.vectors:
-                            doc.append(tmp_w)
-                        is_mention = False
-                        continue
-            if len(doc) > 0:
-                if doc_id in self.res1:
-                    vec = self.getFVec(doc_id, doc, mentions, self.res1[doc_id])
-                else:
-                    vec = self.getFVec(doc_id, doc, mentions)
-                vec.to_csv(feature_file, mode='a', header=False, index=False)
+        for doc in corpus:
+            vec = self.getFVec(doc, lang)
+            vec.to_csv(feature_file, mode='a', header=False, index=False)
         if len(self.log_file) > 0:
             self.fout_log.close()
 
@@ -370,14 +317,25 @@ if __name__ == '__main__':
     candidate_file = '/home/caoyx/data/conll/ppr_candidate'
     wiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
     count_mention_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
-    output_file = '/home/caoyx/data/conll/ppr_conll_file.csv'
+    train_feature_file = '/home/caoyx/data/train_file.csv'
+    eval_feature_file = '/home/caoyx/data/eval_file.csv'
     input_path = '/home/caoyx/data/etc/exp8/envec/'
     entity_vector_file = input_path + 'vectors1_entity5'
     word_vector_file = input_path + 'vectors1_word5'
-    title_vector_file = input_path + 'vectors1_senses5'
+    sense_vector_file = input_path + 'vectors1_senses5'
     log_file = '/home/caoyx/data/log/log_feature'
     res_file = '/home/caoyx/data/log/conll_pred.mpme'
-    has_title = True
+    en_candidate_file = '/home/caoyx/data/candidates.en'
+    es_candidate_file = '/home/caoyx/data/candidates.es'
+    zh_candidate_file = '/home/caoyx/data/candidates.zh'
+
+    eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
+    eval15_path = eval_path + '2015/eval/source_documents/'
+    train15_path = eval_path + '2015/training/source_docs/'
+    ans15_file = eval_path + '2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab'
+    ans15_train_file = eval_path + '2015/training/tac_kbp_2015_tedl_training_gold_standard_entity_mentions.tab'
+    kbid_map_file = '/home/caoyx/data/kbp/id.key'
+
     has_sense = True
 
     wiki_word = Word()
@@ -386,28 +344,38 @@ if __name__ == '__main__':
     wiki_entity = Entity()
     wiki_entity.loadVector(entity_vector_file)
 
-    if has_title and has_sense:
-        wiki_title = Sense()
-        wiki_title.loadVector(title_vector_file)
-
-    if has_title and not has_sense:
-        wiki_title = Word()
-        wiki_title.loadVector(title_vector_file)
+    wiki_sense = None
+    if has_sense:
+        wiki_sense = Sense()
+        wiki_sense.loadVector(sense_vector_file)
 
     features = Features()
     features.log_file = log_file
-    features.loadResult(res_file)
-    features.loadWEVec(wiki_word, wiki_entity)
+    # features.loadResult(res_file)
+    features.loadVec(wiki_word, wiki_entity, sense=wiki_sense)
     features.loadIdWiki(wiki_id_file)
 
-    if has_title:
-        features.loadTitle(wiki_title, has_sense)
+    # generate mention candidates
+    features.candidate = Candidate()
+    features.candidate.en_mention_dic = features.candidate.loadCandidates(en_candidate_file)
+    features.candidate.es_mention_dic = features.candidate.loadCandidates(es_candidate_file)
+    features.candidate.zh_mention_dic = features.candidate.loadCandidates(zh_candidate_file)
     #mention's candidate entities {apple:{wiki ids}, ...}
-    features.loadCand(candidate_file)
     #p(e)
     features.loadPrior(count_mention_file)
     print("load %d entities' priors!" % len(features.entity_prior))
     #{m:{e1:1, e2:3, ...}} for calculating p(e|m)
     print("load %d mention names with prob !" % len(features.me_prob))
-    features.extFeatures(aida_file, output_file)
 
+    # load doc
+    languages = ['eng', 'cmn', 'spa']
+    doc_type = ['nw', 'df', 'newswire', 'discussion_forum']
+    dr = DataReader()
+    idmap = dr.loadKbidMap(kbid_map_file)
+    mentions15 = dr.loadKbpMentions(ans15_file, id_map=idmap)
+    mentions15_train = dr.loadKbpMentions(ans15_train_file, id_map=idmap)
+    en_train_corpus = dr.readKbp(train15_path+languages[0]+'/'+doc_type[2]+'/', mentions15_train, '15')
+    en_eval_corpus = dr.readKbp(eval15_path + languages[0] + '/' + doc_type[2] + '/', mentions15, '15')
+
+    features.extFeatures(en_train_corpus, languages[0], train_feature_file)
+    features.extFeatures(en_eval_corpus, languages[0], eval_feature_file)
