@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Entity.py" afterPath="$PROJECT_DIR$/eval/Entity.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Sense.py" afterPath="$PROJECT_DIR$/eval/Sense.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Word.py" afterPath="$PROJECT_DIR$/eval/Word.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -76,11 +77,31 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Entity.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Entity.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/Entity.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="920">
               <caret line="128" column="67" lean-forward="false" selection-start-line="128" selection-start-column="67" selection-end-line="128" selection-end-column="67" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Sense.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/eval/Sense.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="200">
+              <caret line="99" column="57" lean-forward="false" selection-start-line="99" selection-start-column="57" selection-end-line="99" selection-end-column="57" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Word.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/eval/Word.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="299">
+              <caret line="28" column="20" lean-forward="true" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="20" />
               <folding />
             </state>
           </provider>
@@ -130,14 +151,12 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/eval/evalEntity.py" />
-        <option value="$PROJECT_DIR$/eval/Sense.py" />
         <option value="$PROJECT_DIR$/preprocess/Counter.py" />
         <option value="$PROJECT_DIR$/eval/evalWordSim353.py" />
         <option value="$PROJECT_DIR$/preprocess/parallel.py" />
         <option value="$PROJECT_DIR$/preprocess/preZhHant.py" />
         <option value="$PROJECT_DIR$/eval/distance.py" />
         <option value="$PROJECT_DIR$/eval/evalZhEn.py" />
-        <option value="$PROJECT_DIR$/eval/Word.py" />
         <option value="$PROJECT_DIR$/preprocess/cleanSmall.py" />
         <option value="$PROJECT_DIR$/eval/evalEsEn.py" />
         <option value="$PROJECT_DIR$/eval/features.py" />
@@ -155,6 +174,8 @@
         <option value="$PROJECT_DIR$/eval/candidate.py" />
         <option value="$PROJECT_DIR$/eval/GBDT.py" />
         <option value="$PROJECT_DIR$/eval/Entity.py" />
+        <option value="$PROJECT_DIR$/eval/Sense.py" />
+        <option value="$PROJECT_DIR$/eval/Word.py" />
       </list>
     </option>
   </component>
@@ -755,13 +776,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/Sense.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2300">
-          <caret line="104" column="4" lean-forward="false" selection-start-line="104" selection-start-column="4" selection-end-line="104" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="207">
@@ -774,13 +788,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="805">
           <caret line="39" column="33" lean-forward="false" selection-start-line="39" selection-start-column="33" selection-end-line="39" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/Word.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="322">
-          <caret line="17" column="38" lean-forward="false" selection-start-line="17" selection-start-column="38" selection-end-line="17" selection-end-column="38" />
         </state>
       </provider>
     </entry>
@@ -983,6 +990,22 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="920">
           <caret line="128" column="67" lean-forward="false" selection-start-line="128" selection-start-column="67" selection-end-line="128" selection-end-column="67" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/Sense.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="200">
+          <caret line="99" column="57" lean-forward="false" selection-start-line="99" selection-start-column="57" selection-end-line="99" selection-end-column="57" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/Word.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="299">
+          <caret line="28" column="20" lean-forward="true" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="20" />
           <folding />
         </state>
       </provider>

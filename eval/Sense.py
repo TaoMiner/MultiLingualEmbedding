@@ -37,7 +37,7 @@ class Sense():
 
     def buildMultiProto(self):
         if isinstance(self.id_entity, type(None)):
-            print "please set id entity dic!"
+            print("please set id entity dic!")
             return
         if isinstance(self.mention_dic, type(None)):
             self.mention_dic = {}
@@ -48,7 +48,7 @@ class Sense():
             tmp_senses = self.mention_dic[title] if title in self.mention_dic else []
             tmp_senses.append(t_id)
             self.mention_dic[title] = tmp_senses
-        print "successfully build %d multiproto mentions!" % len(self.mention_dic)
+        print("successfully build {0} multiproto mentions!".format(len(self.mention_dic)))
 
     def initVectorFormat(self, size):
         tmp_struct_fmt = []
@@ -97,7 +97,7 @@ class Sense():
                 self.mu[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 fin_vec.read(1)  # \n
             self.vocab_size = len(self.vectors)
-        print 'load %d senses!' % (self.vocab_size)
+        print('load {0} senses!'.format(self.vocab_size))
 
 if __name__ == '__main__':
     sense_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_senses1'
