@@ -22,7 +22,7 @@ class Entity():
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 or items[0]=="" or items[0] ==" ": continue
                 entity_id[items[1]] = items[0]
-        print 'load %d entities!' % len(entity_id)
+        print('load {0} entities!'.format(len(entity_id)))
         return entity_id
 
     @staticmethod
@@ -33,7 +33,7 @@ class Entity():
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 or items[0] == "" or items[0] == " ": continue
                 id_entity[items[0]] = items[1]
-        print 'load %d entities id!' % len(id_entity)
+        print('load {0} entities id!'.format(len(id_entity)))
         return id_entity
 
     def initVectorFormat(self, size):
@@ -50,7 +50,7 @@ class Entity():
                 items = re.split(r'\t', line.strip())
                 if items[0] in self.vectors:
                     vocab.add(items[0])
-        print 'read %d entities!' % len(vocab)
+        print('read {0} entities!'.format(len(vocab)))
         return vocab
 
     def sample(self, subvocab_file, vector_file,  sample_file):
@@ -59,7 +59,7 @@ class Entity():
         new_word_count = 0
         vocab_size = 0
         layer_size = 0
-        print 'new vocab size: %d\n' % new_vocab_size
+        print('new vocab size: {0}\n'.format(new_vocab_size))
         with codecs.open(vector_file, 'rb') as fin_vec:
             with codecs.open(sample_file, 'wb') as fout_vec:
                 # read file head: vocab size and layer size
@@ -74,7 +74,7 @@ class Entity():
                         layer_size = (int)("".join(char_set))
                         break
                     char_set.append(ch)
-                fout_vec.write("%d %d\n" % (new_vocab_size, layer_size))
+                fout_vec.write("{0} {1}\n".format(new_vocab_size, layer_size))
                 for i in xrange(vocab_size):
                     # read entity label
                     del char_set[:]
@@ -86,13 +86,13 @@ class Entity():
                     label = "".join(char_set).decode('utf-8')
                     if label in new_vocab:
                         new_word_count += 1
-                        fout_vec.write("%s\t" % label.encode('utf-8'))
+                        fout_vec.write("{0}\t".format(label.encode('utf-8')))
                         fout_vec.write(fin_vec.read(4 * layer_size))
                         fout_vec.write(fin_vec.read(1))
                     else:
                         fin_vec.read(4 * layer_size)
                         fin_vec.read(1)  # \n
-        print 'sample %d entities!' % new_word_count
+        print('sample {0} entities!'.format(new_word_count))
 
     def loadVector(self, filename):
         if isinstance(self.vectors, type(None)): self.vectors = {}
@@ -126,7 +126,7 @@ class Entity():
                 self.vectors[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
-        print 'load %d entity vectors!' % len(self.vectors)
+        print('load {0} entity vectors!'.format(len(self.vectors)))
 
 if __name__ == '__main__':
     entity_vector_file = '/Users/ethan/Downloads/mlmpme/envec/vectors1_entity.dat'
