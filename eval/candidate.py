@@ -16,12 +16,12 @@ class Candidate:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2: continue
-                mention_set.add(items[0])
+                mention_set.add(items[0].lower())
                 if not isinstance(entities, type(None)):
                     for ent_id in items[1:]:
                         if ent_id not in entities:
                             miss += 1
-        print("lack of {0} entity in embeddings!".format(miss))
+        print("totally {0} mentions! lack of {1} entity in embeddings!".format(len(mention_set), miss))
         return mention_set
 
     def loadEntityVocab(self, filename):
@@ -37,7 +37,7 @@ class Candidate:
         return entity_set
 
     # entities: id set
-    def loadWikiDic(self, filename, entities = None):
+    def loadWikiDic(self, filename, mentions = None, entities = None):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -45,7 +45,12 @@ class Candidate:
                 if not isinstance(entities, type(None)) and items[0] not in entities: continue
                 self.wiki_dic[items[1]] = items[0]
                 self.wiki_id_dic[items[0]] = items[1]
-        print("load {0} wiki dic!".format(len(self.wiki_dic)))
+                if not isinstance(mentions, type(None)) and items[1] not in mentions: continue
+                lower_title = items[1].lower()
+                tmp = set() if lower_title not in self.mention_dic else self.mention_dic[lower_title]
+                tmp.add(items[0])
+                self.mention_dic[lower_title] = tmp
+        print("load {0} wiki dic!{1} mentions!".format(len(self.wiki_dic), len(self.mention_dic)))
 
     # for ppr and yago candidates for mention set, mentions are all lowered
     def loadCand(self, filename, mentions = None, entities = None):
@@ -205,11 +210,11 @@ if __name__ == '__main__':
 
     en_cand = Candidate()
     entity_vocab = en_cand.loadEntityVocab(enentity_vocab_file)
-    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file)
-    en_cand.loadWikiDic(enwiki_id_file)
-    en_cand.loadCand(ppr_candidate_file)
-    en_cand.loadCand(yago_candidate_file)
-    en_cand.loadWikiCand(enmention_count_file,enredirect_file)
+    mention_vocab = en_cand.loadMentionVocab(enmention_vocab_file, entities=entity_vocab)
+    en_cand.loadWikiDic(enwiki_id_file,mentions=mention_vocab, entities=entity_vocab)
+    en_cand.loadCand(ppr_candidate_file, mentions=mention_vocab, entities=entity_vocab)
+    en_cand.loadCand(yago_candidate_file, mentions=mention_vocab, entities=entity_vocab)
+    en_cand.loadWikiCand(enmention_count_file,enredirect_file, mentions=mention_vocab, entities=entity_vocab)
     en_cand.saveCandidates(en_candidate_file)
 
 

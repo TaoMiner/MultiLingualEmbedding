@@ -40,7 +40,7 @@ class DataReader:
 
     def loadKbidMap(self, filename):
         id_map = {}
-        with codecs.open(file, 'r') as fin:
+        with codecs.open(filename, 'r') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2: continue
@@ -395,7 +395,7 @@ if __name__ == '__main__':
     doc_type = ['nw','df','newswire','discussion_forum']
     dr = DataReader()
     idmap = dr.loadKbidMap(kbid_map_file)
-    enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file)
+    enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file, id_map=idmap)
     dr.saveMentionDic(enmention_dic,enmention_dic_file)
     dr.saveMentionDic(esmention_dic, esmention_dic_file)
     dr.saveMentionDic(zhmention_dic, zhmention_dic_file)
