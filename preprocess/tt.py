@@ -4,6 +4,8 @@ import codecs
 import re
 import jieba
 import nltk
+import pandas as pd
+import numpy as np
 # from stanfordcorenlp import StanfordCoreNLP
 
 '''
@@ -13,7 +15,17 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-nonEngRE = re.compile(r'[\W]+')
-s = 'sdf sdf wefw  sdfwe23 *&^'
-s = nonEngRE.sub(" ", s)
-print s
+df = pd.DataFrame({'A' : ['foo', 'bar', 'foo', 'bar',\
+                          'foo', 'bar', 'foo', 'foo'],\
+                   'B' : ['one', 'one', 'two', 'three',\
+                                  'two', 'two', 'one', 'three'],\
+                   'C' : np.random.randn(8),\
+                   'D' : np.random.randn(8)})
+
+print df
+
+grouped = df.groupby('A')
+
+for name, group in grouped:
+    print name
+    print group

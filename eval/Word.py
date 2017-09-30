@@ -122,12 +122,12 @@ class Word():
             char_set = []
             while True:
                 ch = fin_vec.read(1)
-                if ch==' ' or ch=='\t':
-                    self.vocab_size = (int)("".join(char_set))
+                if ch==b' ' or ch== b'\t':
+                    self.vocab_size = (int)(b''.join(char_set).decode())
                     del char_set[:]
                     continue
-                if ch=='\n':
-                    self.layer_size = (int)("".join(char_set))
+                if ch==b'\n':
+                    self.layer_size = (int)(b''.join(char_set).decode())
                     break
                 char_set.append(ch)
             p_struct_fmt = self.initVectorFormat(self.layer_size)
@@ -137,19 +137,23 @@ class Word():
                 while True:
                     ch = struct.unpack('c',fin_vec.read(1))[0]
                     # add split interval white space
-                    if ch==' ' or ch=='\t':
+                    if ch==b' ' or ch==b'\t':
                         break
                     char_set.append(ch)
-                label = "".join(char_set).decode('utf-8')
+                label = b''.join(char_set).decode('utf-8')
                 self.vectors[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
             print('load {0} words!'.format(self.vocab_size))
 
 if __name__ == '__main__':
+    w = Word()
+    word_vector_file = '/Users/ethan/Downloads/sub_words2'
+    '''
     lang = 'en'
     word_vector_file = '/home/caoyx/data/etc/exp2/' + lang + 'vec/vectors1_word5'
     vocab_file = '/home/caoyx/data/evaluation_vocabulary3'
     output_file = '/home/caoyx/data/etc/exp2/' + lang + 'vec/sub_words'
     word = Word()
     word.sampleMulti(vocab_file,word_vector_file,output_file, lang)
+    '''

@@ -102,12 +102,12 @@ class Entity():
             char_set = []
             while True:
                 ch = fin_vec.read(1)
-                if ch==' ' or ch=='\t':
-                    self.vocab_size = (int)("".join(char_set))
+                if ch==b' ' or ch==b'\t':
+                    self.vocab_size = (int)(b''.join(char_set))
                     del char_set[:]
                     continue
-                if ch=='\n':
-                    self.layer_size = (int)("".join(char_set))
+                if ch==b'\n':
+                    self.layer_size = (int)(b''.join(char_set))
                     break
                 char_set.append(ch)
             p_struct_fmt = self.initVectorFormat(self.layer_size)
@@ -118,11 +118,11 @@ class Entity():
                     tmp_c = fin_vec.read(1)
                     if not tmp_c : break
                     ch = struct.unpack('c', tmp_c)[0]
-                    if ch=='\t':
+                    if ch==b'\t':
                         break
                     char_set.append(ch)
                 if len(char_set) < 1: break
-                label = "".join(char_set).decode('utf-8')
+                label = b''.join(char_set).decode('utf-8')
                 self.vectors[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
