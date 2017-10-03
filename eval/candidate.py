@@ -13,6 +13,16 @@ class Candidate:
         self.es_mention_dic = {}
         self.zh_mention_dic = {}
 
+    def getCandidates(self, ment_name, lang):
+        cand = set()
+        if lang == 'eng' and ment_name in self.en_mention_dic:
+            cand.update(self.en_mention_dic[ment_name])
+        if lang == 'cmn' and ment_name in self.zh_mention_dic:
+            cand.update(self.zh_mention_dic[ment_name])
+        if lang == 'spa' and ment_name in self.es_mention_dic:
+            cand.update(self.es_mention_dic[ment_name])
+        return cand
+
     def loadMentionVocab(self, filename, entities = None):
         mention_set = set()
         miss = 0

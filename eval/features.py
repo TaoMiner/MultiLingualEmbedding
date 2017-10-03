@@ -301,11 +301,11 @@ class Features:
                 cand_size = 0
         return df_vec
 
-    def extFeatures(self, corpus, lang, feature_file):
+    def extFeatures(self, corpus, candidate_dic, feature_file):
         if len(self.log_file) > 0:
             self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
         for doc in corpus:
-            vec = self.getFVec(doc, lang)
+            vec = self.getFVec(doc, candidate_dic)
             vec.to_csv(feature_file, mode='a', header=False, index=False)
         if len(self.log_file) > 0:
             self.fout_log.close()
@@ -401,5 +401,5 @@ if __name__ == '__main__':
     en_train_corpus = dr.readKbp(train15_path+languages[0]+'/'+doc_type[2]+'/', mentions15_train, '15')
     en_eval_corpus = dr.readKbp(eval15_path + languages[0] + '/' + doc_type[2] + '/', mentions15, '15')
 
-    features.extFeatures(en_train_corpus, languages[0], train_feature_file)
-    features.extFeatures(en_eval_corpus, languages[0], eval_feature_file)
+    features.extFeatures(en_train_corpus, features.candidate.en_mention_dic, train_feature_file)
+    features.extFeatures(en_eval_corpus, features.candidate.en_mention_dic, eval_feature_file)

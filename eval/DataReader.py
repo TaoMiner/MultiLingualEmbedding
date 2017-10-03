@@ -186,7 +186,6 @@ class DataReader:
         mention_index = 0
         tmp_map = {}
         for sent in sents:
-            print(sent)
             cur_pos = sent[0]
             line = sent[1]
             # some line contains <>..</>   or  <.../>

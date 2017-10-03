@@ -2,10 +2,6 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
-import jieba
-import nltk
-import pandas as pd
-import numpy as np
 # from stanfordcorenlp import StanfordCoreNLP
 
 '''
@@ -28,8 +24,8 @@ fin2 = codecs.open(lang2_file, 'r', encoding='UTF-8')
 lines2 = fin2.readlines()
 if len(lines1) != len(lines2): print("error")
 with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
-    for i in xrange(len(lines2)):
+    for i in range(len(lines2)):
         items = re.split(r'\t', lines1[i].strip())
         cand = items[0].strip()
         trans_cand = lines2[i].strip()
-        fout.write("{0}\t{1}\n".format(cand.encode('utf8'), trans_cand.encode('utf8')))
+        fout.write("{0}\t{1}\n".format(cand, trans_cand))
