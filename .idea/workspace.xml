@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Entity.py" afterPath="$PROJECT_DIR$/eval/Entity.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Sense.py" afterPath="$PROJECT_DIR$/eval/Sense.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/Word.py" afterPath="$PROJECT_DIR$/eval/Word.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/DataReader.py" afterPath="$PROJECT_DIR$/eval/DataReader.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/features.py" afterPath="$PROJECT_DIR$/eval/features.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/tt.py" afterPath="$PROJECT_DIR$/preprocess/tt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -21,7 +19,7 @@
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Counter.coverage" NAME="Counter Coverage Results" MODIFIED="1493420156377" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$test.coverage" NAME="test Coverage Results" MODIFIED="1505922211985" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../others/py_corenlp" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Word.coverage" NAME="Word Coverage Results" MODIFIED="1493317525922" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
-    <SUITE FILE_PATH="coverage/MultiLingualEmbedding$tt.coverage" NAME="tt Coverage Results" MODIFIED="1506695822903" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
+    <SUITE FILE_PATH="coverage/MultiLingualEmbedding$tt.coverage" NAME="tt Coverage Results" MODIFIED="1507015447123" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Sense.coverage" NAME="Sense Coverage Results" MODIFIED="1493384813142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$distance.coverage" NAME="distance Coverage Results" MODIFIED="1499240556515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$evalZhEn.coverage" NAME="evalZhEn Coverage Results" MODIFIED="1499779540926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
@@ -45,8 +43,8 @@
       <file leaf-file-name="DataReader.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8809">
-              <caret line="390" column="4" lean-forward="false" selection-start-line="390" selection-start-column="4" selection-end-line="392" selection-end-column="48" />
+            <state relative-caret-position="-1778">
+              <caret line="271" column="21" lean-forward="true" selection-start-line="271" selection-start-column="21" selection-end-line="271" selection-end-column="21" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -90,11 +88,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="features.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="features.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/features.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="518">
-              <caret line="124" column="24" lean-forward="true" selection-start-line="124" selection-start-column="24" selection-end-line="124" selection-end-column="24" />
+            <state relative-caret-position="269">
+              <caret line="400" column="29" lean-forward="false" selection-start-line="400" selection-start-column="29" selection-end-line="400" selection-end-column="29" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -102,11 +100,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tt.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="tt.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="483">
-              <caret line="26" column="20" lean-forward="false" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="20" />
+            <state relative-caret-position="322">
+              <caret line="29" column="52" lean-forward="false" selection-start-line="29" selection-start-column="52" selection-end-line="29" selection-end-column="52" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
               </folding>
@@ -153,16 +151,16 @@
         <option value="$PROJECT_DIR$/eval/kbp_preprocess.py" />
         <option value="$PROJECT_DIR$/preprocess/WikiExtractor.py" />
         <option value="$PROJECT_DIR$/preprocess/preprocess.py" />
-        <option value="$PROJECT_DIR$/eval/DataReader.py" />
         <option value="$PROJECT_DIR$/eval/candidate.py" />
         <option value="$PROJECT_DIR$/eval/GBDT.py" />
         <option value="$PROJECT_DIR$/eval/features_old.py" />
-        <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/eval/evaluator.py" />
         <option value="$PROJECT_DIR$/eval/Word.py" />
         <option value="$PROJECT_DIR$/eval/Entity.py" />
         <option value="$PROJECT_DIR$/eval/Sense.py" />
+        <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/eval/features.py" />
+        <option value="$PROJECT_DIR$/eval/DataReader.py" />
       </list>
     </option>
   </component>
@@ -593,7 +591,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1365105" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -601,18 +599,18 @@
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24657534" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24657534" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -628,13 +626,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="230">
-          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/Sense.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="368">
@@ -892,16 +883,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8809">
-          <caret line="390" column="4" lean-forward="false" selection-start-line="390" selection-start-column="4" selection-end-line="392" selection-end-column="48" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/GBDT.py" />
     <entry file="file://$PROJECT_DIR$/eval/features_old.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -961,22 +942,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
+    <entry file="file://$USER_HOME$/anaconda2/envs/tfTest/lib/python2.7/codecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="483">
-          <caret line="26" column="20" lean-forward="false" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="20" />
-          <folding>
-            <element signature="e#46#59#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="3348">
+          <caret line="709" column="16" lean-forward="false" selection-start-line="709" selection-start-column="16" selection-end-line="709" selection-end-column="16" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/features.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="518">
-          <caret line="124" column="24" lean-forward="true" selection-start-line="124" selection-start-column="24" selection-end-line="124" selection-end-column="24" />
+        <state relative-caret-position="269">
+          <caret line="400" column="29" lean-forward="false" selection-start-line="400" selection-start-column="29" selection-end-line="400" selection-end-column="29" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/DataReader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1778">
+          <caret line="271" column="21" lean-forward="true" selection-start-line="271" selection-start-column="21" selection-end-line="271" selection-end-column="21" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="322">
+          <caret line="29" column="52" lean-forward="false" selection-start-line="29" selection-start-column="52" selection-end-line="29" selection-end-column="52" />
+          <folding>
+            <element signature="e#46#59#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -110,20 +110,21 @@ class Features:
         return re.sub(r'\(.*?\)$', '', entity_label).strip()
 
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
-    def getFVec(self, doc, lang, c_entities = []):
+    def getFVec(self, doc, candidate_dic, c_entities = []):
         vec = []
         largest_pe = -1.0
         mention_index = -1
+        skip_mentions = {}
         isFirstStep = True if len(c_entities) < 1 else False
         for m in doc.mentions:      #m [doc_index, sentence_index, wiki_id]     # [doc_index, ment_len, wiki_id, ment_str]
             mention_index += 1
             ment_name = m[3]
-            if ment_name not in self.candidate.en_mention_dic:
+            if ment_name not in candidate_dic:
                 self.skip += 1
-                if len(self.log_file) > 0:
-                    self.fout_log.write('miss mention:{0}, for entity: {1}\n'.format(m[3], m[2]))
+                if ment_name not in skip_mentions:
+                    skip_mentions[m[3]] = m[2]
                 continue
-            cand_set = self.candidate.en_mention_dic[ment_name]
+            cand_set = candidate_dic[ment_name]
             cand_size = len(cand_set)
 
             for cand_id in cand_set:        #cand_id: m's candidates wiki id
@@ -132,19 +133,10 @@ class Features:
                 tmp_mc_vec = [doc.doc_id]
                 #get base features
                 pem = 0.0
-                if ment_name not in self.me_prob:
-                    if len(self.log_file) > 0:
-                        self.fout_log.write('miss mention: {0} in anchors!\n'.format(ment_name) )
-                elif cand_id not in self.me_prob[ment_name]:
-                    if len(self.log_file) > 0 :
-                        self.fout_log.write('miss entity {0}, for {1}!\n'.format(cand_id, ment_name))
-                else:
+                if ment_name in self.me_prob and cand_id in self.me_prob[ment_name]:
                     pem = float(self.me_prob[ment_name][cand_id])/self.m_count[ment_name]
                 pe = 0.0
-                if cand_id not in self.entity_prior:
-                    if len(self.log_file) > 0:
-                        self.fout_log.write('miss entity {0} in prior!\n'.format(cand_id))
-                else:
+                if cand_id in self.entity_prior:
                     pe = self.entity_prior[cand_id]
                 largest_pe = pe if largest_pe < pe else largest_pe
                 tmp_mc_vec.extend([mention_index, m[2], cand_id, cand_size, pem, pe, 0])
@@ -327,11 +319,11 @@ if __name__ == '__main__':
     train_feature_file = '/home/caoyx/data/train15_file.csv'
     eval_feature_file = '/home/caoyx/data/eval15_file.csv'
     vec_path = '/home/caoyx/data/etc/exp8/'
-    kb_entity_vector_file = ''
-    kb_sense_vector_file = ''
-    entity_vector_file = vec_path + 'vectors1_entity5'
-    word_vector_file = vec_path + 'vectors1_word5'
-    sense_vector_file = vec_path + 'vectors1_senses5'
+    kb_entity_vector_file = vec_path + 'envec/vectors1_entity5'
+    kb_sense_vector_file = vec_path + 'envec/vectors1_senses5'
+    entity_vector_file = vec_path + '/envec/vectors1_entity5'
+    word_vector_file = vec_path + '/envec/vectors1_word5'
+    sense_vector_file = vec_path + '/envec/vectors1_senses5'
     log_file = '/home/caoyx/data/log/log_feature'
     res_file = '/home/caoyx/data/log/conll_pred.mpme'
     en_candidate_file = '/home/caoyx/data/candidates.en'
@@ -389,7 +381,7 @@ if __name__ == '__main__':
     features.loadPrior(count_mention_file)
     print("load {0} entities' priors!".format(len(features.entity_prior)))
     #{m:{e1:1, e2:3, ...}} for calculating p(e|m)
-    print("load {0] mention names with prob !".format(len(features.me_prob)))
+    print("load {0} mention names with prob !".format(len(features.me_prob)))
 
     # load doc
     en_server = 'http://localhost:9001'

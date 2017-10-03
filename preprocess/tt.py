@@ -15,17 +15,21 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-df = pd.DataFrame({'A' : ['foo', 'bar', 'foo', 'bar',\
-                          'foo', 'bar', 'foo', 'foo'],\
-                   'B' : ['one', 'one', 'two', 'three',\
-                                  'two', 'two', 'one', 'three'],\
-                   'C' : np.random.randn(8),\
-                   'D' : np.random.randn(8)})
+lang = 'es'
+lang1_file = '/Users/ethan/Downloads/kbp15/eval_mention_dic.'+lang
+lang2_file = '/Users/ethan/Downloads/kbp15/'+lang+'-en'
+output_file = '/Users/ethan/Downloads/kbp15/'+lang+'-en2'
 
-print df
-
-grouped = df.groupby('A')
-
-for name, group in grouped:
-    print name
-    print group
+lines1 = []
+lines2 = []
+fin1 = codecs.open(lang1_file, 'r', encoding='UTF-8')
+lines1 = fin1.readlines()
+fin2 = codecs.open(lang2_file, 'r', encoding='UTF-8')
+lines2 = fin2.readlines()
+if len(lines1) != len(lines2): print("error")
+with codecs.open(output_file, 'w', encoding='UTF-8') as fout:
+    for i in xrange(len(lines2)):
+        items = re.split(r'\t', lines1[i].strip())
+        cand = items[0].strip()
+        trans_cand = lines2[i].strip()
+        fout.write("{0}\t{1}\n".format(cand.encode('utf8'), trans_cand.encode('utf8')))

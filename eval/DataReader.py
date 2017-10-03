@@ -245,7 +245,7 @@ class DataReader:
                         if tmp_seg[j][2] == 0:
                             tmp_map[m_index] = len(doc.text)-add_text
                         elif m_index in tmp_map:
-                            doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text]])
+                            doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], b' '.join(doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text])])
         return doc
 
     def readConll(self, file_name):
