@@ -38,7 +38,7 @@ class Entity():
 
     def initVectorFormat(self, size):
         tmp_struct_fmt = []
-        for i in xrange(size):
+        for i in range(size):
             tmp_struct_fmt.append('f')
         p_struct_fmt = "".join(tmp_struct_fmt)
         return p_struct_fmt
@@ -111,7 +111,7 @@ class Entity():
                     break
                 char_set.append(ch)
             p_struct_fmt = self.initVectorFormat(self.layer_size)
-            for i in xrange(self.vocab_size):
+            for i in range(self.vocab_size):
                 # read entity label
                 del char_set[:]
                 while True:

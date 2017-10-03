@@ -28,7 +28,14 @@ class Features:
         self.has_sense = False
         self.candidate = None
 
-    def loadVec(self, word, entity, sense=None):
+    def setCurLang(self, lang):
+        self.lang = lang
+
+    def loadKbVec(self, entity, sense=None):
+        self.kb_entity = entity
+        self.kb_sense = sense
+
+    def loadCurVec(self, word, entity, sense=None):
         self.tr_word = word
         self.tr_entity = entity
         if not isinstance(sense, type(None)):
@@ -319,10 +326,12 @@ if __name__ == '__main__':
     count_mention_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
     train_feature_file = '/home/caoyx/data/train15_file.csv'
     eval_feature_file = '/home/caoyx/data/eval15_file.csv'
-    input_path = '/home/caoyx/data/etc/exp8/envec/'
-    entity_vector_file = input_path + 'vectors1_entity5'
-    word_vector_file = input_path + 'vectors1_word5'
-    sense_vector_file = input_path + 'vectors1_senses5'
+    vec_path = '/home/caoyx/data/etc/exp8/'
+    kb_entity_vector_file = ''
+    kb_sense_vector_file = ''
+    entity_vector_file = vec_path + 'vectors1_entity5'
+    word_vector_file = vec_path + 'vectors1_word5'
+    sense_vector_file = vec_path + 'vectors1_senses5'
     log_file = '/home/caoyx/data/log/log_feature'
     res_file = '/home/caoyx/data/log/conll_pred.mpme'
     en_candidate_file = '/home/caoyx/data/candidates.en'
@@ -336,7 +345,12 @@ if __name__ == '__main__':
     ans15_train_file = eval_path + '2015/training/tac_kbp_2015_tedl_training_gold_standard_entity_mentions.tab'
     kbid_map_file = '/home/caoyx/data/kbp/id.key'
 
+    languages = ['eng', 'cmn', 'spa']
     has_sense = True
+    cur_lang = languages[0]
+    features = Features()
+    # kb lang is always 'eng', set for current lang
+    features.setCurLang(cur_lang)
 
     wiki_word = Word()
     wiki_word.loadVector(word_vector_file)
@@ -349,13 +363,23 @@ if __name__ == '__main__':
         wiki_sense = Sense()
         wiki_sense.loadVector(sense_vector_file)
 
-    features = Features()
     features.log_file = log_file
     # features.loadResult(res_file)
-    features.loadVec(wiki_word, wiki_entity, sense=wiki_sense)
+    features.loadCurVec(wiki_word, wiki_entity, sense=wiki_sense)
+    if cur_lang == languages[0]:
+        features.loadKbVec(wiki_entity, wiki_sense)
+    else:
+        kb_entity = Entity()
+        kb_entity.loadVector(kb_entity_vector_file)
+
+        kb_sense = None
+        if has_sense:
+            kb_sense = Sense()
+            kb_sense.loadVector(kb_sense_vector_file)
+        features.loadKbVec(kb_entity, kb_sense)
     features.loadIdWiki(wiki_id_file)
 
-    # generate mention candidates
+    # generate mention candidates in eng kb
     features.candidate = Candidate()
     features.candidate.en_mention_dic = features.candidate.loadCandidates(en_candidate_file)
     features.candidate.es_mention_dic = features.candidate.loadCandidates(es_candidate_file)
@@ -371,10 +395,14 @@ if __name__ == '__main__':
     en_server = 'http://localhost:9001'
     es_server = 'http://localhost:9002'
     jieba_dict = '/home/caoyx/data/dict.txt.big'
-    languages = ['eng', 'cmn', 'spa']
     doc_type = ['nw', 'df', 'newswire', 'discussion_forum']
     dr = DataReader()
-    dr.initNlpTool(en_server,languages[0])
+    if cur_lang == languages[0]:
+        dr.initNlpTool(en_server, cur_lang)
+    elif cur_lang == languages[1]:
+        dr.initNlpTool(es_server, cur_lang)
+    elif cur_lang == languages[2]:
+        dr.initNlpTool(jieba_dict, cur_lang)
     idmap = dr.loadKbidMap(kbid_map_file)
     mentions15 = dr.loadKbpMentions(ans15_file, id_map=idmap)
     mentions15_train = dr.loadKbpMentions(ans15_train_file, id_map=idmap)
