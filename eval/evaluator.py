@@ -3,18 +3,25 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 import datetime
 import codecs
+from options import Options
 
 class Evaluator:
     def __init__(self):
         self.log_file = ''
-        self.feature_list = ['cand_size', 'pem', 'pe','largest_pe','str_sim1', 'str_sim2','str_sim3','str_sim4','str_sim5','csim1', 'crank1','csim2', 'crank2','csim3', 'crank3', 'csim4', 'crank4']
+        self.feature_list = ['kb_cand_size', 'kb_pem', 'kb_pe','kb_largest_pe','cur_pem', 'cur_pe', 'cur_largest_pe',\
+                             'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5',\
+                             'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
+                             'esim1', 'erank1', 'esim2', 'erank2', 'esim3', 'erank3', 'esim4', 'erank4', \
+                             'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3']
 
     def loadFeatures(self, filename):
-        features = pd.read_csv(filename, header = None, names = ['doc_id', 'mention_id', 'wiki_id', 'cand_id',\
-                                              'cand_size', 'pem', 'pe','largest_pe',\
-                                                'str_sim1', 'str_sim2','str_sim3','str_sim4','str_sim5',\
-                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3',\
-                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3','csim4', 'crank4','csim5', 'crank5'])
+        features = pd.read_csv(filename, header = None, names = ['doc_id', 'mention_id', 'wiki_id', 'kb_cand_id',\
+                                              'kb_cand_size', 'kb_pem', 'kb_pe','kb_largest_pe', \
+                                                'cur_pem', 'cur_pe', 'cur_largest_pe', \
+                                                 'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5', \
+                                                'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
+                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4',\
+                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3'])
         print 'load finished!'
         features = features.fillna(0)
         label = []
@@ -93,15 +100,13 @@ class Evaluator:
                 fout.write("*******************************************************************************************\n")
 
 if __name__ == '__main__':
-    output_path = '/home/caoyx/data/log/'
-    train_feature_file = '/home/caoyx/data/train15_file.csv'
-    test_feature_file = '/home/caoyx/data/eval15_file.csv'
-    ans_file = output_path + 'conll_ans.mpme'
-    predict_file = output_path + 'conll_pred.mpme'
-    log_file = output_path + 'conll_log'
+    cur_lang = Options.en
+    doc_type = Options.doc_type[0]
+    corpus_year = 2015
+
     eval = Evaluator()
-    eval.log_file = log_file
+    eval.log_file = Options.getLogFile('eval_log')
     starttime = datetime.datetime.now()
-    eval.gbdt(train_feature_file, test_feature_file, predict_file = predict_file, ans_file = ans_file)
+    eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type), predict_file = Options.getLogFile('eval_predict.log'), ans_file = Options.getLogFile('eval_ans.log'))
     endtime = datetime.datetime.now()
     print (endtime - starttime).seconds

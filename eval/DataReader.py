@@ -6,6 +6,7 @@ import copy
 from pycorenlp import StanfordCoreNLP
 import simplejson
 import jieba
+from options import Options
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -106,20 +107,21 @@ class DataReader:
         print("load {0} mentions for {1} docs from {2}!".format(count, len(mentions), file))
         return mentions
 
-    def readKbp(self, path, mentions, doc_type):
+    def readKbp(self, year, isEval, lang, docType, mentions):
+        path = Options.getKBPDataPath(year,isEval,lang, docType)
         if len(mentions) < 1 or not os.path.isdir(path) :
             print("please check kbp mentions and input path!")
             return
         files = os.listdir(path)
         corpus = []
         offset = -4
-        if doc_type == 'df':
-            extract = self.extractKBP16DfText
-        elif doc_type == 'nw':
-            extract = self.extractKBP16NwText
-        else:
+        if year == 2015:
             extract = self.extractKBP15Text
             offset = -11
+        elif docType == Options.doc_type[0]:
+            extract = self.extractKBP16DfText
+        else :
+            extract = self.extractKBP16NwText
         for f in files:
             if f[:offset] in mentions:
                 print("processing {0}!".format(f))
@@ -244,7 +246,7 @@ class DataReader:
                         if tmp_seg[j][2] == 0:
                             tmp_map[m_index] = len(doc.text)-add_text
                         elif m_index in tmp_map:
-                            doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], b' '.join(doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text])])
+                            doc.mentions.append([tmp_map[m_index], len(doc.text)-tmp_map[m_index]-add_text, mentions[m_index][2], ' '.join(doc.text[tmp_map[m_index]:tmp_map[m_index]+len(doc.text)-tmp_map[m_index]-add_text])])
         return doc
 
     def readConll(self, file_name):
@@ -375,23 +377,7 @@ class DataReader:
                 fout.write("{0}\t{1}\n".format(ment, '\t'.join(mention_dic[ment])))
 
 if __name__ == '__main__':
-    eval_path = '/home/caoyx/data/kbp/LDC2017E03_TAC_KBP_Entity_Discovery_and_Linking_Comprehensive_Training_and_Evaluation_Data_2014-2016/data/'
-    ans15_file = eval_path+'2015/eval/tac_kbp_2015_tedl_evaluation_gold_standard_entity_mentions.tab'
-    ans15_train_file = eval_path + '2015/training/tac_kbp_2015_tedl_training_gold_standard_entity_mentions.tab'
-    ans16_file = eval_path+'2016/eval/tac_kbp_2016_edl_evaluation_gold_standard_entity_mentions.tab'
-    eval15_path = eval_path + '2015/eval/source_documents/'
-    train15_path = eval_path + '2015/training/source_docs/'
-    eval16_path = eval_path + '2016/eval/source_documents/'
-    conll_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
-    enmention_dic_file = '/home/caoyx/data/eval_mention_dic.en'
-    esmention_dic_file = '/home/caoyx/data/eval_mention_dic.es'
-    zhmention_dic_file = '/home/caoyx/data/eval_mention_dic.zh'
-    kbid_map_file = '/home/caoyx/data/kbp/id.key'
-    en_server = 'http://localhost:9001'
-    es_server = 'http://localhost:9002'
-    jieba_dict = '/home/caoyx/data/dict.txt.big'
-    languages = ['eng','cmn','spa']
-    doc_type = ['nw','df','newswire','discussion_forum']
+
     dr = DataReader()
     idmap = dr.loadKbidMap(kbid_map_file)
     enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file, id_map=idmap)

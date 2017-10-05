@@ -1,6 +1,6 @@
 import codecs
 import regex as re
-import os
+from options import Options
 
 nonEngRE = re.compile(r'[\W]+')
 class Candidate:
@@ -8,45 +8,85 @@ class Candidate:
     def __init__(self):
         self.wiki_dic = {}
         self.wiki_id_dic = {}
-        self.mention_dic = {}       # {'mention':set(ent_id,..), ...}
-        self.en_mention_dic = {}
-        self.es_mention_dic = {}
-        self.zh_mention_dic = {}
+        self.en_cand_dic = {}
+        self.es_cand_dic = {}
+        self.zh_cand_dic = {}
+        self.en_zh_dic = {}
+        self.en_es_dic = {}
+        self.zh_to_en = {}
+        self.es_to_en = {}
+
+    def loadTranslations(self, isLowered = True):
+        self.zh_to_en = self.loadTranslateMention(Options.getTransFile(Options.zh), isLowered)
+        self.es_to_en = self.loadTranslateMention(Options.getTransFile(Options.es), isLowered)
+
+    def getTranslation(self, ment_name, lang):
+        tr_ment_name = ''
+        if lang == Options.es:
+            tr_ment_name = self.es_to_en[ment_name] if ment_name in self.es_to_en else ''
+        if lang == Options.zh:
+            tr_ment_name = self.zh_to_en[ment_name] if ment_name in self.zh_to_en else ''
+        if lang == Options.en:
+            tr_ment_name = ment_name
+        return tr_ment_name
 
     def getCandidates(self, ment_name, lang):
-        cand = set()
-        if lang == 'eng' and ment_name in self.en_mention_dic:
-            cand.update(self.en_mention_dic[ment_name])
-        if lang == 'cmn' and ment_name in self.zh_mention_dic:
-            cand.update(self.zh_mention_dic[ment_name])
-        if lang == 'spa' and ment_name in self.es_mention_dic:
-            cand.update(self.es_mention_dic[ment_name])
+        en_cand = set()
+        cand = []
+        if ment_name in self.en_cand_dic:
+            en_cand.update(self.en_cand_dic[ment_name])
+        if ment_name in self.zh_cand_dic:
+            en_cand.update(self.zh_cand_dic[ment_name])
+        if ment_name in self.es_cand_dic:
+            en_cand.update(self.es_cand_dic[ment_name])
+        has_crosslinks = True
+        if lang == Options.en:
+            has_crosslinks = False
+        else:
+            tmp_dic = self.en_zh_dic if lang == Options.zh else self.en_es_dic
+        for ent_id in en_cand:
+            if has_crosslinks and ent_id in tmp_dic:
+                cand.append([ent_id, tmp_dic[ent_id]])
+            else:
+                cand.append([ent_id, ''])
         return cand
 
-    def loadMentionVocab(self, filename, entities = None):
-        mention_set = set()
-        miss = 0
+    def loadCrossLinks(self, filename):
+        line_count = 0
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                line_count += 1
+                if line_count <= 2 : continue
+                items = re.split(r'\t', line.strip())
+                if len(items) < 3 or len(items[0]) < 1: continue
+                if len(items[1]) > 0:
+                    self.en_zh_dic[items[0]] = items[1]
+                if len(items[2]) > 0:
+                    self.en_es_dic[items[0]] = items[2]
+
+    def loadMentionVocab(self, filename, isLowered):
+        mention_vocab = {}
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2: continue
-                mention_set.add(items[0].lower())
-                if not isinstance(entities, type(None)):
-                    for ent_id in items[1:]:
-                        if ent_id not in entities:
-                            miss += 1
-        print("totally {0} mentions! lack of {1} entity in embeddings!".format(len(mention_set), miss))
-        return mention_set
+                ment_name = items[0].lower() if isLowered else items[0]
+                tmp_ent_set = mention_vocab[ment_name] if ment_name in mention_vocab else set()
+                tmp_ent_set.update(items[1:])
+                mention_vocab[ment_name] = tmp_ent_set
+        return mention_vocab
 
-    def loadTranslateMention(self, filename, mentions):
+    def loadTranslateMention(self, filename, isLowered):
+        mentions = {}
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
-                line = nonEngRE.sub(' ', line)
-                line = re.sub(r'\s+',' ', line)
-                line = line.strip()
-                mentions.add(line)
-        print("totally {0} mentions".format(len(mentions)))
-
+                if isLowered:
+                    line = line.lower()
+                items = re.split(r'\t', line.strip())
+                if len(items) != 2 : continue
+                mentions[items[0]] = items[1]
+        print("totally {0} translated mentions".format(len(mentions)))
+        return mentions
 
     def loadEntityVocab(self, filename):
         entity_set = set()
@@ -61,7 +101,7 @@ class Candidate:
         return entity_set
 
     # entities: id set
-    def loadWikiDic(self, filename, mentions = None, entities = None):
+    def loadWikiDic(self, mention_dic, filename, isLowered, mentions = None, entities = None):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
@@ -69,22 +109,22 @@ class Candidate:
                 if not isinstance(entities, type(None)) and items[0] not in entities: continue
                 self.wiki_dic[items[1]] = items[0]
                 self.wiki_id_dic[items[0]] = items[1]
-                if not isinstance(mentions, type(None)) and items[1] not in mentions: continue
-                lower_title = items[1].lower()
-                tmp = set() if lower_title not in self.mention_dic else self.mention_dic[lower_title]
+                lower_title = items[1].lower() if isLowered else items[1]
+                if not isinstance(mentions, type(None)) and lower_title not in mentions: continue
+                tmp = set() if lower_title not in mention_dic else mention_dic[lower_title]
                 tmp.add(items[0])
-                self.mention_dic[lower_title] = tmp
-        print("load {0} wiki dic!{1} mentions!".format(len(self.wiki_dic), len(self.mention_dic)))
+                mention_dic[lower_title] = tmp
+        print("load {0} wiki dic!{1} mentions!".format(len(self.wiki_dic), len(mention_dic)))
 
     # for ppr and yago candidates for mention set, mentions are all lowered
-    def loadCand(self, filename, mentions = None, entities = None):
+    def loadCand(self, mention_dic, filename, isLowered, mentions = None, entities = None):
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                ment = items[0].lower()
+                ment_name = items[0].lower() if isLowered else items[0]
                 if len(items) < 2 : continue
-                if not isinstance(mentions, type(None)) and ment not in mentions: continue
-                tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                if not isinstance(mentions, type(None)) and ment_name not in mentions: continue
+                tmp_cand = set() if ment_name not in mention_dic else mention_dic[ment_name]
                 if not isinstance(entities, type(None)):
                     for item in items[1:]:
                         if item in entities:
@@ -92,14 +132,14 @@ class Candidate:
                 else:
                     tmp_cand |= set(items[1:])
                 if len(tmp_cand) > 0:
-                    self.mention_dic[ment] = tmp_cand
+                    mention_dic[ment_name] = tmp_cand
 
         cand_sum = 0
-        for ment in self.mention_dic:
-            cand_sum += len(self.mention_dic[ment])
-        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), filename))
+        for ment in mention_dic:
+            cand_sum += len(mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(mention_dic), filename))
 
-    def loadWikiCand(self, anchor_file, redirect_file, mentions = None, entities = None):
+    def loadWikiCand(self, mention_dic, anchor_file, redirect_file, isLowered, mentions = None, entities = None):
         if len(self.wiki_dic) == 0 :
             print("please load wiki dic!")
             return
@@ -111,181 +151,116 @@ class Candidate:
                 if not isinstance(entities, type(None)) and ent_id not in entities: continue
                 for item in items[2:]:
                     ment_item = re.split(r'::=', item)
-                    ment = ment_item[0].lower()
-                    if not isinstance(mentions, type(None)) and ment not in mentions: continue
-                    tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                    ment_name = ment_item[0].lower() if isLowered else ment_item[0]
+                    if not isinstance(mentions, type(None)) and ment_name not in mentions: continue
+                    tmp_cand = set() if ment_name not in mention_dic else mention_dic[ment_name]
                     tmp_cand.add(ent_id)
-                    self.mention_dic[ment] = tmp_cand
+                    mention_dic[ment_name] = tmp_cand
         cand_sum = 0
-        for ment in self.mention_dic:
-            cand_sum += len(self.mention_dic[ment])
-        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), anchor_file))
+        for ment in mention_dic:
+            cand_sum += len(mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(mention_dic), anchor_file))
         with codecs.open(redirect_file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 : continue
                 wiki_title = items[0]
-                ment = items[1].lower()
-                if not isinstance(mentions, type(None)) and ment not in mentions: continue
+                ment_name = items[1].lower() if isLowered else items[1]
+                if not isinstance(mentions, type(None)) and ment_name not in mentions: continue
                 if wiki_title in self.wiki_dic :
                     ent_id = self.wiki_dic[wiki_title]
                     if not isinstance(entities, type(None)) and ent_id not in entities: continue
                 else: return
-                tmp_cand = set() if ment not in self.mention_dic else self.mention_dic[ment]
+                tmp_cand = set() if ment_name not in mention_dic else mention_dic[ment_name]
                 tmp_cand.add(ent_id)
-                self.mention_dic[ment] = tmp_cand
+                mention_dic[ment_name] = tmp_cand
         cand_sum = 0
-        for ment in self.mention_dic:
-            cand_sum += len(self.mention_dic[ment])
-        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(self.mention_dic), redirect_file))
+        for ment in mention_dic:
+            cand_sum += len(mention_dic[ment])
+        print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(mention_dic), redirect_file))
 
-    def saveCandidates(self, filename):
+    def saveCandidates(self, filename, mention_dic):
         with codecs.open(filename, 'w', encoding='UTF-8') as fout:
             count = 0
-            for mention in self.mention_dic:
-                if len(self.mention_dic[mention])>0 and len(mention)>1:
-                    count += len(self.mention_dic[mention])
-                    fout.write("%s\t%s\n" % (mention, '\t'.join(self.mention_dic[mention])))
-        print("total {0} candidates for {1} mentions!".format(count, len(self.mention_dic)))
+            for mention in mention_dic:
+                if len(mention_dic[mention])>0 and len(mention)>1:
+                    count += len(mention_dic[mention])
+                    fout.write("%s\t%s\n" % (mention, '\t'.join(mention_dic[mention])))
+        print("total {0} candidates for {1} mentions!".format(count, len(mention_dic)))
 
-    def loadCandidates(self, filename):
-        mention_dic = {}
+    def loadCandidates(self):
+        self.loadEnCandidates(Options.getEvalCandidatesFile(Options.en))
+        self.loadEsCandidates(Options.getEvalCandidatesFile(Options.es))
+        self.loadZhCandidates(Options.getEvalCandidatesFile(Options.zh))
+
+    def loadEnCandidates(self, filename):
         count = 0
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                mention_dic[items[0]] = items[1:]
+                self.en_cand_dic[items[0]] = items[1:]
                 count += len(items[1:])
-        print("load {0} mentions with {1} candidates!".format(len(mention_dic), count))
-        return mention_dic
+        print("load {0} mentions with {1} candidates!".format(len(self.en_cand_dic), count))
 
-
-
-'''
-    def findPPRCand(self, path):
-        if not os.path.isdir(path):
-            return
-        for root, dirs, list in os.walk(path):
-            for dir in dirs:
-                self.findPPRCand(os.path.join(root, dir))
-            for l in list:
-                if not l.startswith('.'):
-                    with codecs.open(os.path.join(root, l), 'r', encoding='UTF-8') as fin:
-                        mention_name = ''
-                        for line in fin:
-                            line = line.strip()
-                            if line.startswith('ENTITY'):
-                                mention_name = re.search(r'(?<=text:).*?(?=\t)', line).group()
-                                if mention_name not in self.candidate:
-                                    self.candidate[mention_name] = set()
-                            if line.startswith('CANDIDATE') and mention_name != '':
-                                id = re.search(r'(?<=id:).*?(?=\t)', line).group()
-                                if id in self.ids:
-                                    self.candidate[mention_name].add(id)
-
-    def findYagoCand(self, filename):
+    def loadEsCandidates(self, filename):
+        count = 0
         with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
-                items = re.split(r'\t',line.strip().lower().decode('unicode_escape'))
-                items[1] = items[1].replace('_',' ')
-                if items[1] in self.wiki_id:
-                    tmp_id = self.wiki_id[items[1]]
-                    tmp_m = re.search(r'(?<=").*?(?=")', items[0]).group()
-                    if tmp_m in self.candidate:
-                        cand = self.candidate[tmp_m]
-                    else:
-                        cand = set()
-                    cand.add(tmp_id)
-                    self.candidate[tmp_m] = cand
+                items = re.split(r'\t', line.strip())
+                self.es_cand_dic[items[0]] = items[1:]
+                count += len(items[1:])
+        print("load {0} mentions with {1} candidates!".format(len(self.es_cand_dic), count))
 
-    def findWikiCand(self, anchor_file, redirect_file, wiki_file):
-        with codecs.open(anchor_file, 'r', encoding='UTF-8') as fin:
+    def loadZhCandidates(self, filename):
+        count = 0
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
             for line in fin:
-                items = re.split(r'\t', line.strip().lower())
-                if len(items) <= 2: continue
-                for m in items[2:]:
-                    m_text = m.replace('=[\d]+$', '')
-                    tmp_cand = self.candidate[m_text] if m_text in self.candidate else set()
-                    tmp_cand.add(items[0])
-                    self.candidate[m_text] = tmp_cand
-            print("load %d mention from anchors!" % len(self.candidate))
-        if len(self.wiki_id) < 1:
-            self.loadWikiId(wiki_file)
-        with codecs.open(redirect_file, 'r', encoding='UTF-8') as fin:
-            for line in fin:
-                items = re.split(r'\t\t', line.strip().lower())
-                if len(items)<2:continue
-                tmp_cand = self.candidate[items[0]] if items[0] in self.candidate else set()
-                if items[1] not in self.wiki_id:
-                    items[1] = items[1].replace('_', ' ')
-                    if items[1] not in self.wiki_id: continue
-                tmp_cand.add(self.wiki_id[items[1]])
-                self.candidate[items[0]] = tmp_cand
-            print("load %d mention from redirect pages!" % len(self.candidate))
-        with codecs.open(wiki_file, 'r', encoding='UTF-8') as fin:
-            for line in fin:
-                items = re.split(r'\t\t', line.strip().lower())
-                tmp_cand = self.candidate[items[0]] if items[0] in self.candidate else set()
-                tmp_cand.add(items[1])
-                self.candidate[items[0]] = tmp_cand
-            print("load %d mention from wiki pages!" % len(self.candidate))
+                items = re.split(r'\t', line.strip())
+                self.zh_cand_dic[items[0]] = items[1:]
+                count += len(items[1:])
+        print("load {0} mentions with {1} candidates!".format(len(self.zh_cand_dic), count))
 
-'''
+    def buildCandidates(self, isLowered = True):
+        enmention_dic = self.loadMentionVocab(Options.getEvalMentionVocabFile(Options.en), isLowered)
+        zh_en_dic = self.loadTranslateMention(Options.getTransFile(Options.zh), isLowered)
+        es_en_dic = self.loadTranslateMention(Options.getTransFile(Options.es), isLowered)
+
+        en_mention_vocab = set(enmention_dic.keys())
+        en_mention_vocab.update(set(zh_en_dic.values()))
+        en_mention_vocab.update(set(es_en_dic.values()))
+
+        esmention_dic = self.loadMentionVocab(Options.getEvalMentionVocabFile(Options.es), isLowered)
+        zhmention_dic = self.loadMentionVocab(Options.getEvalMentionVocabFile(Options.zh), isLowered)
+        es_mention_vocab = set(esmention_dic.keys())
+        zh_mention_vocab = set(zhmention_dic.keys())
+
+        mention_vocab = en_mention_vocab | es_mention_vocab | zh_mention_vocab
+
+        # eng candidate file
+        en_cand_dic = {}
+        self.loadWikiDic(en_cand_dic, Options.getEntityIdFile(Options.en),isLowered, mentions=mention_vocab)
+        self.loadCand(en_cand_dic, Options.ppr_candidate_file, isLowered, mentions=mention_vocab)
+        self.loadCand(en_cand_dic, Options.yago_candidate_file, isLowered, mentions=mention_vocab)
+        self.loadWikiCand(en_cand_dic, Options.getMentionCountFile(Options.en), Options.getRedirectFile(Options.en), isLowered, mentions=mention_vocab)
+        self.saveCandidates(en_cand_dic, Options.getEvalCandidatesFile(Options.en))
+
+        # es candidate file
+        es_cand_dic = {}
+        self.loadWikiDic(es_cand_dic, Options.getEntityIdFile(Options.es),isLowered, mentions=mention_vocab)
+        self.loadWikiCand(es_cand_dic, Options.getMentionCountFile(Options.es), Options.getRedirectFile(Options.es), isLowered, mentions=mention_vocab)
+        self.saveCandidates(es_cand_dic, Options.getEvalCandidatesFile(Options.es))
+
+        # zh candidate file
+        zh_cand_dic = {}
+        self.loadWikiDic(zh_cand_dic, Options.getEntityIdFile(Options.zh),isLowered, mentions=mention_vocab)
+        self.loadWikiCand(zh_cand_dic, Options.getMentionCountFile(Options.zh), Options.getRedirectFile(Options.zh), isLowered, mentions=mention_vocab)
+        self.saveCandidates(zh_cand_dic, Options.getEvalCandidatesFile(Options.zh))
 
 if __name__ == '__main__':
-    enwiki_id_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
-    eswiki_id_file = '/home/caoyx/data/dump20170401/eswiki_cl/vocab_entity.dat'
-    zhwiki_id_file = '/home/caoyx/data/dump20170401/zhwiki_cl/vocab_entity.dat'
-    ppr_candidate_file = '/home/caoyx/data/conll/ppr_candidate'
-    yago_candidate_file = '/home/caoyx/JTextKgForEL/data/conll/yago_candidates'
-    enmention_count_file = '/home/caoyx/data/dump20170401/enwiki_cl/entity_prior'
-    enredirect_file = '/home/caoyx/data/dump20170401/enwiki_cl/redirect_article_title'
-    enmention_vocab_file = '/home/caoyx/data/eval_mention_dic.en'
-    enentity_vocab_file = '/home/caoyx/data/etc/exp8/envec/vocab1_entity.txt'
-    en_candidate_file = '/home/caoyx/data/candidates.en'
-
-    esmention_count_file = '/home/caoyx/data/dump20170401/eswiki_cl/entity_prior'
-    esredirect_file = '/home/caoyx/data/dump20170401/eswiki_cl/redirect_article_title'
-    esmention_vocab_file = '/home/caoyx/data/eval_mention_dic.es'
-    esentity_vocab_file = '/home/caoyx/data/etc/exp8/esvec/vocab2_entity.txt'
-    es_candidate_file = '/home/caoyx/data/candidates.es'
-
-    zhmention_count_file = '/home/caoyx/data/dump20170401/zhwiki_cl/entity_prior'
-    zhredirect_file = '/home/caoyx/data/dump20170401/zhwiki_cl/redirect_article_title'
-    zhmention_vocab_file = '/home/caoyx/data/eval_mention_dic.zh'
-    zhentity_vocab_file = '/home/caoyx/data/etc/exp3/zhvec/vocab2_entity.txt'
-    zh_candidate_file = '/home/caoyx/data/candidates.zh'
-
-    zh_en_file = '/home/caoyx/data/kbp/zh-en'
-    es_en_file = '/home/caoyx/data/kbp/es-en'
-
     cand = Candidate()
-    enmention_vocab = cand.loadMentionVocab(enmention_vocab_file)
-    cand.loadTranslateMention(zh_en_file,enmention_vocab)
-    cand.loadTranslateMention(es_en_file, enmention_vocab)
-
-    esmention_vocab = cand.loadMentionVocab(esmention_vocab_file)
-    zhmention_vocab = cand.loadMentionVocab(zhmention_vocab_file)
-
-    mention_vocab = enmention_vocab | esmention_vocab | zhmention_vocab
-
-    # eng candidate file
-    cand.mention_dic = {}
-    cand.loadWikiDic(enwiki_id_file,mentions=mention_vocab)
-    cand.loadCand(ppr_candidate_file, mentions=mention_vocab)
-    cand.loadCand(yago_candidate_file, mentions=mention_vocab)
-    cand.loadWikiCand(enmention_count_file,enredirect_file, mentions=mention_vocab)
-    cand.saveCandidates(en_candidate_file)
-
-    # es candidate file
-    cand.mention_dic = {}
-    cand.loadWikiDic(eswiki_id_file, mentions=mention_vocab)
-    cand.loadWikiCand(esmention_count_file, esredirect_file, mentions=mention_vocab)
-    cand.saveCandidates(es_candidate_file)
-
-    # zh candidate file
-    cand.mention_dic = {}
-    cand.loadWikiDic(zhwiki_id_file, mentions=mention_vocab)
-    cand.loadWikiCand(zhmention_count_file, zhredirect_file, mentions=mention_vocab)
-    cand.saveCandidates(zh_candidate_file)
-
+    cand.buildCandidates()
+    '''
+    cand.loadCandidates()
+    cand.loadCrossLinks(Options.cross_links_file)
+    cand.loadTranslations()
+    '''
