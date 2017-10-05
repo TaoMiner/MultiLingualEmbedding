@@ -118,7 +118,8 @@ class Features:
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
     def getFVec(self, doc, c_entities = []):
         vec = []
-        largest_pe = -1.0
+        largest_kb_pe = -1.0
+        largest_cur_pe = -1.0
         mention_index = -1
         skip_mentions = {}
         isFirstStep = True if len(c_entities) < 1 else False
@@ -191,20 +192,20 @@ class Features:
                 items = re.split(r' ', tr_ment_name)
                 kbw_vec = np.zeros(self.kb_word.layer_size, dtype=float)
                 for item in items:
-                    if item in self.kb_word:
-                        kbw_vec += self.kb_word[item]
+                    if item in self.kb_word.vectors:
+                        kbw_vec += self.kb_word.vectors[item]
                         has_kb_word = True
                 has_cur_word = False
                 if self.lang != Options.en:
                     items = re.split(r' ', ment_name)
                     curw_vec = np.zeros(self.cur_word.layer_size, dtype=float)
                     for item in items:
-                        if item in self.cur_word:
-                            curw_vec += self.cur_word[item]
+                        if item in self.cur_word.vectors:
+                            curw_vec += self.cur_word.vectors[item]
                             has_cur_word = True
 
-                has_kb_sense = True if self.has_kb_sense and kb_cand_id in self.kb_sense else False
-                has_cur_sense = True if self.lang != Options.en and self.has_cur_sense and cur_cand_id in self.cur_sense else False
+                has_kb_sense = True if self.has_kb_sense and kb_cand_id in self.kb_sense.vectors else False
+                has_cur_sense = True if self.lang != Options.en and self.has_cur_sense and cur_cand_id in self.cur_sense.vectors else False
 
                 # 3 embedding similarity: esim1:(kbw,kbsense), esim2:(curw,cursense), esim3:(curw,kbw), esim4:(curw, kbsense)
                 esim1 = 0
@@ -276,13 +277,13 @@ class Features:
                 last_mention = row[2]
                 cand_count = 0
                 kb_cand_size = row[5]
-            kb_entity_label = self.kb_idwiki[row[4]]
+            kb_entity_id = self.kb_idwiki[row[4]]
             cand_count += 1
             #update the largest pe in base features
             df_vec.loc[row[0], 'kb_largest_pe'] = largest_kb_pe
             df_vec.loc[row[0], 'cur_largest_pe'] = largest_cur_pe
             #update context entity features
-            if len(c_entities) > 0 and kb_entity_label in self.kb_entity.vectors :
+            if len(c_entities) > 0 and kb_entity_id in self.kb_entity.vectors :
                 c_ent_vec = np.zeros(self.kb_entity.layer_size, dtype=float)
                 c_ent_num = 0
                 for ent in c_entities:

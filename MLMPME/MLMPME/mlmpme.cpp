@@ -1565,7 +1565,7 @@ int main(int argc, char **argv) {
         if(output_path[i][0]!=0){
             sprintf(model[TEXT_VOCAB][i].output_file, "%svectors%d_word", output_path[i], i+1);
             sprintf(model[KG_VOCAB][i].output_file, "%svectors%d_entity", output_path[i], i+1);
-            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors%d_senses", output_path[i], i+1);
+            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors%d_sense", output_path[i], i+1);
         }
         
         //initialize save vocab file

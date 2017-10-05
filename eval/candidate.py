@@ -179,7 +179,7 @@ class Candidate:
             cand_sum += len(mention_dic[ment])
         print("load {0} candidates for {1} mentions from {2}!".format(cand_sum, len(mention_dic), redirect_file))
 
-    def saveCandidates(self, filename, mention_dic):
+    def saveCandidates(self, mention_dic, filename):
         with codecs.open(filename, 'w', encoding='UTF-8') as fout:
             count = 0
             for mention in mention_dic:
