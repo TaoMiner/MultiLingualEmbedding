@@ -195,10 +195,11 @@ class Features:
                     if item in self.kb_word.vectors:
                         kbw_vec += self.kb_word.vectors[item]
                         has_kb_word = True
+
                 has_cur_word = False
+                curw_vec = np.zeros(self.cur_word.layer_size, dtype=float)
                 if self.lang != Options.en:
                     items = re.split(r' ', ment_name)
-                    curw_vec = np.zeros(self.cur_word.layer_size, dtype=float)
                     for item in items:
                         if item in self.cur_word.vectors:
                             curw_vec += self.cur_word.vectors[item]
@@ -234,7 +235,7 @@ class Features:
                 context_vec = np.zeros(self.cur_word.layer_size, dtype=float)
                 begin_pos = m[0] - self.window if m[0] - self.window > 0 else 0
                 end_pos = m[0] + self.window if m[0] + self.window < len(doc.text) else len(doc.text) - 1
-                for i in xrange(begin_pos, end_pos + 1):
+                for i in range(begin_pos, end_pos + 1):
                     if i == m[0]: continue
                     if doc.text[i] in self.cur_word.vectors:
                         context_vec += self.cur_word.vectors[doc.text[i]]
@@ -277,13 +278,13 @@ class Features:
                 last_mention = row[2]
                 cand_count = 0
                 kb_cand_size = row[5]
-            kb_entity_id = self.kb_idwiki[row[4]]
+            kb_cand_id = row[4]
             cand_count += 1
             #update the largest pe in base features
             df_vec.loc[row[0], 'kb_largest_pe'] = largest_kb_pe
             df_vec.loc[row[0], 'cur_largest_pe'] = largest_cur_pe
             #update context entity features
-            if len(c_entities) > 0 and kb_entity_id in self.kb_entity.vectors :
+            if len(c_entities) > 0 and kb_cand_id in self.kb_entity.vectors :
                 c_ent_vec = np.zeros(self.kb_entity.layer_size, dtype=float)
                 c_ent_num = 0
                 for ent in c_entities:
