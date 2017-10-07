@@ -118,6 +118,7 @@ class Features:
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
     # default, mention candidate dict depends on isCandLowered, embedding vocab is lowered
     def getFVec(self, doc, isCandLowered, c_entities = []):
+        self.fout_log.write("doc:{0}\nmentions:{1}\n".format(doc.text,doc.mentions))
         vec = []
         largest_kb_pe = -1.0
         largest_cur_pe = -1.0
@@ -221,6 +222,7 @@ class Features:
 
                 has_kb_sense = True if self.has_kb_sense and kb_cand_id in self.kb_sense.vectors else False
                 has_cur_sense = True if self.lang != Options.en and self.has_cur_sense and cur_cand_id in self.cur_sense.vectors else False
+
                 # 3 embedding similarity: esim1:(kbw,kbsense), esim2:(curw,cursense), esim3:(curw,kbw), esim4:(curw, kbsense)
                 esim1 = 0
                 erank1 = 0
@@ -255,6 +257,7 @@ class Features:
                         c_w_actual += 1
                 if c_w_actual > 0:
                     context_vec /= c_w_actual
+                self.fout_log.write("ment_name:{0}, cand_label:{1}, kb_s: {2}, kb_w: {3}, cw: {4}\n".format(ment_name,kb_entity_label,has_kb_sense,kb_w_actual,c_w_actual))
                 csim1 = 0
                 crank1 = 0
                 if c_w_actual>0 and has_kb_sense:
@@ -270,7 +273,7 @@ class Features:
                     csim3 = self.cosSim(context_vec, self.cur_sense.mu[cur_cand_id])
 
                 tmp_mc_vec.extend([esim1, erank1, esim2, erank2, esim3, erank3, esim4, erank4, csim1, crank1, csim2, crank2, csim3, crank3])
-
+                print("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
                 vec.append(tmp_mc_vec)
                 # add entities without ambiguous as truth
                 if isFirstStep and kb_pem > 0.95 :
@@ -354,9 +357,9 @@ class Features:
         if len(self.log_file) > 0:
             self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
         for doc in corpus:
-            self.fout_log.write("doc_id:{0}\n".format(doc.doc_id))
-            vec = self.getFVec(doc, isLowered)
-            vec.to_csv(feature_file, mode='a', header=False, index=False)
+            if doc.doc_id == "ENG_NW_001429_20150622_F0010006H":
+                vec = self.getFVec(doc, isLowered)
+                vec.to_csv(feature_file, mode='a', header=False, index=False)
         if len(self.log_file) > 0:
             self.fout_log.close()
 
@@ -450,6 +453,5 @@ if __name__ == '__main__':
     en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
     en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
 
-    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type))
-    print("train features finished!")
+    #features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type))
     features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type))
