@@ -124,7 +124,7 @@ class DataReader:
             extract = self.extractKBP16NwText
         for f in files:
             if f[:offset] in mentions:
-                print("processing {0}!".format(f))
+                #print("processing {0}!".format(f))
                 sents = extract(os.path.join(path, f))
                 doc = self.readDoc(sents, mentions[f[:offset]])
                 doc.doc_id = f[:offset]
