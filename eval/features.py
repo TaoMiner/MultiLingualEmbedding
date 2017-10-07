@@ -118,7 +118,7 @@ class Features:
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
     # default, mention candidate dict depends on isCandLowered, embedding vocab is lowered
     def getFVec(self, doc, isCandLowered, c_entities = []):
-        self.fout_log.write("doc:{0}\nmentions:{1}\n".format(doc.text,doc.mentions))
+        self.fout_log.write("doc_id:{0}\ndoc:{1}\nmentions:{2}\n".format(doc.doc_id, doc.text,doc.mentions))
         vec = []
         largest_kb_pe = -1.0
         largest_cur_pe = -1.0
@@ -273,7 +273,7 @@ class Features:
                     csim3 = self.cosSim(context_vec, self.cur_sense.mu[cur_cand_id])
 
                 tmp_mc_vec.extend([esim1, erank1, esim2, erank2, esim3, erank3, esim4, erank4, csim1, crank1, csim2, crank2, csim3, crank3])
-                print("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
+                self.fout_log.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
                 vec.append(tmp_mc_vec)
                 # add entities without ambiguous as truth
                 if isFirstStep and kb_pem > 0.95 :
@@ -354,12 +354,14 @@ class Features:
         return df_vec
 
     def extFeatures(self, corpus, feature_file, isLowered=True):
+        count = 0
         if len(self.log_file) > 0:
             self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
         for doc in corpus:
-            if doc.doc_id == "ENG_NW_001429_20150622_F0010006H":
-                vec = self.getFVec(doc, isLowered)
-                vec.to_csv(feature_file, mode='a', header=False, index=False)
+            vec = self.getFVec(doc, isLowered)
+            vec.to_csv(feature_file, mode='a', header=False, index=False)
+            count += 1
+        print("totally processed {0} docs!".format(count))
         if len(self.log_file) > 0:
             self.fout_log.close()
 
@@ -452,6 +454,8 @@ if __name__ == '__main__':
     mentions15_train = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, False), id_map=idmap)
     en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
     en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
+    print("totally {0} train docs, {1} eval docs!".format(len(en_train_corpus), len(en_eval_corpus)))
 
-    #features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type))
+    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type))
+    print("train features finished!")
     features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type))

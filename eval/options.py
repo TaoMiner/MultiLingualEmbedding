@@ -23,8 +23,6 @@ class Options:
     kbid_map_file = '/home/caoyx/data/kbp/id.key'
 
     output_path = '/home/caoyx/data/log/'
-    train_feature_file = '/home/caoyx/data/train15_file.csv'
-    test_feature_file = '/home/caoyx/data/eval15_file.csv'
     ans_file = output_path + 'conll_ans.mpme'
     predict_file = output_path + 'conll_pred.mpme'
     log_file = output_path + 'conll_log'
@@ -32,7 +30,7 @@ class Options:
     @staticmethod
     def getFeatureFile(year, isEval, lang, docType):
         tmp = 'eval' if isEval else 'training'
-        return Options.getKBPRootPath() + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature'
+        return Options.root_path + 'kbp/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature'
 
     @staticmethod
     def getNlpToolUrl(lang):
