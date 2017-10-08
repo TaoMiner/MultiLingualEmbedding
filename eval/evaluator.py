@@ -25,7 +25,7 @@ class Evaluator:
         print('load finished!')
         features = features.fillna(0)
         label = []
-        for row in features.loc[:, ['wiki_id', 'cand_id']].itertuples():
+        for row in features.loc[:, ['wiki_id', 'kb_cand_id']].itertuples():
             label.append(1 if row[1] == row[2] else 0)
         features.insert(0, 'label', label)
         return features
@@ -109,4 +109,4 @@ if __name__ == '__main__':
     starttime = datetime.datetime.now()
     eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type), predict_file = Options.getLogFile('eval_predict.log'), ans_file = Options.getLogFile('eval_ans.log'))
     endtime = datetime.datetime.now()
-    print (endtime - starttime).seconds
+    print("{0}".format((endtime - starttime).seconds))
