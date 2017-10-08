@@ -127,4 +127,4 @@ class Options:
         return Options.root_path + 'dump20170401/' + Options.getLangStr(lang) + 'wiki_cl/redirect_article_title'
 
 if __name__ == '__main__':
-    print(Options.getRedirectFile('cmn'))
+    print(Options.getKBPAnsFile(2015,False))

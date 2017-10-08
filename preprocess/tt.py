@@ -11,8 +11,8 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-a = b = c = 1
+s = "weofnf.of.wer.wer"
 
-print c
-
+index =  s.find(r'.')
+print s[:index]
 

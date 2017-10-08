@@ -114,20 +114,21 @@ class DataReader:
             return
         files = os.listdir(path)
         corpus = []
-        offset = -4
         if year == 2015:
             extract = self.extractKBP15Text
-            offset = -11
         elif docType == Options.doc_type[0]:
             extract = self.extractKBP16DfText
         else :
             extract = self.extractKBP16NwText
         for f in files:
-            if f[:offset] in mentions:
+            postfix_inf = f.find(r'.')
+            if postfix_inf == -1 : continue
+            filename = f[:postfix_inf]
+            if filename in mentions:
                 #print("processing {0}!".format(f))
                 sents = extract(os.path.join(path, f))
-                doc = self.readDoc(sents, mentions[f[:offset]])
-                doc.doc_id = f[:offset]
+                doc = self.readDoc(sents, mentions[filename])
+                doc.doc_id = filename
                 corpus.append(doc)
         return corpus
 
