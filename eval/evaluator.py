@@ -22,7 +22,7 @@ class Evaluator:
                                                 'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
                                                 'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4',\
                                                 'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3'])
-        print 'load finished!'
+        print('load finished!')
         features = features.fillna(0)
         label = []
         for row in features.loc[:, ['wiki_id', 'cand_id']].itertuples():
@@ -59,7 +59,7 @@ class Evaluator:
         gbdt.fit(train_x, train_y)
         print("train finished!")
         pred=gbdt.predict(test_x)
-        test_x.insert(0,'score', pred)
+        test_feature.insert(0,'score', pred)
 
         #testa's doc_id 947-1162
         total_p = 0.0
