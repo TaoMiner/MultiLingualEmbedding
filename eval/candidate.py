@@ -232,7 +232,9 @@ class Candidate:
         esmention_dic = self.loadMentionVocab(Options.getEvalMentionVocabFile(Options.es), isLowered)
         zhmention_dic = self.loadMentionVocab(Options.getEvalMentionVocabFile(Options.zh), isLowered)
         es_mention_vocab = set(esmention_dic.keys())
+        es_mention_vocab.update(set(es_en_dic.keys()))
         zh_mention_vocab = set(zhmention_dic.keys())
+        zh_mention_vocab.update(set(zh_en_dic.keys()))
 
         mention_vocab = en_mention_vocab | es_mention_vocab | zh_mention_vocab
 
@@ -246,12 +248,24 @@ class Candidate:
 
         # es candidate file
         es_cand_dic = {}
+        for ment_name in es_en_dic:
+            en_ment_name = es_en_dic[ment_name]
+            if en_ment_name in en_cand_dic:
+                tmp_set = set() if ment_name not in es_cand_dic else es_cand_dic[ment_name]
+                tmp_set.update(en_cand_dic[en_ment_name])
+                es_cand_dic[ment_name] = tmp_set
         self.loadWikiDic(es_cand_dic, Options.getEntityIdFile(Options.es),isLowered, mentions=mention_vocab)
         self.loadWikiCand(es_cand_dic, Options.getMentionCountFile(Options.es), Options.getRedirectFile(Options.es), isLowered, mentions=mention_vocab)
         self.saveCandidates(es_cand_dic, Options.getEvalCandidatesFile(Options.es))
 
         # zh candidate file
         zh_cand_dic = {}
+        for ment_name in zh_cand_dic:
+            en_ment_name = zh_cand_dic[ment_name]
+            if en_ment_name in en_cand_dic:
+                tmp_set = set() if ment_name not in zh_cand_dic else zh_cand_dic[ment_name]
+                tmp_set.update(en_cand_dic[en_ment_name])
+                zh_cand_dic[ment_name] = tmp_set
         self.loadWikiDic(zh_cand_dic, Options.getEntityIdFile(Options.zh),isLowered, mentions=mention_vocab)
         self.loadWikiCand(zh_cand_dic, Options.getMentionCountFile(Options.zh), Options.getRedirectFile(Options.zh), isLowered, mentions=mention_vocab)
         self.saveCandidates(zh_cand_dic, Options.getEvalCandidatesFile(Options.zh))

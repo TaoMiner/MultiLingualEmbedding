@@ -52,7 +52,7 @@ class DataReader:
     def initNlpTool(self, url, lang):
         if not isinstance(self.nlp, type(None)):return
         self.lang = lang
-        if lang != 'cmn':
+        if lang != Options.zh:
             self.nlp = StanfordCoreNLP(url)
             self.prop = {'annotators': 'tokenize, ssplit, lemma', 'outputFormat': 'json'}
         elif os.path.isfile(url):
@@ -65,7 +65,7 @@ class DataReader:
             print("please init nlp tool!")
             return
         tokens = []
-        if self.lang == 'cmn':
+        if self.lang == Options.zh:
             tokens = self.nlp.tokenize(sent)
         else:
             results = self.nlp.annotate(sent, properties=self.prop)
@@ -213,7 +213,7 @@ class DataReader:
             # tokens : [[word, start, end, lemma],...]  no lemma for chinese
             for token in tokens:
                 w = token[0]
-                lemma = w if self.lang=='zh' else token[3]
+                lemma = w if self.lang == Options.zh else token[3]
                 t_start = cur_pos + token[1] + 1 + lspace
                 t_end = cur_pos + token[2] + 1 + lspace
                 if tag_index < len(tag_pos) and t_start + tag_len >= tag_pos[tag_index][0] + cur_pos +1:
