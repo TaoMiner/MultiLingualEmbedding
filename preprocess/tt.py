@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
+import string
 # from stanfordcorenlp import StanfordCoreNLP
 
 '''
@@ -11,8 +12,12 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-s = "weofnf.of.wer.wer"
+punc = re.compile('^[{0}]+$'.format(re.escape(string.punctuation)))
+print '[{0}]+'.format(re.escape(string.punctuation))
 
-index =  s.find(r'.')
-print s[:index]
+s = "'s"
 
+m = punc.match(s)
+
+if m:
+    print "match!"

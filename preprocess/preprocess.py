@@ -3,7 +3,6 @@
 import codecs
 import re
 import HTMLParser
-from itertools import izip
 import string
 import jieba
 from pycorenlp import StanfordCoreNLP
@@ -342,9 +341,9 @@ class Preprocessor():
         print("successfully load {0} cross lingual entities!".format(len(link_set)))
         return link_set
 
-punc = re.compile(ur'[{0}]'.format(re.escape(string.punctuation)))
+punc = re.compile('^[{0}]+$'.format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
-zhpunc = re.compile(ur'[{0}]'.format(re.escape(zh_punctuation.decode('utf-8'))))
+zhpunc = re.compile('[{0}]'.format(re.escape(zh_punctuation)))
 
 numRE1 = re.compile(r'(?<=\s)[\d\s]+(?=($|\s))')
 numRE2 = re.compile(r'(?<=^)[\d\s]+(?=($|\s))')
@@ -356,6 +355,7 @@ class cleaner():
         self.redirects = None
         self.mentions = None
         self.formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)([;].*?\}|\})-')
+        self.nlp = None
 
     def init(self, lang):
         self.lang = languages[lang]
@@ -436,7 +436,7 @@ class cleaner():
         """
         openPat = '|'.join([re.escape(x) for x in openDelim])
         afterPat = dict()
-        for o, c in izip(openDelim, closeDelim):
+        for o, c in zip(openDelim, closeDelim):
             afterPat[o] = re.compile(openPat + '|' + c, re.DOTALL)
         stack = []
         start = 0
@@ -531,10 +531,10 @@ class cleaner():
                 tmp_ment = tmp_ent
 
             if len(tmp_ment) > 0:
-                if redirects and tmp_title in redirects:
-                    tmp_title = redirects[tmp_title]
-                if not isinstance(entity_id, type(None)) and tmp_title in entity_id:
-                    tmp_title_id = entity_id[tmp_title]
+                if not isinstance(redirects,type(None)) and tmp_ent in redirects:
+                    tmp_ent = redirects[tmp_ent]
+                if not isinstance(entity_id, type(None)) and tmp_ent in entity_id:
+                    tmp_title_id = entity_id[tmp_ent]
                     anchor_boundry.append([len(sent_cl), len(sent_cl) + len(tmp_ment), tmp_title_id])
             sent_cl += tmp_ment
             cur = e
@@ -550,10 +550,13 @@ class cleaner():
             num_m = numRE2.match(token[0])
             if num_m:
                 token[3] = 'dddddd'
+            punc_m = punc.match(token[0])
+            if punc_m:
+                continue
             if anchor_index >= len(anchor_boundry) or token[2] < anchor_boundry[anchor_index][0]:
                 res += token[3] + ' '
             elif token[1] >= anchor_boundry[anchor_index][1] :
-                res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment+']]' + ' '
+                res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment.strip()+']]' + ' '
                 tmp_ment = ''
                 anchor_index += 1
             else:
