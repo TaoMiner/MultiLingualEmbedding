@@ -186,7 +186,7 @@ class Preprocessor():
                 items = re.split(r'\t', line.strip())
                 if len(items) != 2 : continue
                 id_entity[items[0]] = items[1]
-        print("successfully load {0] entities!".format(len(id_entity)))
+        print("successfully load {0} entities!".format(len(id_entity)))
         return id_entity
 
     @staticmethod
@@ -356,6 +356,7 @@ class cleaner():
         self.mentions = None
         self.formatRE = re.compile(r'-\{.*?(zh-hans|zh-cn):(?P<label>[^;]*?)([;].*?\}|\})-')
         self.nlp = None
+        self.tagRE = re.compile(r'^<.*>$')
 
     def init(self, lang):
         self.lang = languages[lang]
@@ -402,6 +403,17 @@ class cleaner():
             with codecs.open(raw_anchor_file, 'w', 'utf-8') as fout:
                 for line in fin:
                     fout.write(line)
+
+    def formatZhDoc(self, filename, outputfile):
+        with codecs.open(filename, 'r', 'utf-8') as fin:
+            with codecs.open(outputfile, 'w', 'utf-8') as fout:
+                for line in fin:
+                    m = self.tagRE.match(line.strip())
+                    if m:
+                        fout.write("{0}\n".format(line.strip()))
+                    else:
+                        tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=self.entity_dic, redirects=self.redirects)
+                        fout.write("{0}\n".format(tmp_line))
 
     @staticmethod
     def regularize(str, lang):
@@ -901,18 +913,27 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    lang_index = languages.index('en')
+    lang_index = languages.index('zh')
     # mkb = MonoKGBuilder(lang_index)
     # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    clean(lang_index)
+    # clean(lang_index)
     # cleanT(lang_index)
     # lang = ['en', 'zh']
     # cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     # sub_file = '/home/caoyx/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
     # subCrossLinks(cross_file, sub_file, lang)
     # anchor_text_file = '/home/caoyx/data/dump20170401/eswiki_cl/anchor_text_cl.dat'
+    # op = options(lang_index)
+    # mentionCount(op.anchor_file,op.mention_file)
+    cl = cleaner()
     op = options(lang_index)
-    mentionCount(op.anchor_file,op.mention_file)
+
+    cl.init(lang_index)
+    cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
+    cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
+
+    output = '/home/caoyx/data/dump20170401/zhwiki_cl/linked_pages.tw'
+    cl.formatZhDoc(op.cross_corpus_file,output)
