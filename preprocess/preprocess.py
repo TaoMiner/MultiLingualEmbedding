@@ -565,6 +565,8 @@ class cleaner():
                 i = i-1 if i-1 >= 0 else 0
             else:
                 tmp_ment += token[3] + ' '
+        if len(tmp_ment) > 0:
+            res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment.strip()+']]'
         return res.strip()
 
     @staticmethod
