@@ -12,12 +12,7 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-punc = re.compile('^[{0}]+$'.format(re.escape(string.punctuation)))
-print '[{0}]+'.format(re.escape(string.punctuation))
-
-s = "'s"
-
-m = punc.match(s)
-
-if m:
-    print "match!"
+for i in range(3):
+    print i
+    if i == 2:
+        i = i - 1
