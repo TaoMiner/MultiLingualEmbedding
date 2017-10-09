@@ -6,6 +6,8 @@ import HTMLParser
 from itertools import izip
 import string
 import jieba
+from pycorenlp import StanfordCoreNLP
+import os
 
 htmlparser = HTMLParser.HTMLParser()
 jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
@@ -360,6 +362,31 @@ class cleaner():
         self.mentions = {}
         print("cleaning {0} language!".format(self.lang))
 
+    def initNlpTool(self, url, lang):
+        if not isinstance(self.nlp, type(None)):return
+        self.lang = lang
+        if lang != 'zh':
+            self.nlp = StanfordCoreNLP(url)
+            self.prop = {'annotators': 'tokenize, ssplit, lemma', 'outputFormat': 'json'}
+        elif os.path.isfile(url):
+            jieba.set_dictionary(url)
+            self.nlp = jieba
+        print("set nlp tool!")
+
+    def tokenize(self, sent):
+        if isinstance(self.nlp, type(None)):
+            print("please init nlp tool!")
+            return
+        tokens = []
+        if self.lang == 'zh':
+            tokens = self.nlp.tokenize(sent)
+        else:
+            results = self.nlp.annotate(sent, properties=self.prop)
+            for sent in results['sentences']:
+                for token in sent['tokens']:
+                    tokens.append([token['word'], token['characterOffsetBegin'], token['characterOffsetEnd'], token['lemma']])
+        return tokens
+
     # format -{zh-cn:xxx1;zh-cn:xxx2}- to xxx1
     def formatRawWiki(self, raw_anchor_file):
         line_count = 0
@@ -484,6 +511,55 @@ class cleaner():
             res += tmp_line
         return res.strip()
 
+    def processSent(self, sent, entity_id=None, redirects=None, mentions=None):
+        anchor_count = 0
+        cur = 0
+        sent_cl = ''
+        anchor_boundry = []
+        for s, e in cleaner.findBalanced(sent):
+            sent_cl += sent[cur:s]
+            tmp_anchor = sent[s:e]
+            # extract title and label
+            tmp_vbar = tmp_anchor.find('|')
+            tmp_ent = ''
+            tmp_ment = ''
+            if tmp_vbar > 0:
+                tmp_ent = tmp_anchor[2:tmp_vbar]
+                tmp_ment = tmp_anchor[tmp_vbar + 1:-2]
+            else:
+                tmp_ent = tmp_anchor[2:-2]
+                tmp_ment = tmp_ent
+
+            if len(tmp_ment) > 0:
+                if redirects and tmp_title in redirects:
+                    tmp_title = redirects[tmp_title]
+                if not isinstance(entity_id, type(None)) and tmp_title in entity_id:
+                    tmp_title_id = entity_id[tmp_title]
+                    anchor_boundry.append([len(sent_cl), len(sent_cl) + len(tmp_ment), tmp_title_id])
+            sent_cl += tmp_ment
+            cur = e
+        sent_cl += sent[cur:]
+        seg_sent = self.tokenize(sent_cl)
+
+        res = ''
+        anchor_index = 0
+        tmp_ment = ''
+        for token in seg_sent:
+            token[0] = token[0].strip()
+            if len(token[0]) < 1 : continue
+            num_m = numRE2.match(token[0])
+            if num_m:
+                token[3] = 'dddddd'
+            if anchor_index >= len(anchor_boundry) or token[2] < anchor_boundry[anchor_index][0]:
+                res += token[3] + ' '
+            elif token[1] >= anchor_boundry[anchor_index][1] :
+                res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment+']]' + ' '
+                tmp_ment = ''
+                anchor_index += 1
+            else:
+                tmp_ment += token[3] + ' '
+        return res.strip()
+
     @staticmethod
     def cleanAnchorSent(sent, lang, isReplaceId = True, entity_id = None, redirects = None, mentions = None):
         anchor_count = 0
@@ -571,7 +647,8 @@ class cleaner():
                     cur = 0
                     res = ''
                     # isReplaceId = True, entity_id = None, redirects = None, mentions = None
-                    res = cleaner.cleanAnchorSent(line.strip(), self.lang, isReplaceId = True, entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
+                    # res = cleaner.cleanAnchorSent(line.strip(), self.lang, isReplaceId = True, entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
+                    res = self.processSent(line.strip(),entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
                     if len(res) > 11:
                         fout.write("{0}\n".format(res))
         print 'process train text finished! start count anchors ...'
@@ -692,9 +769,13 @@ def clean(lang):
     cl.init(lang)
     if lang == languages.index('zh'):
         cl.formatRawWiki(op.raw_anchor_file)
+    if lang == languages.index('es'):
+        cl.initNlpTool('http://localhost:9002','es')
+    if lang == languages.index('en'):
+        cl.initNlpTool('http://localhost:9001','en')
     cl.entity_id = Preprocessor.loadEntityDic(op.vocab_entity_file)
     cl.redirects = Preprocessor.loadRedirects(op.redirect_file)
-    cl.cleanWiki(op.raw_anchor_file, op.anchor_file, mention_file=op.mention_file)
+    cl.cleanWiki(op.raw_anchor_file, op.anchor_file)
 
 class MonoKGBuilder():
 
@@ -817,13 +898,12 @@ if __name__ == '__main__':
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
-    # clean(lang_index)
+    clean(lang_index)
     # cleanT(lang_index)
     # lang = ['en', 'zh']
     # cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     # sub_file = '/home/caoyx/data/paradata/cross_links.'+ lang[0] + '_' + lang[1]
     # subCrossLinks(cross_file, sub_file, lang)
     # anchor_text_file = '/home/caoyx/data/dump20170401/eswiki_cl/anchor_text_cl.dat'
-    anchor_text_file = '/home/caoyx/data/dump20170401/eswiki_cl/text_anchor.dat'
-    mention_count_file = '/home/caoyx/data/dump20170401/eswiki_cl/ent_prior'
-    mentionCount(anchor_text_file,mention_count_file)
+    op = options(lang_index)
+    mentionCount(op.anchor_file,op.mention_file)

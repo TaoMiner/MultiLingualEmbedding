@@ -260,8 +260,8 @@ class Candidate:
 
         # zh candidate file
         zh_cand_dic = {}
-        for ment_name in zh_cand_dic:
-            en_ment_name = zh_cand_dic[ment_name]
+        for ment_name in zh_en_dic:
+            en_ment_name = zh_en_dic[ment_name]
             if en_ment_name in en_cand_dic:
                 tmp_set = set() if ment_name not in zh_cand_dic else zh_cand_dic[ment_name]
                 tmp_set.update(en_cand_dic[en_ment_name])
