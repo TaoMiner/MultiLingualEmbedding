@@ -544,8 +544,10 @@ class cleaner():
         res = ''
         anchor_index = 0
         tmp_ment = ''
-        for i in range(len(seg_sent)):
+        i = 0
+        while i < len(seg_sent):
             token = seg_sent[i]
+            i += 1
             token[0] = token[0].strip()
             if len(token[0]) < 1 : continue
             num_m = numRE2.match(token[0])
@@ -897,7 +899,7 @@ if __name__ == '__main__':
     # if zhwiki, please format zhwiki.xml first
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
-    lang_index = languages.index('es')
+    lang_index = languages.index('en')
     # mkb = MonoKGBuilder(lang_index)
     # mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
