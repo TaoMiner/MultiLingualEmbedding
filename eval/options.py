@@ -22,10 +22,7 @@ class Options:
     res_file = '/home/caoyx/data/log/conll_pred.mpme'
     kbid_map_file = '/home/caoyx/data/kbp/id.key'
 
-    output_path = '/home/caoyx/data/log/'
-    ans_file = output_path + 'conll_ans.mpme'
-    predict_file = output_path + 'conll_pred.mpme'
-    log_file = output_path + 'conll_log'
+    output_file = '../etc/output_senselink'
 
     @staticmethod
     def getFeatureFile(year, isEval, lang, docType):

@@ -341,7 +341,7 @@ class Preprocessor():
         print("successfully load {0} cross lingual entities!".format(len(link_set)))
         return link_set
 
-punc = re.compile('^[{0}]+$'.format(re.escape(string.punctuation)))
+punc = re.compile('[{0}]'.format(re.escape(string.punctuation)))
 zh_punctuation = "！？｡。·＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏."
 zhpunc = re.compile('[{0}]'.format(re.escape(zh_punctuation)))
 
@@ -412,7 +412,7 @@ class cleaner():
                     if m:
                         fout.write("{0}\n".format(line.strip()))
                     else:
-                        tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=self.entity_dic, redirects=self.redirects)
+                        tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=self.entity_id, redirects=self.redirects)
                         fout.write("{0}\n".format(tmp_line))
 
     @staticmethod

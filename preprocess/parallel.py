@@ -10,7 +10,7 @@ cleaner = preprocess.cleaner
 languages = preprocess.languages
 
 # <doc id="12" url="https://en.wikipedia.org/wiki?curid=12" title="Anarchism">
-headerRE = re.compile(r'<doc.*?title="(.*?)">')
+headerRE = re.compile(r'<doc id="(.*?)".*>')
 footerRE = re.compile(r'</doc>')
 class Parallel():
 
@@ -65,7 +65,10 @@ class Parallel():
     def readMonoDoc(self, i):
         op = self.ops[i]
         pre = preprocess.Preprocessor()
-        entity_dic = pre.loadEntityDic(op.vocab_entity_file)
+        entity_id_dic = pre.loadEntityIdDic(op.vocab_entity_file)
+        entity_dic = None
+        if self.lang2 != languages.index('zh'):
+            entity_dic = pre.loadEntityDic(op.vocab_entity_file)
         redirects = pre.loadRedirects(op.redirect_file)
         with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
             cur_title_id = ''
@@ -82,13 +85,15 @@ class Parallel():
                     continue
                 m = headerRE.match(line)
                 if m:
-                    cur_title = redirects[m.group(1)] if m.group(1) in redirects else m.group(1)
-                    cur_title_id = entity_dic[cur_title] if cur_title in entity_dic else ''
+                    cur_title_id = m.group(1) if m.group(1) in entity_id_dic else ''
                     if len(cur_title_id) > 0:
                         tmp_sents = self.corpus[i][cur_title_id] if cur_title_id in self.corpus[i] else []
                     continue
                 elif not isinstance(tmp_sents, type(None)) and len(cur_title_id) > 0:
-                    tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
+                    if self.lang2 == languages.index('zh') and i == 2:
+                        tmp_line = line.strip()
+                    else:
+                        tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
                     tmp_sents.append(tmp_line)
 
     def extractContext(self, sents, stop_words = None, words = None):
@@ -100,7 +105,7 @@ class Parallel():
             anchors = []
             for s, e in  cleaner.findBalanced(sent):
                 tmp_words = re.split(r' ', sent[cur:s].strip())
-                if isinstance(stop_words, type(None)) and isinstance(words, type(None)):
+                if not isinstance(stop_words, type(None)) and not isinstance(words, type(None)):
                     for w in tmp_words:
                         if w in words and w not in stop_words:
                             sent_words.append(w)
