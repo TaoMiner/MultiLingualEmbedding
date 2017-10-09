@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
-import HTMLParser
+# import HTMLParser
 import string
 import jieba
 from pycorenlp import StanfordCoreNLP
 import os
 
-htmlparser = HTMLParser.HTMLParser()
+# htmlparser = HTMLParser.HTMLParser()
 jieba.set_dictionary('/home/caoyx/data/dict.txt.big')
 # jieba.set_dictionary('/Users/ethan/Downloads/zhwiki/dict.txt.big')
 
@@ -539,12 +539,13 @@ class cleaner():
             sent_cl += tmp_ment
             cur = e
         sent_cl += sent[cur:]
-        seg_sent = self.tokenize(sent_cl)
+        seg_sent = self.tokenize(sent_cl.lower())
 
         res = ''
         anchor_index = 0
         tmp_ment = ''
-        for token in seg_sent:
+        for i in range(len(seg_sent)):
+            token = seg_sent[i]
             token[0] = token[0].strip()
             if len(token[0]) < 1 : continue
             num_m = numRE2.match(token[0])
@@ -559,6 +560,7 @@ class cleaner():
                 res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment.strip()+']]' + ' '
                 tmp_ment = ''
                 anchor_index += 1
+                i = i-1 if i-1 >= 0 else 0
             else:
                 tmp_ment += token[3] + ' '
         return res.strip()
@@ -654,7 +656,7 @@ class cleaner():
                     res = self.processSent(line.strip(),entity_id = self.entity_id, redirects = self.redirects, mentions = self.mentions)
                     if len(res) > 11:
                         fout.write("{0}\n".format(res))
-        print 'process train text finished! start count anchors ...'
+        print('process train text finished! start count anchors ...')
         if not mention_file:
             with codecs.open(mention_file, 'w', 'utf-8') as fout:
                 out_list = []

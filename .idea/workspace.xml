@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/preprocess.py" afterPath="$PROJECT_DIR$/preprocess/preprocess.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/tt.py" afterPath="$PROJECT_DIR$/preprocess/tt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -43,13 +42,13 @@
       <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="335">
-              <caret line="554" column="24" lean-forward="true" selection-start-line="554" selection-start-column="24" selection-end-line="554" selection-end-column="24" />
+            <state relative-caret-position="414">
+              <caret line="562" column="42" lean-forward="false" selection-start-line="562" selection-start-column="42" selection-end-line="562" selection-end-column="42" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
-                <marker date="1507522508000" expanded="true" signature="5682:5713" ph="INSERT INTO `redirect`... " />
-                <marker date="1507522508000" expanded="true" signature="9277:9309" ph="INSERT INTO `pagelinks`... " />
-                <marker date="1507522508000" expanded="true" signature="13122:13154" ph="INSERT INTO `langlinks`... " />
+                <marker date="1507523708000" expanded="true" signature="5686:5717" ph="INSERT INTO `redirect`... " />
+                <marker date="1507523708000" expanded="true" signature="9281:9313" ph="INSERT INTO `pagelinks`... " />
+                <marker date="1507523708000" expanded="true" signature="13126:13158" ph="INSERT INTO `langlinks`... " />
               </folding>
             </state>
           </provider>
@@ -964,13 +963,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="335">
-          <caret line="554" column="24" lean-forward="true" selection-start-line="554" selection-start-column="24" selection-end-line="554" selection-end-column="24" />
+        <state relative-caret-position="414">
+          <caret line="562" column="42" lean-forward="false" selection-start-line="562" selection-start-column="42" selection-end-line="562" selection-end-column="42" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
-            <marker date="1507522508000" expanded="true" signature="5682:5713" ph="INSERT INTO `redirect`... " />
-            <marker date="1507522508000" expanded="true" signature="9277:9309" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1507522508000" expanded="true" signature="13122:13154" ph="INSERT INTO `langlinks`... " />
+            <marker date="1507523708000" expanded="true" signature="5686:5717" ph="INSERT INTO `redirect`... " />
+            <marker date="1507523708000" expanded="true" signature="9281:9313" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1507523708000" expanded="true" signature="13126:13158" ph="INSERT INTO `langlinks`... " />
           </folding>
         </state>
       </provider>
