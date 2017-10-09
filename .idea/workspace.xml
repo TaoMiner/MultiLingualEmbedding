@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/preprocess.py" afterPath="$PROJECT_DIR$/preprocess/preprocess.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" afterPath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/parallel.py" afterPath="$PROJECT_DIR$/preprocess/parallel.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocess/tt.py" afterPath="$PROJECT_DIR$/preprocess/tt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -18,7 +21,7 @@
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Counter.coverage" NAME="Counter Coverage Results" MODIFIED="1493420156377" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$test.coverage" NAME="test Coverage Results" MODIFIED="1505922211985" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../others/py_corenlp" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Word.coverage" NAME="Word Coverage Results" MODIFIED="1493317525922" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
-    <SUITE FILE_PATH="coverage/MultiLingualEmbedding$tt.coverage" NAME="tt Coverage Results" MODIFIED="1507524250425" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
+    <SUITE FILE_PATH="coverage/MultiLingualEmbedding$tt.coverage" NAME="tt Coverage Results" MODIFIED="1507540310059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocess" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$Sense.coverage" NAME="Sense Coverage Results" MODIFIED="1493384813142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$distance.coverage" NAME="distance Coverage Results" MODIFIED="1499240556515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
     <SUITE FILE_PATH="coverage/MultiLingualEmbedding$evalZhEn.coverage" NAME="evalZhEn Coverage Results" MODIFIED="1499779540926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/eval" />
@@ -29,26 +32,28 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="WikiExtractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preprocess/WikiExtractor.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-9943">
-              <caret line="2399" column="25" lean-forward="true" selection-start-line="2399" selection-start-column="25" selection-end-line="2399" selection-end-column="25" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="preprocess.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="174">
-              <caret line="554" column="35" lean-forward="true" selection-start-line="554" selection-start-column="35" selection-end-line="554" selection-end-column="35" />
+            <state relative-caret-position="312">
+              <caret line="124" column="44" lean-forward="false" selection-start-line="124" selection-start-column="44" selection-end-line="124" selection-end-column="52" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
                 <marker date="1507525109000" expanded="true" signature="5686:5717" ph="INSERT INTO `redirect`... " />
                 <marker date="1507525109000" expanded="true" signature="9281:9313" ph="INSERT INTO `pagelinks`... " />
                 <marker date="1507525109000" expanded="true" signature="13126:13158" ph="INSERT INTO `langlinks`... " />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="parallel.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/preprocess/parallel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="315">
+              <caret line="261" column="17" lean-forward="true" selection-start-line="261" selection-start-column="17" selection-end-line="261" selection-end-column="17" />
+              <folding>
+                <element signature="e#24#33#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -89,8 +94,8 @@
       <file leaf-file-name="tt.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="253">
-              <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+            <state relative-caret-position="322">
+              <caret line="14" column="3" lean-forward="true" selection-start-line="14" selection-start-column="3" selection-end-line="14" selection-end-column="3" />
               <folding>
                 <element signature="e#46#59#0" expanded="true" />
               </folding>
@@ -122,7 +127,6 @@
         <option value="$PROJECT_DIR$/eval/evalEntity.py" />
         <option value="$PROJECT_DIR$/preprocess/Counter.py" />
         <option value="$PROJECT_DIR$/eval/evalWordSim353.py" />
-        <option value="$PROJECT_DIR$/preprocess/parallel.py" />
         <option value="$PROJECT_DIR$/preprocess/preZhHant.py" />
         <option value="$PROJECT_DIR$/eval/distance.py" />
         <option value="$PROJECT_DIR$/eval/evalZhEn.py" />
@@ -146,8 +150,9 @@
         <option value="$PROJECT_DIR$/eval/evaluator.py" />
         <option value="$PROJECT_DIR$/eval/DataReader.py" />
         <option value="$PROJECT_DIR$/eval/candidate.py" />
-        <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/preprocess/preprocess.py" />
+        <option value="$PROJECT_DIR$/preprocess/parallel.py" />
+        <option value="$PROJECT_DIR$/preprocess/tt.py" />
       </list>
     </option>
   </component>
@@ -578,7 +583,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14135703" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -586,7 +591,7 @@
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24657534" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24657534" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -830,13 +835,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess/parallel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="299">
-          <caret line="13" column="32" lean-forward="true" selection-start-line="13" selection-start-column="32" selection-end-line="13" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/eval/GBDT.py" />
     <entry file="file://$PROJECT_DIR$/eval/features_old.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -951,25 +949,35 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="312">
+          <caret line="124" column="44" lean-forward="false" selection-start-line="124" selection-start-column="44" selection-end-line="124" selection-end-column="52" />
+          <folding>
+            <element signature="e#46#59#0" expanded="true" />
+            <marker date="1507525109000" expanded="true" signature="5686:5717" ph="INSERT INTO `redirect`... " />
+            <marker date="1507525109000" expanded="true" signature="9281:9313" ph="INSERT INTO `pagelinks`... " />
+            <marker date="1507525109000" expanded="true" signature="13126:13158" ph="INSERT INTO `langlinks`... " />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="253">
-          <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+        <state relative-caret-position="322">
+          <caret line="14" column="3" lean-forward="true" selection-start-line="14" selection-start-column="3" selection-end-line="14" selection-end-column="3" />
           <folding>
             <element signature="e#46#59#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preprocess/preprocess.py">
+    <entry file="file://$PROJECT_DIR$/preprocess/parallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="174">
-          <caret line="554" column="35" lean-forward="true" selection-start-line="554" selection-start-column="35" selection-end-line="554" selection-end-column="35" />
+        <state relative-caret-position="315">
+          <caret line="261" column="17" lean-forward="true" selection-start-line="261" selection-start-column="17" selection-end-line="261" selection-end-column="17" />
           <folding>
-            <element signature="e#46#59#0" expanded="true" />
-            <marker date="1507525109000" expanded="true" signature="5686:5717" ph="INSERT INTO `redirect`... " />
-            <marker date="1507525109000" expanded="true" signature="9281:9313" ph="INSERT INTO `pagelinks`... " />
-            <marker date="1507525109000" expanded="true" signature="13126:13158" ph="INSERT INTO `langlinks`... " />
+            <element signature="e#24#33#0" expanded="true" />
           </folding>
         </state>
       </provider>

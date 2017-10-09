@@ -3,6 +3,7 @@
 import codecs
 import re
 import string
+from nltk.corpus import stopwords
 # from stanfordcorenlp import StanfordCoreNLP
 
 '''
@@ -12,7 +13,9 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-for i in range(3):
-    print i
-    if i == 2:
-        i = i - 1
+stop = set(stopwords.words('spanish'))
+filename = '/Users/ethan/Downloads/es_stop_words'
+with codecs.open(filename, 'w') as fout:
+    for w in stop:
+        w = w.encode('utf-8', 'ignore')
+        fout.write("{0}\n".format(w))

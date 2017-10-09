@@ -987,13 +987,14 @@ void *TrainTextModelThread(void *id) {
         sentence_position++;
         if (sentence_position >= sentence_length) {
             // train word embedding finished! start train mention sense embedding ...
-            if (hasSense && anchor_count > 0){
+            if (anchor_count > 0){
                 for(anchor_position=0;anchor_position<anchor_count;anchor_position++){
-                    for (c = 0; c < layer_size; c++) neu1[c] = 0;
-                    for (c = 0; c < layer_size; c++) neu1e[c] = 0;
                     //reset context vec
                     for (c = 0; c < layer_size; c++) tmp_context_vec[c] = 0;
                     cw = 0;
+                    /*
+                    for (c = 0; c < layer_size; c++) neu1[c] = 0;
+                    for (c = 0; c < layer_size; c++) neu1e[c] = 0;
                     next_random = next_random * (unsigned long long)25214903917 + 11;
                     b = next_random % window;
                     sentence_position = anchors[anchor_position].start_pos;
@@ -1036,7 +1037,7 @@ void *TrainTextModelThread(void *id) {
                             // Learn weights input -> hidden
                             for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
                         }
-                    
+                    */
                     // use context words and mention sense to predict entity
                     for (c = 0; c < layer_size; c++) neu1[c] = 0;
                     for (c = 0; c < layer_size; c++) neu1e[c] = 0;
@@ -1056,7 +1057,8 @@ void *TrainTextModelThread(void *id) {
                             if (c >= sentence_length) continue;
                             last_word_index = sen[c];
                             if (last_word_index == -1) continue;
-                            
+                            for (c = 0; c < layer_size; c++) tmp_context_vec[c] += mono_words->syn0[last_word_index * layer_size + c];
+                            cw ++;
                             l1 = last_word_index * layer_size;
                             for (c = 0; c < layer_size; c++) neu1e[c] = 0;
                             // NEGATIVE SAMPLING
@@ -1083,40 +1085,41 @@ void *TrainTextModelThread(void *id) {
                             // Learn weights input -> hidden
                             for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
                         }
-                    //also use sense embedding to predict the entity
-                    last_word_index = anchors[anchor_position].sense_index;
-                    if (last_word_index == -1) continue;
-                    l1 = last_word_index * layer_size;
-                    for (c = 0; c < layer_size; c++) neu1e[c] = 0;
-                    // NEGATIVE SAMPLING
-                    if (negative > 0) for (d = 0; d < negative + 1; d++) {
-                        if (d == 0) {
-                            target = word_index;
-                            label = 1;
-                        } else {
-                            next_random = next_random * (unsigned long long)25214903917 + 11;
-                            target = mono_entities->table[(next_random >> 16) % table_size];
-                            if (target == 0) target = next_random % (mono_entities->vocab_size - 1) + 1;
-                            if (target == word_index) continue;
-                            label = 0;
+                    if(hasSense){
+                        //also use sense embedding to predict the entity
+                        last_word_index = anchors[anchor_position].sense_index;
+                        if (last_word_index == -1) continue;
+                        l1 = last_word_index * layer_size;
+                        for (c = 0; c < layer_size; c++) neu1e[c] = 0;
+                        // NEGATIVE SAMPLING
+                        if (negative > 0) for (d = 0; d < negative + 1; d++) {
+                            if (d == 0) {
+                                target = word_index;
+                                label = 1;
+                            } else {
+                                next_random = next_random * (unsigned long long)25214903917 + 11;
+                                target = mono_entities->table[(next_random >> 16) % table_size];
+                                if (target == 0) target = next_random % (mono_entities->vocab_size - 1) + 1;
+                                if (target == word_index) continue;
+                                label = 0;
+                            }
+                            l2 = target * layer_size;
+                            f = 0;
+                            for (c = 0; c < layer_size; c++) f += mono_senses->syn0[c + l1] * mono_entities->syn1neg[c + l2];
+                            if (f > MAX_EXP) g = (label - 1) * mono_words->alpha;
+                            else if (f < -MAX_EXP) g = (label - 0) * mono_words->alpha;
+                            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * mono_words->alpha;
+                            for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn1neg[c + l2];
+                            for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_senses->syn0[c + l1];
                         }
-                        l2 = target * layer_size;
-                        f = 0;
-                        for (c = 0; c < layer_size; c++) f += mono_senses->syn0[c + l1] * mono_entities->syn1neg[c + l2];
-                        if (f > MAX_EXP) g = (label - 1) * mono_words->alpha;
-                        else if (f < -MAX_EXP) g = (label - 0) * mono_words->alpha;
-                        else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * mono_words->alpha;
-                        for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn1neg[c + l2];
-                        for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_senses->syn0[c + l1];
-                    }
-                    // Learn weights input -> hidden
-                    for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
+                        // Learn weights input -> hidden
+                        for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
                     
-                    
-                    //update cluster center mu and cluster size
-                    if(cw>0){
-                        for (c = 0; c < layer_size; c++) mono_senses->syn1neg[l1 + c] += (tmp_context_vec[c]/cw);
-                        mono_senses->vocab[last_word_index].index += 1;
+                        //update cluster center mu and cluster size
+                        if(cw>0){
+                            for (c = 0; c < layer_size; c++) mono_senses->syn1neg[l1 + c] += (tmp_context_vec[c]/cw);
+                            mono_senses->vocab[last_word_index].index += 1;
+                        }
                     }
                 }
             }
