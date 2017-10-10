@@ -18,12 +18,11 @@ class SenseLinker:
         self.window = 5
         self.kb_entity_prior = {}
         self.kb_me_prob = {}
-        self.mention_cand = {}
         self.kb_mcount = {}
         self.cur_entity_prior = {}
         self.cur_me_prob = {}
         self.cur_mcount = {}
-        self.punc = re.compile('[%s]' % re.escape(string.punctuation))
+        self.punc = re.compile('[{0}]'.format(re.escape(string.punctuation)))
         self.log_file = ''
         self.total_p = 0
         self.total_tp = 0
@@ -88,35 +87,11 @@ class SenseLinker:
             m_count[m] = sum([me_prob[m][k] for k in me_prob[m]])
         return me_prob, entity_prior, m_count
 
-
-    def savePrior(self, file):
-        with codecs.open(file, 'w', encoding='UTF-8') as fout:
-            for ent in self.entity_prior:
-                fout.write('%s\t%f\n' % (ent,self.entity_prior[ent]))
-
-    def loadCand(self, filename):
-        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
-            can_sum = 0
-            skip_candidate = 0
-            for line in fin:
-                items = re.split(r'\t', line.strip())
-                tmp_set = set()
-                if len(items) > 1:
-                    for i in items[1:]:
-                        if i not in self.id_wiki or self.id_wiki[i] not in self.tr_title.ent_vectors:
-                            skip_candidate += 1
-                            continue
-                        tmp_set.add(i)
-                if len(tmp_set) > 0:
-                    self.mention_cand[items[0]] = tmp_set
-                    can_sum += len(tmp_set)
-        print("load %d mentions with %d candidates!" % (len(self.mention_cand),can_sum))
-
     def nearestSenseMu(self, cvec, sense):
         nearest_index = -1
         cloest_sim = -1.0
         if cvec[0] != 0 and cvec[-1] != 0:
-            for i in xrange(sense.size):
+            for i in range(sense.size):
                 sim = self.cosSim(cvec, sense.mu[i])
                 if sim > cloest_sim :
                     cloest_sim = sim
@@ -143,13 +118,13 @@ class SenseLinker:
     def getTitle(self, entity_label):
         return re.sub(r'\(.*?\)$', '', entity_label).strip()
 
-    # doc:[w,...,w], mentions:[[doc_pos, mention_name, e_id],...]
+    # doc:[w,...,w], mentions:[[doc_pos, m_len, e_id, mention_name],...]
     # senses:[mention_index, e_id]
-    def disambiguateDoc(self, doc_id, doc, mentions):
+    def disambiguateDoc(self, doc, mentions):
         senses = {}     #{mention_index:predicted_id}
         m_order = []    #[[mention_index, [cand_id, pem], [...]], ...]
         # 1. cand_size ==1 or pem > 0.95;
-        for i in xrange(len(mentions)):
+        for i in range(len(mentions)):
             m_order.append([i])
             tmp_cand_set = []
             ment_name = mentions[i][1]

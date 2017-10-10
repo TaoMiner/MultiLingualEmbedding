@@ -90,7 +90,7 @@ class Parallel():
                         tmp_sents = self.corpus[i][cur_title_id] if cur_title_id in self.corpus[i] else []
                     continue
                 elif not isinstance(tmp_sents, type(None)) and len(cur_title_id) > 0:
-                    if self.lang2 == languages.index('zh') and i == 2:
+                    if self.lang2 == languages.index('zh') and i == 1:
                         tmp_line = line.strip()
                     else:
                         tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
