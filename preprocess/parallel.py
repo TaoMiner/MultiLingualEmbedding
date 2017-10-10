@@ -66,9 +66,7 @@ class Parallel():
         op = self.ops[i]
         pre = preprocess.Preprocessor()
         entity_id_dic = pre.loadEntityIdDic(op.vocab_entity_file)
-        entity_dic = None
-        if self.lang2 != languages.index('zh'):
-            entity_dic = pre.loadEntityDic(op.vocab_entity_file)
+        entity_dic = pre.loadEntityDic(op.vocab_entity_file)
         total_entity_id, total_id_entity = pre.loadWikiIndex(op.entity_index_dump)
         redirects = pre.loadRedirects(op.redirect_file)
         redirects_id = pre.loadRedirectsId(op.redirect_file, total_entity_id)
@@ -238,7 +236,7 @@ class Parallel():
                     continue
                 context_set1 = contexts_dict1[t1]
                 context_set2 = contexts_dict2[self.clinks[t1]]
-                self.parallel_contexts.append([t1, self.clinks[t1], context_set1, context_set2])
+                self.parallel_contexts.append([cl, self.clinks[cl], context_set1, context_set2])
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
     def saveParaData(self, filename):
@@ -250,7 +248,7 @@ class Parallel():
 
 if __name__ == '__main__':
     str_lang1 = 'en'
-    str_lang2 = 'es'
+    str_lang2 = 'zh'
     cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     par_file = '/home/caoyx/data/paradata/para_contexts.' + str_lang1 + '-' + str_lang2
     stop_word_file = ['/home/caoyx/data/en_stop_words', '/home/caoyx/data/es_stop_words','/home/caoyx/data/zh_stop_words']
@@ -259,12 +257,10 @@ if __name__ == '__main__':
     lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)
     par.stop_words[0].update(par.loadStopWords(stop_word_file[0]))
-    par.stop_words[1].update(par.loadStopWords(stop_word_file[1]))
+    par.stop_words[1].update(par.loadStopWords(stop_word_file[2]))
     par.words[0].update(par.loadWordVocab(word_vocab_file[0]))
-    par.words[1].update(par.loadWordVocab(word_vocab_file[1]))
+    par.words[1].update(par.loadWordVocab(word_vocab_file[2]))
     par.loadCrossLink(cross_file)
-    par.entity_dics[0] = preprocess.Preprocessor.loadEntityIdDic(par.ops[0].vocab_entity_file)
-    par.entity_dics[1] = preprocess.Preprocessor.loadEntityIdDic(par.ops[1].vocab_entity_file)
     # whether output brace for anchors
     par.has_brace = False
     par.readDoc()
