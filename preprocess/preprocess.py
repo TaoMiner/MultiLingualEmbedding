@@ -97,16 +97,20 @@ class Preprocessor():
                     line = formatRE.sub('\g<label>', line)
                     fout.write(line)
 
-    def loadWikiIndex(self, filename):
+    @staticmethod
+    def loadWikiIndex(filename):
+        total_entity_id = {}
+        total_id_entity = {}
         with codecs.open(filename, 'r', 'utf-8') as fin:
             for line in fin:
                 m = nsidRE.match(line.strip())
                 if m != None:
                     id = m.group(2)
                     title = m.group(3)
-                    self.total_entity_id[title] = id
-                    self.total_id_entity[id] = title
-        print("successfully load {0} wiki index!".format(len(self.total_entity_id)))
+                    total_entity_id[title] = id
+                    total_id_entity[id] = title
+        print("successfully load {0} wiki index!".format(len(total_entity_id)))
+        return total_entity_id, total_id_entity
 
     # build wiki_aritle_title dict that doesnt contain any redirects
     def buildEntityDic(self, filename):
@@ -198,6 +202,18 @@ class Preprocessor():
                 if len(items) != 2 : continue
                 redirects[items[0]] = items[1]
         print("successfully load {0} redirects!".format(len(redirects)))
+        return redirects
+
+    @staticmethod
+    def loadRedirectsId(filename, entity_id_dic):
+        redirects = {}
+        with codecs.open(filename, 'rb', 'utf-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if len(items) != 2: continue
+                if items[0] in entity_id_dic and items[1] in entity_id_dic:
+                    redirects[entity_id_dic[items[0]]] = entity_id_dic[items[1]]
+        print("successfully load {0} redirect ids!".format(len(redirects)))
         return redirects
 
     def parsePageLinks(self, filename):
@@ -806,7 +822,7 @@ class MonoKGBuilder():
 
     def buildMonoKG(self):
         # build entity dic and redirect dic
-        self.preprocessor.loadWikiIndex(self.op.entity_index_dump)
+        self.preprocessor.total_entity_id, self.preprocessor.total_id_entity = Preprocessor.loadWikiIndex(self.op.entity_index_dump)
         self.preprocessor.buildEntityDic(self.op.title_file)
         self.preprocessor.parseRedirects(self.op.redirect_dump)
         self.preprocessor.lowerTitleToRedirects()
@@ -821,7 +837,7 @@ class MonoKGBuilder():
     def extractLanglinks(self):
         if not self.preprocessor: return
         if not self.preprocessor.total_entity_id:
-            self.preprocessor.loadWikiIndex(self.op.entity_index_dump)
+            self.preprocessor.total_entity_id, self.preprocessor.total_id_entity = Preprocessor.loadWikiIndex(self.op.entity_index_dump)
         if not self.preprocessor.entity_id:
             self.preprocessor.entity_id = Preprocessor.loadEntityDic(self.op.vocab_entity_file)
         if not self.preprocessor.redirects:

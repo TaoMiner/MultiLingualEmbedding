@@ -69,7 +69,9 @@ class Parallel():
         entity_dic = None
         if self.lang2 != languages.index('zh'):
             entity_dic = pre.loadEntityDic(op.vocab_entity_file)
+        total_entity_id, total_id_entity = pre.loadWikiIndex(op.entity_index_dump)
         redirects = pre.loadRedirects(op.redirect_file)
+        redirects_id = pre.loadRedirectsId(op.redirect_file, total_entity_id)
         with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
             cur_title_id = ''
             tmp_sents = None
@@ -86,6 +88,7 @@ class Parallel():
                 m = headerRE.match(line)
                 if m:
                     cur_title_id = m.group(1) if m.group(1) in entity_id_dic else ''
+                    cur_title_id = redirects_id[cur_title_id] if cur_title_id in redirects_id else cur_title_id
                     if len(cur_title_id) > 0:
                         tmp_sents = self.corpus[i][cur_title_id] if cur_title_id in self.corpus[i] else []
                     continue

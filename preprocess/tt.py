@@ -13,9 +13,9 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-stop = set(stopwords.words('spanish'))
-filename = '/Users/ethan/Downloads/es_stop_words'
-with codecs.open(filename, 'w') as fout:
-    for w in stop:
-        w = w.encode('utf-8', 'ignore')
-        fout.write("{0}\n".format(w))
+headerRE = re.compile(r'<doc id="(.*?)".*>')
+s = '<doc id="12" url="https://en.wikipedia.org/wiki?curid=12" title="Anarchism">'
+
+m = headerRE.match(s)
+if m:
+    print m.group(1)
