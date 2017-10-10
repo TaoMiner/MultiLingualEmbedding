@@ -108,7 +108,7 @@ class Parallel():
                 tmp_words = re.split(r' ', sent[cur:s].strip())
                 if not isinstance(stop_words, type(None)) and not isinstance(words, type(None)):
                     for w in tmp_words:
-                        if w in words and w not in stop_words:
+                        if w in words and w not in stop_words and w != 'dddddd':
                             sent_words.append(w)
                 else:
                     sent_words.extend(tmp_words)
@@ -126,7 +126,7 @@ class Parallel():
                 start_index = len(sent_words)
                 if isinstance(stop_words, type(None)) and isinstance(words, type(None)):
                     for w in tmp_words:
-                        if w in words and w not in stop_words:
+                        if w in words and w not in stop_words and w != 'dddddd':
                             sent_words.append(w)
                 else:
                     sent_words.extend(tmp_words)
@@ -138,7 +138,7 @@ class Parallel():
                 tmp_words = re.split(r' ', sent[cur:])
                 if isinstance(stop_words, type(None)) and isinstance(words, type(None)):
                     for w in tmp_words:
-                        if w in words and w not in stop_words:
+                        if w in words and w not in stop_words and w != 'dddddd':
                             sent_words.append(w)
                 else:
                     sent_words.extend(tmp_words)
