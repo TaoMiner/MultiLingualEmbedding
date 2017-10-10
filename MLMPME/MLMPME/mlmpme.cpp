@@ -712,7 +712,7 @@ void InitModel(int model_type, int lang_id){
 /* Read parallel sentences into *sen for all languages from fi
  * fi point to the file: each line contains NUM_LANG sentences separated by tab */
 void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
-    long long index;
+    long long index = -1;
     char word[MAX_STRING];
     int sentence_length = 0, res, cur_lang=0, item_count=0;
     struct vocab *tmp_model = NULL;
@@ -735,8 +735,8 @@ void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long 
                     sentence_length = 0;
                 }
             }
-            
-            index = SearchVocab(word, tmp_model);
+            if (tmp_model!=NULL)
+                index = SearchVocab(word, tmp_model);
             if (index == -1) continue;
             if (item_count <=2) entity_index[cur_lang] = index;
             else{
@@ -1382,6 +1382,11 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real att
                 if (a==0) return;       // disgard those have empty sents
                 break;
             }
+    for (int i=0;i<NUM_LANG;i++)
+        for(a=0;a<MAX_SENTENCE_LENGTH;a++)
+            if (attention[i][a]==0 && a == 0)
+                return;                  // disgard empty attention
+                
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
     for (int i=0;i<NUM_LANG;i++){
         if (len[i]==0) continue;
@@ -1412,7 +1417,9 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
             sum += tmp_sim;
         }
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            attention[i][j] /= sum;
+            if (sum == 0) attention[i][j] = 0;
+            else
+                attention[i][j] /= sum;
         }
         sum = 0.0;
     }
