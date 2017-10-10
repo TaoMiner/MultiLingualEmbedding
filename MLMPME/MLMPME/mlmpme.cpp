@@ -237,7 +237,7 @@ void ReadParText(char *item, FILE *fin) {
             if (ch == '\n') {
                 strcpy(item, (char *)"</s>");
                 return;
-            } else if (ch == '\n'){
+            } else if (ch == '\t'){
                 strcpy(item, (char *)"</t>");
                 return;
             } else continue;
@@ -713,38 +713,41 @@ void InitModel(int model_type, int lang_id){
 
 // cross lingual alignment
 /* Read parallel sentences into *sen for all languages from fi
- * fi point to the file: each line contains NUM_LANG sentences separated by tab */
-void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
+ * fi point to the file: each line contains NUM_LANG sentences separated by tab 
+ return 1 if read success, -1 false*/
+int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
     long long index = -1;
     char word[MAX_STRING];
-    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, j;
+    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, j, res = 1;
     struct vocab *tmp_model = &model[KG_VOCAB][0];
-    
+    for (i=0;i<NUM_LANG;i++) entity_index[i] = -1;
+    for (i=0;i<NUM_LANG;i++)
+        for(j=0;j<NUM_LANG;j++)
+            sen[i][j] = 0;
     while (1) {
         ReadParText(word, fi);
         if (feof(fi) || !strcmp(word, "</s>")){
             sen[cur_lang][sentence_length] = 0;
-            if (item_count < 3){
-                for (i=0;i<NUM_LANG;i++){
-                    entity_index[i] = 0;
-                    for (j=0;j<MAX_SENTENCE_LENGTH;j++)
-                        sen[i][j] = 0;
-                }
+            for (i=0;i<NUM_LANG;i++){
+                if (entity_index[i] < 0 || sen[i][0] <=0)
+                    res = -1;
             }
+            if (item_count < 3) res = -1;
             break;
         }
         if (item_count < 4){
             if (! strcmp(word, "</t>")) {
+                if (rem == 1) {
+                    sen[cur_lang][sentence_length] = 0;
+                    sentence_length = 0;
+                }
                 item_count ++;
                 cur_lang = item_count%NUM_LANG;
                 rem = item_count/NUM_LANG;
                 if (rem == 0)
                     tmp_model = &model[KG_VOCAB][cur_lang];
-                else{
+                else
                     tmp_model = &model[TEXT_VOCAB][cur_lang];
-                    sen[cur_lang][sentence_length] = 0;
-                    sentence_length = 0;
-                }
                 continue;
             }
             index = SearchVocab(word, tmp_model);
@@ -759,6 +762,7 @@ void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long 
             }
         }
     }
+    return res;
 }
 
 void InitMultiModel(char *cross_link_file){
@@ -1441,7 +1445,7 @@ void *BilbowaThread(void *id) {
     long long par_entity[NUM_LANG];
     real attention[NUM_LANG][MAX_SENTENCE_LENGTH];
     long long fi_size;
-    int line_num = 0, cur_line = 0;
+    int line_num = 0, cur_line = 0, res = 0;
     
     real deltas[layer_size];
     //seek for the position of the current thread
@@ -1459,8 +1463,9 @@ void *BilbowaThread(void *id) {
             par_sen[i][0] = 0;
         for(int i=0;i<NUM_LANG;i++)
             par_entity[i] = 0;
-        ReadSent(fi_par, par_sen, par_entity);
+        res = ReadSent(fi_par, par_sen, par_entity);
         cur_line ++;
+        if (res <=0) continue;
         SetAttention(par_sen, par_entity, attention);
         BilBOWASentenceUpdate(par_sen, attention, deltas);
     } // while training loop
