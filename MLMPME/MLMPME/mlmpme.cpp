@@ -223,27 +223,30 @@ int ReadText(char *item, FILE *fin) {
     return -1;
 }
 
-// '\n' return -1, '\t' return 1, ' ' return 0
-int ReadParText(char *item, FILE *fin) {
+void ReadParText(char *item, FILE *fin) {
     int a = 0, ch;
-    int res = 0;
     while (!feof(fin)) {
         ch = fgetc(fin);
         if (ch == 13) continue;
         if ((ch == '\t') || (ch == ' ') || (ch == '\n')) {
             if (a > 0) {
-                if (ch == '\n') res = -1;
-                else if (ch == '\t') res = 1;
+                if (ch == '\n') ungetc(ch, fin);
+                else if (ch == '\t') ungetc(ch, fin);
                 break;
             }
-            continue;
+            if (ch == '\n') {
+                strcpy(item, (char *)"</s>");
+                return;
+            } else if (ch == '\n'){
+                strcpy(item, (char *)"</t>");
+                return;
+            } else continue;
         }
         item[a] = ch;
         a++;
         if (a >= MAX_STRING - 1) a--;   // Truncate too long words
     }
     item[a] = 0;
-    return res;
 }
 
 // splite by tab
@@ -714,42 +717,47 @@ void InitModel(int model_type, int lang_id){
 void ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
     long long index = -1;
     char word[MAX_STRING];
-    int sentence_length = 0, res, cur_lang=0, item_count=0;
-    struct vocab *tmp_model = NULL;
+    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, j;
+    struct vocab *tmp_model = &model[KG_VOCAB][0];
     
     while (1) {
-        res = ReadParText(word, fi);
-        if (feof(fi) || res == -1){
+        ReadParText(word, fi);
+        if (feof(fi) || !strcmp(word, "</s>")){
             sen[cur_lang][sentence_length] = 0;
+            if (item_count < 3){
+                for (i=0;i<NUM_LANG;i++){
+                    entity_index[i] = 0;
+                    for (j=0;j<MAX_SENTENCE_LENGTH;j++)
+                        sen[i][j] = 0;
+                }
+            }
             break;
         }
-        if (res >= 0 && item_count < 4 && sentence_length < MAX_SENTENCE_LENGTH-1){
-            if (res==1) {
-                cur_lang = item_count%NUM_LANG;
+        if (item_count < 4){
+            if (! strcmp(word, "</t>")) {
                 item_count ++;
-                if (item_count<=2)
+                cur_lang = item_count%NUM_LANG;
+                rem = item_count/NUM_LANG;
+                if (rem == 0)
                     tmp_model = &model[KG_VOCAB][cur_lang];
                 else{
                     tmp_model = &model[TEXT_VOCAB][cur_lang];
                     sen[cur_lang][sentence_length] = 0;
                     sentence_length = 0;
                 }
+                continue;
             }
-            if (tmp_model!=NULL)
-                index = SearchVocab(word, tmp_model);
+            index = SearchVocab(word, tmp_model);
             if (index == -1) continue;
-            if (item_count <=2) entity_index[cur_lang] = index;
+            
+            if (item_count <2) entity_index[cur_lang] = index;
             else{
                 sen[cur_lang][sentence_length] = index;
                 sentence_length++;
-                if (sentence_length >= MAX_SENTENCE_LENGTH){
+                if (sentence_length >= MAX_SENTENCE_LENGTH)
                     sentence_length = MAX_SENTENCE_LENGTH - 1;
-                    continue;
-                }
-
             }
         }
-        
     }
 }
 
