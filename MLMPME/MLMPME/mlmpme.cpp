@@ -22,6 +22,7 @@
 #define SENSE_VOCAB 2
 #define MAX_NUM_MENTION 135
 #define MAX_SENTENCE_LENGTH 1000
+#define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
 
@@ -1336,6 +1337,10 @@ void UpdateEmbeddings(real *embeddings, int offset, int num_updates, real *delta
             fprintf(stderr, "ERROR: step == NaN\n");
         }
         step = step * weight;
+        if (CLIP_UPDATES != 0) {
+            if (step > CLIP_UPDATES) step = CLIP_UPDATES;
+            if (step < -CLIP_UPDATES) step = -CLIP_UPDATES;
+        }
         embeddings[offset + a] += step;
     }
 }
@@ -1394,7 +1399,7 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real att
                 if (a==0) return;       // disgard those have empty sents
                 break;
             }
-    
+    for (a = 0; a < layer_size; a++) deltas[a] = 0;
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
     for (int i=0;i<NUM_LANG;i++){
         if (len[i]==0) continue;
