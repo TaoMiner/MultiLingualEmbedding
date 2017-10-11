@@ -720,7 +720,7 @@ int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long e
     long long index = -1;
     char word[MAX_STRING];
     int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, res = 1;
-    struct vocab *tmp_model = &model[KG_VOCAB][0];
+    struct vocab *tmp_model = &model[SENSE_VOCAB][0];
     while (1) {
         ReadParText(word, fi);
         if (feof(fi) || !strcmp(word, "</s>")){
@@ -745,7 +745,7 @@ int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long e
                 cur_lang = item_count%NUM_LANG;
                 rem = item_count/NUM_LANG;
                 if (rem == 0)
-                    tmp_model = &model[KG_VOCAB][cur_lang];
+                    tmp_model = &model[SENSE_VOCAB][cur_lang];
                 else
                     tmp_model = &model[TEXT_VOCAB][cur_lang];
                 continue;
@@ -1425,7 +1425,7 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
                 attention[i][j] = -1;
                 break;
             }
-            tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[KG_VOCAB][i].syn0[entity_index[i]*layer_size]);
+            tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][i].syn0[entity_index[i]*layer_size]);
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
