@@ -11,10 +11,12 @@ import math
 from options import Options
 from candidate import Candidate
 from DataReader import DataReader
+from DataReader import Doc
 
 class SenseLinker:
     "given a doc, disambiguate each mention from less ambiguous to more"
     def __init__(self):
+        self.cur_lang = ''
         self.window = 5
         self.kb_entity_prior = {}
         self.kb_me_prob = {}
@@ -24,6 +26,7 @@ class SenseLinker:
         self.cur_mcount = {}
         self.punc = re.compile('[{0}]'.format(re.escape(string.punctuation)))
         self.log_file = ''
+        self.debug_file = ''
         self.total_p = 0
         self.total_tp = 0
         self.doc_actual = 0
@@ -34,6 +37,7 @@ class SenseLinker:
         self.is_local = False
         self.is_global = False
         self.is_prior = False
+        self.candidate = None
 
     def setGamma(self, gamma):
         self.gamma = gamma
@@ -120,111 +124,138 @@ class SenseLinker:
 
     # doc:[w,...,w], mentions:[[doc_pos, m_len, e_id, mention_name],...]
     # senses:[mention_index, e_id]
-    def disambiguateDoc(self, doc, mentions):
+    def disambiguateDoc(self, doc, isCandLowered=True):
+        doc_id = doc.doc_id
+        text = doc.text
+        mentions = doc.mentions
         senses = {}     #{mention_index:predicted_id}
-        m_order = []    #[[mention_index, [cand_id, pem], [...]], ...]
-        # 1. cand_size ==1 or pem > 0.95;
+        m_order = []    #[[mention_index, [cand_id, p(s_en|m_en),p(C_cur(m)|s_en), p(N_en(m)|s_en), p(m_en|m_cur)], [...]], ...]
+        # 1. cand_size ==1 or pem > 0.95; p(s_en|m_en)
         for i in range(len(mentions)):
             m_order.append([i])
             tmp_cand_set = []
-            ment_name = mentions[i][1]
-            tmp_w = doc[mentions[i][0]]
-            has_m_prob = True if tmp_w in self.me_prob else False
-            if not has_m_prob and len(self.log_file) > 0:
-                self.fout_log.write('miss norm mention: %s, for %s, in anchors!\n' % (tmp_w, ment_name))
-            for cand_id in self.mention_cand[ment_name]:
+            ment_name = mentions[i][3].lower() if isCandLowered else mentions[i][3]
+            kb_ment_name = self.candidate.getTranslation(ment_name, self.cur_lang)
+            kb_entity_label = self.kb_idwiki[mentions[i][2]] if mentions[i][2] in self.kb_idwiki else ''
+
+            has_me_prob = True if kb_ment_name in self.kb_me_prob else False
+            if not has_me_prob and len(self.debug_file) > 0:
+                self.fout_debug.write('miss mention me prob: {0}, for {1}!\n'.format(kb_ment_name, kb_entity_label))
+            kb_cand_set = self.candidate.getCandidates(ment_name, self.cur_lang)
+            for cand_id in kb_cand_set:
                 pem = 0.000001
-                if has_m_prob and cand_id not in self.me_prob[tmp_w]:
-                    if len(self.log_file) > 0:
-                        self.fout_log.write('miss entity: %s, for norm mention: %s!\n' % (cand_id, tmp_w))
-                elif has_m_prob:
-                    pem = float(self.me_prob[tmp_w][cand_id]) / self.m_count[tmp_w]
+                if has_me_prob and cand_id not in self.kb_me_prob[kb_ment_name]:
+                    if len(self.debug_file) > 0:
+                        self.fout_debug.write('miss entity: {0}, for mention: {1}!\n'.format(cand_id, kb_ment_name))
+                elif has_me_prob:
+                    pem = float(self.kb_me_prob[kb_ment_name][cand_id]) / self.kb_mcount[kb_ment_name]
                 if pem > 0.98:
                     del tmp_cand_set[:]
-                    tmp_cand_set.append([cand_id, pem, 0.0, 0.0])
+                    tmp_cand_set.append([cand_id, pem, 0.0, 0.0, 0.0])
                     break
-                tmp_cand_set.append([cand_id, pem, 0.0, 0.0])
+                tmp_cand_set.append([cand_id, pem, 0.0, 0.0, 0.0])
             m_order[-1].extend(tmp_cand_set)
         # order for disambiguation
         m_order = sorted(m_order, cmp=lambda x, y: cmp(len(x), len(y)))
         # unambiguous tls vec in doc
         ge_actual = 0
-        ge_vec = np.zeros(self.tr_title.layer_size)
-        for i in xrange(len(m_order)):   #[[mention_index, [cand_id, pem], [...]], ...]
+        ge_vec = np.zeros(self.kb_sense.layer_size)
+        for i in range(len(m_order)):   #[[mention_index, [cand_id, pem], [...]], ...]
             m = m_order[i]
             mention_index = m[0]
             if len(m) == 2:
                 senses[mention_index] = m[1][0]
-                if self.id_wiki[m[1][0]] in self.tr_title.ent_vectors:
-                    ge_vec += self.tr_title.ent_vectors[self.id_wiki[m[1][0]]]
+                if m[1][0] in self.kb_sense.vectors:
+                    ge_vec += self.kb_sense.vectors[m[1][0]]
                     ge_actual +=1
                 continue
-            # cand:[cand_id, pem] --> [cand_id, p(tls|m), p(tls|context), p(tls|tls(umambiguous))]
-            for j in xrange(1,len(m)):
+            # cand:[cand_id, pem] --> [cand_id, p(s_en|m_en),p(C_cur(m)|s_en), p(N_en(m)|s_en), p(m_en|m_cur)]
+            for j in range(1,len(m)):
                 cand_id = m[j][0]
-                entity_label = self.id_wiki[cand_id]
-                # p(tls|context)
+                # p(C_cur(m)|s_en)
                 csim = 0.000001
                 c_w_actual = 0
-                if entity_label in self.tr_title.ent_mu:
+                if cand_id in self.kb_sense.mu:
                     # context vector
-                    context_vec = np.zeros(self.tr_word.layer_size)
+                    context_vec = np.zeros(self.cur_word.layer_size)
                     begin_pos = mentions[mention_index][0] - self.window if mentions[mention_index][0] - self.window > 0 else 0
-                    end_pos = mentions[mention_index][0] + self.window if mentions[mention_index][0] + self.window < len(doc) else len(doc) - 1
-                    for c in xrange(begin_pos, end_pos + 1):
-                        if c == mentions[m[0]][0]: continue
-                        if doc[c] in self.tr_word.vectors:
-                            context_vec += self.tr_word.vectors[doc[c]]
+                    end_pos = mentions[mention_index][0] + mentions[mention_index][1]-1 + self.window if mentions[mention_index][0] + mentions[mention_index][1]-1+ self.window < len(doc) else len(doc) - 1
+                    for c in range(begin_pos, end_pos + 1):
+                        if c >= mentions[mention_index][0] and c <=mentions[mention_index][0] + mentions[mention_index][1]-1: continue
+                        if text[c] in self.cur_word.vectors:
+                            context_vec += self.cur_word.vectors[text[c]]
                             c_w_actual += 1
                     if c_w_actual > 0:
                         context_vec /= c_w_actual
-                        csim = self.cosSim(context_vec, self.tr_title.ent_mu[entity_label])
+                        csim = self.cosSim(context_vec, self.kb_sense.mu[cand_id])
                 m_order[i][j][2] = csim
-                # p(tls|tls(umambiguous))
+                # p(N_en(m)|s_en)
                 gsim = 0.000001
-                if ge_actual > 0 and entity_label in self.tr_title.ent_vectors:
-                    gsim = self.cosSim(ge_vec / ge_actual, self.tr_title.ent_vectors[entity_label])
+                if ge_actual > 0 and cand_id in self.kb_sense.vectors:
+                    gsim = self.cosSim(ge_vec / ge_actual, self.kb_sense.vectors[cand_id])
                 m_order[i][j][3] = gsim
+                # p(m_en|m_cur)
+                tr_sim = 0.000001
+                cur_w_vec = np.zeros(self.cur_word.layer_size)
+                cur_w_actual = 0
+                kb_w_vec = np.zeros(self.kb_word.layer_size)
+                kb_w_actual = 0
+                ment_name = mentions[mention_index][3].lower()
+                kb_ment_name = self.candidate.getTranslation(ment_name, self.cur_lang)
+                kb_ment_name = kb_ment_name.lower()
+                items = re.split(r' ', ment_name)
+                for item in items:
+                    if item in self.cur_word.vectors:
+                        cur_w_vec += self.cur_word.vectors[item]
+                        cur_w_actual += 1
+                items = re.split(r' ', kb_ment_name)
+                for item in items:
+                    if item in self.kb_word.vectors:
+                        kb_w_vec += self.kb_word.vectors[item]
+                        kb_w_actual += 1
+                if cur_w_actual>0 and kb_w_actual>0:
+                    tr_sim = self.cosSim(cur_w_vec/cur_w_actual, kb_w_vec/kb_w_actual)
+                m_order[i][j][4] = tr_sim
                 self.total_cand_num += 1
             if self.is_prior:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[1],x[1]))
+                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[1],x[4]*x[1]))
             elif self.is_local:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[2]*(y[1]**self.gamma), x[2]*(x[1]**self.gamma)))
+                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[2]*(y[1]**self.gamma), x[4]*x[2]*(x[1]**self.gamma)))
             else:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[2]*y[3]*(y[1]**self.gamma), x[2]*x[3]*(x[1]**self.gamma)))
+                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[3]*y[2]*(y[1]**self.gamma), x[4]*x[3]*x[2]*(x[1]**self.gamma)))
 
             cand_id = m_order[i][1][0]
             senses[mention_index]=cand_id
-            if self.id_wiki[cand_id] in self.tr_title.ent_vectors:
-                ge_vec += self.tr_title.ent_vectors[self.id_wiki[cand_id]]
+            if cand_id in self.kb_sense.vectors:
+                ge_vec += self.kb_sense.vectors[cand_id]
                 ge_actual += 1
 
-        if len(self.log_file) > 0:
-            self.fout_log.write('*************************************************\n')
-            self.fout_log.write('doc %d: has mentions %d!\n' % (doc_id, len(mentions)))
+        if len(self.debug_file) > 0:
+            self.fout_debug.write('*************************************************\n')
+            self.fout_debug.write('doc {0}: has mentions {1}!\n'.format(doc_id, len(mentions)))
             m_order = sorted(m_order, cmp=lambda x, y: cmp(x[0], y[0]))
-            for m in m_order:       #[[mention_index, [cand_id, pem], [...]], ...]
-                ment_name = mentions[m[0]][1]
+            for m in m_order:       #[[mention_index, [cand_id, p(s_en|m_en),p(C_cur(m)|s_en), p(N_en(m)|s_en), p(m_en|m_cur)], [...]], ...]
+                ment_name = mentions[m[0]][3]
                 wiki_id = mentions[m[0]][2]
                 predict = m[1]
                 # ans
-                self.fout_log.write('%s\t%d\t%s\t%s\t%f\t%f\t%f\n' % (ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3]))
+                self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3],predict[4]))
                 # truth
-                if predict[0] != wiki_id:
+                if predict[0] != wiki_id and len(m)-1 >1:
                     for cand in m[2:]:
                         if cand[0] == wiki_id:
-                            self.fout_log.write('%s\t%d\t%s\t%s\t%f\t%f\t%f\n' % (ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3]))
-                if predict[0] == wiki_id:
+                            self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
+                if predict[0] == wiki_id and len(m)-1 >1:
                     for cand in m[2:]:
                         if cand[1] > 0.9:
-                            self.fout_log.write('%s\t%d\t%s\t%s\t%f\t%f\t%f\n' % (ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3]))
-            self.fout_log.write('*************************************************\n')
+                            self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
+            self.fout_debug.write('*************************************************\n')
         return senses
 
     def evaluate(self, senses, mentions):
         if len(senses) > 0 :
             doc_tp = 0
-            for i in xrange(len(mentions)):
+            for i in range(len(mentions)):
                 if mentions[i][2] == senses[i]:
                     doc_tp += 1
             self.total_p += float(doc_tp)/len(senses)
@@ -232,56 +263,26 @@ class SenseLinker:
             self.doc_actual += 1
             self.mention_actual += len(senses)
 
-    def disambiguate(self, doc_file, output_file):
+    def disambiguate(self, corpus, dataset_name = ''):
         if not self.is_global and not self.is_local and not self.is_prior:
             self.is_global = True
-        if len(self.log_file) > 0:
-            self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
-        with codecs.open(doc_file, 'r', encoding='UTF-8') as fin:
-            doc_id = 0
-            doc = []
-            mentions = []
-            is_mention = False
-            for line in fin:
-                line = line.strip()
-                if line.startswith('-DOCSTART-'):
-                    if doc_id >= 1163 and len(mentions) > 0:
-                        self.evaluate(self.disambiguateDoc(doc_id, doc, mentions), mentions)
-                    doc_id += 1
-                    del doc[:]
-                    del mentions[:]
-                    is_mention = False
-                    continue
-                elif len(line)<1:
-                    is_mention = False
-                    continue
-                else:
-                    items = re.split(r'\t', line)
-                    if len(items)>4 and items[1] == 'B' and items[2] in self.mention_cand and items[5] in self.mention_cand[items[2]]:
-                        mentions.append([len(doc), items[2], items[5]])
-                        doc.append(self.maprule(items[2]))
-                        is_mention = True
-                    elif is_mention and len(items)> 2 and items[1] == 'I':
-                        continue
-                    else:
-                        tmp_w = self.maprule(items[0])
-                        if tmp_w in self.tr_word.vectors:
-                            doc.append(tmp_w)
-                        is_mention = False
-                        continue
-            if len(doc) > 0:
-                self.evaluate(self.disambiguateDoc(doc_id, doc, mentions), mentions)
+        if len(self.debug_file) > 0:
+            self.fout_debug = codecs.open(self.debug_file, 'w', encoding='UTF-8')
+            if len(corpus) > 0:
+                for doc in corpus:
+                    self.evaluate(self.disambiguateDoc(doc), doc.mentions)
         micro_p = float(self.total_tp) / self.mention_actual
         macro_p = self.total_p / self.doc_actual
-        print("micro precision : %f(%d/%d/%d), macro precision : %f" % (micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
-        with codecs.open(output_file, 'a', encoding='UTF-8') as fout:
-            fout.write('*******************************************************************************************\n')
-            fout.write('input: %s, gamma:%f, method: is_prior: %r, is_local: %r, is_global: %r\n' % (self.input_path, self.gamma, self.is_prior, self.is_local, self.is_global))
-            fout.write("micro precision : %f(%d/%d/%d), macro precision : %f\n" % (micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
-            fout.write("*******************************************************************************************\n")
+        print("micro precision : {0:%f}({1:%d}/{2:%d}/{3:%d}), macro precision : {4:%f}".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
         if len(self.log_file) > 0:
-            self.fout_log.write('miss %d senses!\n%s\n' % (len(self.miss_senses), '\n'.join(self.miss_senses)))
-            self.fout_log.close()
+            with codecs.open(self.log_file, 'a', encoding='UTF-8') as fout:
+                fout.write('*******************************************************************************************\n')
+                fout.write('dataset: {0:%s}, gamma:{1:%f}, method: is_prior: {2:%r}, is_local: {3:%r}, is_global: {4:%r}\n'.format(dataset_name, self.gamma, self.is_prior, self.is_local, self.is_global))
+                fout.write("micro precision : {0:%f}({1:%d}/{2:%d}/{3:%d}), macro precision : {4:%f}\n".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
+                fout.write("*******************************************************************************************\n")
+        if len(self.debug_file) > 0:
+            self.fout_debug.write('miss {0} senses!\n{1}\n'.format(len(self.miss_senses), '\n'.join(self.miss_senses)))
+            self.fout_debug.close()
 
 if __name__ == '__main__':
 
@@ -295,7 +296,9 @@ if __name__ == '__main__':
     doc_type = Options.doc_type[0]
 
     sense_linker = SenseLinker()
+    sense_linker.cur_lang = cur_lang
     sense_linker.log_file = Options.getLogFile('eval2.log')
+    sense_linker.debug_file = Options.getLogFile('eval2.debug')
     if method == 1:
         sense_linker.setPrior()
     elif method == 2:
@@ -359,5 +362,5 @@ if __name__ == '__main__':
 
     mentions15 = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, True), id_map=idmap)
     en_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, doc_type, mentions15)
-
-    sense_linker.disambiguate(aida_file, output_file)
+    dataset_name = Options.getFeatureFile(corpus_year, True, cur_lang, doc_type)
+    sense_linker.disambiguate(en_eval_corpus, dataset_name)

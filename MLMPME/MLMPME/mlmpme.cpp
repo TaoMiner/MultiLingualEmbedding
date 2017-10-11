@@ -718,25 +718,24 @@ void InitModel(int model_type, int lang_id){
 int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
     long long index = -1;
     char word[MAX_STRING];
-    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, j, res = 1;
+    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, res = 1;
     struct vocab *tmp_model = &model[KG_VOCAB][0];
-    for (i=0;i<NUM_LANG;i++) entity_index[i] = -1;
-    for (i=0;i<NUM_LANG;i++)
-        for(j=0;j<NUM_LANG;j++)
-            sen[i][j] = 0;
     while (1) {
         ReadParText(word, fi);
         if (feof(fi) || !strcmp(word, "</s>")){
             sen[cur_lang][sentence_length] = 0;
-            for (i=0;i<NUM_LANG;i++){
-                if (entity_index[i] < 0 || sen[i][0] <=0)
-                    res = -1;
-            }
             if (item_count < 3) res = -1;
+            else{
+                for (i=0;i<NUM_LANG;i++)
+                    if (entity_index[i] < 0 || sen[i][0] <=0){
+                        res = -1;
+                        break;
+                    }
+            }
             break;
         }
         if (item_count < 4){
-            if (! strcmp(word, "</t>")) {
+            if (!strcmp(word, "</t>")) {
                 if (rem == 1) {
                     sen[cur_lang][sentence_length] = 0;
                     sentence_length = 0;
@@ -1273,7 +1272,7 @@ void *TrainKgModelThread(void *id) {
 }
 
 void setMonoLangId(int lang_id){
-    cur_lang_id = lang_id;
+    cur_lang_id = lang_id%NUM_LANG;
 }
 
 void resetSenseCluster(int lang_id){
@@ -1322,6 +1321,7 @@ real similarity(real *vec1, real *vec2){
     if (len_v > 0) {
         for (a = 0; a < layer_size; a++)
             dist += vec1[a] * vec2[a] / len_v;
+        dist = (dist+1)/2;      // (-1,1) --> (0,1)
     }
     return dist;
 }
@@ -1365,12 +1365,12 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
     long long c, d, offset;
     int len = 0;
     for (len = 0;len<MAX_SENTENCE_LENGTH;len++)
-        if (sen[len] == 0) break;
+        if (sen[len] == 0 || attention[len] == -1) break;
     for (d = 0; d < MAX_SENTENCE_LENGTH; d++) {
         if (sen[d]==0) break;
         offset = layer_size * sen[d];
         for (c = 0; c < layer_size; c++) {
-            // We compute the MEAN sentence vector
+            // We compute the attentive sentence vector
             deltas[c] += sign * attention[d] * syn[offset + c] / (real)len;
             if (d == len - 1) sumSquares += deltas[c] * deltas[c];
         }
@@ -1381,24 +1381,20 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
 
 /* BilBOWA bag-of-words sentence update */
 void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real attention[NUM_LANG][MAX_SENTENCE_LENGTH],real *deltas) {
-    int a;
+    int a,i;
     real grad_norm;
     real *syn0_1, *syn0_2;
     int len[NUM_LANG];
     // FPROP
     // length of sen
-    for (int i=0;i<NUM_LANG;i++)
+    for (i=0;i<NUM_LANG;i++)
         for(a=0;a<MAX_SENTENCE_LENGTH;a++)
-            if (sen[i][a]==0){
+            if (sen[i][a]==0 || attention[i][a] == -1){
                 len[i] = a;
                 if (a==0) return;       // disgard those have empty sents
                 break;
             }
-    for (int i=0;i<NUM_LANG;i++)
-        for(a=0;a<MAX_SENTENCE_LENGTH;a++)
-            if (attention[i][a]==0 && a == 0)
-                return;                  // disgard empty attention
-                
+    
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
     for (int i=0;i<NUM_LANG;i++){
         if (len[i]==0) continue;
@@ -1421,18 +1417,17 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
     for (i=0;i<NUM_LANG;i++){
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
             if (sen[i][j] == 0){
-                attention[i][j] = 0;
+                attention[i][j] = -1;
                 break;
             }
             tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[KG_VOCAB][i].syn0[entity_index[i]*layer_size]);
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
-        for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            if (sum == 0) attention[i][j] = 0;
-            else
+        if (sum == 0)attention[i][0] = -1;
+        else
+            for (j=0;j<MAX_SENTENCE_LENGTH;j++)
                 attention[i][j] /= sum;
-        }
         sum = 0.0;
     }
 }
@@ -1459,10 +1454,11 @@ void *BilbowaThread(void *id) {
     if((long long)id!=0) ReadSent(fi_par, par_sen, par_entity);
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
-        for(int i=0;i<NUM_LANG;i++)
+        for(int i=0;i<NUM_LANG;i++){
             par_sen[i][0] = 0;
-        for(int i=0;i<NUM_LANG;i++)
-            par_entity[i] = 0;
+            attention[i][0] = -1;
+            par_entity[i] = -1;
+        }
         res = ReadSent(fi_par, par_sen, par_entity);
         cur_line ++;
         if (res <=0) continue;
