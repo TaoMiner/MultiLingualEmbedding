@@ -1424,10 +1424,15 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
-        if (sum == 0)attention[i][0] = -1;
-        else
-            for (j=0;j<MAX_SENTENCE_LENGTH;j++)
+        for (j=0;j<MAX_SENTENCE_LENGTH;j++){
+            if (attention[i][j] == -1) break;
+            
+            if (sum == 0)
+                attention[i][j] = 1;
+            else
                 attention[i][j] /= sum;
+        }
+        
         sum = 0.0;
     }
 }
