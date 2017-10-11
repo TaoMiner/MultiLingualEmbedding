@@ -75,7 +75,7 @@ class DataReader:
         return tokens
 
     # {doc_id:[[startP, endP, wikiId, mention_str],...], ...}
-    def loadKbpMentions(self, file, id_map=None):
+    def loadKbpMentions(self, file, id_map=None, redirectsId = None):
         count = 0
         mentions = {}
         with codecs.open(file, 'r') as fin:
@@ -93,6 +93,8 @@ class DataReader:
                     ent_id = items[4]
                 elif items[4] in id_map:
                     ent_id = id_map[items[4]]
+                    if not isinstance(redirectsId, type(None)) and ent_id in redirectsId:
+                        ent_id = redirectsId[ent_id]
                 else: continue
                 tmp_mention = [start_p, end_p, ent_id, mention_str]
                 doc_mentions = [] if doc_id not in mentions else mentions[doc_id]
