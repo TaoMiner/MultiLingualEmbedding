@@ -25,9 +25,9 @@ class Options:
     output_file = '../etc/output_senselink'
 
     @staticmethod
-    def getFeatureFile(year, isEval, lang, docType):
+    def getFeatureFile(year, isEval, lang, docType, exp):
         tmp = 'eval' if isEval else 'training'
-        return Options.root_path + 'kbp/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature'
+        return Options.root_path + 'kbp/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature_' + exp
 
     @staticmethod
     def getNlpToolUrl(lang):

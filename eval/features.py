@@ -29,9 +29,14 @@ class Features:
         self.skip = 0
         self.punc = re.compile('[{0}]'.format(re.escape(string.punctuation)))
         self.log_file = ''
+        self.debug_file = ''
         self.has_cur_sense = False
         self.has_kb_sense = False
         self.candidate = None
+        self.isFilter = True
+        self.total_doc_num = 0
+        self.total_mention_num = 0
+        self.total_cand_num = 0
 
     def setCurLang(self, lang):
         self.lang = lang
@@ -118,7 +123,8 @@ class Features:
     #doc=[w,..,w], mentions = [[doc_pos, ment_name, wiki_id],...], c_entities = [wiki_id, ...]
     # default, mention candidate dict depends on isCandLowered, embedding vocab is lowered
     def getFVec(self, doc, isCandLowered, c_entities = []):
-        self.fout_log.write("doc_id:{0}\ndoc:{1}\nmentions:{2}\n".format(doc.doc_id, doc.text,doc.mentions))
+        if len(self.debug_file) > 0:
+            self.fout_debug.write("doc_id:{0}\ndoc:{1}\nmentions:{2}\n".format(doc.doc_id, doc.text,doc.mentions))
         vec = []
         largest_kb_pe = -1.0
         largest_cur_pe = -1.0
@@ -126,6 +132,7 @@ class Features:
         skip_mentions = {}
         isFirstStep = True if len(c_entities) < 1 else False
         for m in doc.mentions:      # m [doc_index, sentence_index, wiki_id]     # [doc_index, ment_len, wiki_id, ment_str]
+            isFilteredMention = True
             mention_index += 1
             ment_length = int(m[1])
             # sense embedding starts with '\s+'
@@ -144,14 +151,29 @@ class Features:
                     skip_mentions[m[3]] = m[2]
                 continue
 
+            # filter according to sense embedding
+            if self.isFilter and m[2] not in self.kb_sense.vectors:
+                continue
+
+            # filter cand doesnot contain wiki_id
+            has_wiki_id = False
+            for cand in cand_set:
+                if cand[0] == m[2]:
+                    has_wiki_id = True
+            if not has_wiki_id: continue
+
             for cand in cand_set:        #cand_id: m's candidates wiki id
                 kb_cand_id = cand[0]
                 cur_cand_id = cand[1]
-                # can fliter out the cand entity that doesnot has the entity vec
+                # filter according to sense embedding
+                if self.isFilter and kb_cand_id not in self.kb_sense.vectors : continue
+
                 if kb_cand_id not in self.kb_idwiki : continue
                 kb_entity_label = self.kb_idwiki[kb_cand_id]
                 cur_entity_label = self.cur_idwiki[cur_cand_id] if cur_cand_id in self.cur_idwiki else ''
-
+                if isFilteredMention:
+                    self.total_mention_num += 1
+                    isFilteredMention = False
                 tmp_mc_vec = [doc.doc_id]
                 tmp_mc_vec.extend([mention_index, m[2], kb_cand_id, cand_size])
 
@@ -257,7 +279,8 @@ class Features:
                         c_w_actual += 1
                 if c_w_actual > 0:
                     context_vec /= c_w_actual
-                self.fout_log.write("ment_name:{0}, cand_label:{1}, kb_s: {2}, kb_w: {3}, cw: {4}\n".format(ment_name,kb_entity_label,has_kb_sense,kb_w_actual,c_w_actual))
+                if len(self.debug_file) > 0:
+                    self.fout_debug.write("ment_name:{0}, cand_label:{1}, kb_s: {2}, kb_w: {3}, cw: {4}\n".format(ment_name,kb_entity_label,has_kb_sense,kb_w_actual,c_w_actual))
                 csim1 = 0
                 crank1 = 0
                 if c_w_actual>0 and has_kb_sense:
@@ -273,7 +296,8 @@ class Features:
                     csim3 = self.cosSim(context_vec, self.cur_sense.mu[cur_cand_id])
 
                 tmp_mc_vec.extend([esim1, erank1, esim2, erank2, esim3, erank3, esim4, erank4, csim1, crank1, csim2, crank2, csim3, crank3])
-                self.fout_log.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
+                if len(self.debug_file) > 0:
+                    self.fout_debug.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
                 vec.append(tmp_mc_vec)
                 # add entities without ambiguous as truth
                 if isFirstStep and kb_pem > 0.95 :
@@ -355,21 +379,31 @@ class Features:
 
     def extFeatures(self, corpus, feature_file, isLowered=True):
         count = 0
-        if len(self.log_file) > 0:
-            self.fout_log = codecs.open(self.log_file, 'w', encoding='UTF-8')
+        if len(self.debug_file) > 0:
+            self.fout_debug = codecs.open(self.debug_file, 'a', encoding='UTF-8')
+            self.fout_debug.write("**************************************************\n")
+            self.fout_debug.write("feature_file:{0}\n".format(feature_file))
         for doc in corpus:
             vec = self.getFVec(doc, isLowered)
             vec.to_csv(feature_file, mode='a', header=False, index=False)
+            self.total_cand_num += len(vec)
+            if len(vec) > 0: self.total_doc_num += 1
             count += 1
-        print("totally processed {0} docs!".format(count))
+        if len(self.debug_file) > 0:
+            self.fout_debug.write("**************************************************\n")
+            self.fout_debug.close()
         if len(self.log_file) > 0:
+            self.fout_log = codecs.open(self.log_file, 'a', encoding='UTF-8')
+            self.fout_log.write("**************************************************\n")
+            self.fout_log.write("feature_file:{0}, {1} docs! {2} mentions! {3} candidates!\n".format(feature_file, self.total_doc_num, self.total_mention_num, self.total_cand_num))
+            self.fout_log.write("**************************************************\n")
             self.fout_log.close()
 
 
 if __name__ == '__main__':
     # kb lang is always 'eng'
     has_sense = True
-    exp = 'exp8'
+    exp = 'exp9'
     it = 5
     cur_lang = Options.en
     doc_type = Options.doc_type[0]
@@ -418,6 +452,7 @@ if __name__ == '__main__':
     features.loadCurVec(cur_idwiki_dic, cur_word, cur_entity, sense=cur_sense)
 
     features.log_file = Options.getLogFile('log_feature')
+    features.debug_file = Options.getLogFile('debug_feature')
 
     # kb mention's candidate entities {apple:{wiki ids}, ...}
     # p(e)
@@ -454,8 +489,6 @@ if __name__ == '__main__':
     mentions15_train = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, False), id_map=idmap)
     en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
     en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
-    print("totally {0} train docs, {1} eval docs!".format(len(en_train_corpus), len(en_eval_corpus)))
 
-    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type))
-    print("train features finished!")
-    features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type))
+    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp))
+    features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp))

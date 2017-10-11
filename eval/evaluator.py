@@ -95,7 +95,7 @@ class Evaluator:
             with codecs.open(self.log_file, 'a', encoding='UTF-8') as fout:
                 fout.write('*******************************************************************************************\n')
                 fout.write('train feature file:{0}, test feature file:{1}, answer file:{2}, predicted file:{3}\n'.format(train_feature_file, test_feature_file, predict_file, ans_file))
-                fout.write('{0}\n'.format(','.join(self.feature_list)))
+                fout.write('total {0} candidates! use features:{1} \n'.format(len(test_feature), ','.join(self.feature_list)))
                 fout.write("micro precision : {0}({1}/{2}), macro precision : {3}\n".format(micro_p, total_mention_tp, total_mention_num, macro_p))
                 fout.write("*******************************************************************************************\n")
 
@@ -103,10 +103,11 @@ if __name__ == '__main__':
     cur_lang = Options.en
     doc_type = Options.doc_type[0]
     corpus_year = 2015
+    exp = 'exp9'
 
     eval = Evaluator()
-    eval.log_file = Options.getLogFile('eval_log')
+    eval.log_file = Options.getLogFile('eval1.log')
     starttime = datetime.datetime.now()
-    eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type), predict_file = Options.getLogFile('eval_predict.log'), ans_file = Options.getLogFile('eval_ans.log'))
+    eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp), predict_file = Options.getLogFile('eval_predict.log'), ans_file = Options.getLogFile('eval_ans.log'))
     endtime = datetime.datetime.now()
     print("{0}".format((endtime - starttime).seconds))
