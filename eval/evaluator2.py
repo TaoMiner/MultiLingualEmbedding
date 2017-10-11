@@ -38,6 +38,10 @@ class SenseLinker:
         self.is_global = False
         self.is_prior = False
         self.candidate = None
+        self.isFilter = True
+        self.total_doc_num = 0
+        self.total_cand_num = 0
+        self.total_ment_num = 0
 
     def setGamma(self, gamma):
         self.gamma = gamma
@@ -142,7 +146,22 @@ class SenseLinker:
             if not has_me_prob and len(self.debug_file) > 0:
                 self.fout_debug.write('miss mention me prob: {0}, for {1}!\n'.format(kb_ment_name, kb_entity_label))
             kb_cand_set = self.candidate.getCandidates(ment_name, self.cur_lang)
-            for cand_id in kb_cand_set:
+
+            # filter according to sense embedding
+            if self.isFilter and mentions[i][2] not in self.kb_sense.vectors:
+                continue
+
+            # filter cand doesnot contain wiki_id
+            has_wiki_id = False
+            for cand in kb_cand_set:
+                if cand[0] == mentions[i][2]:
+                    has_wiki_id = True
+            if not has_wiki_id: continue
+
+            for cand in kb_cand_set:
+                cand_id = cand[0]
+                if self.isFilter and cand_id not in self.kb_sense.vectors:
+                    continue
                 pem = 0.000001
                 if has_me_prob and cand_id not in self.kb_me_prob[kb_ment_name]:
                     if len(self.debug_file) > 0:
@@ -163,6 +182,8 @@ class SenseLinker:
         for i in range(len(m_order)):   #[[mention_index, [cand_id, pem], [...]], ...]
             m = m_order[i]
             mention_index = m[0]
+            if len(m) < 2: continue
+            self.total_cand_num += len(m) - 1
             if len(m) == 2:
                 senses[mention_index] = m[1][0]
                 if m[1][0] in self.kb_sense.vectors:
@@ -254,6 +275,8 @@ class SenseLinker:
 
     def evaluate(self, senses, mentions):
         if len(senses) > 0 :
+            self.total_doc_num += 1
+            self.total_ment_num += len(senses)
             doc_tp = 0
             for i in range(len(mentions)):
                 if mentions[i][2] == senses[i]:
@@ -277,7 +300,8 @@ class SenseLinker:
         if len(self.log_file) > 0:
             with codecs.open(self.log_file, 'a', encoding='UTF-8') as fout:
                 fout.write('*******************************************************************************************\n')
-                fout.write('dataset: {0:%s}, gamma:{1:%f}, method: is_prior: {2:%r}, is_local: {3:%r}, is_global: {4:%r}\n'.format(dataset_name, self.gamma, self.is_prior, self.is_local, self.is_global))
+                fout.write("dataset:{0:%s}, {1} docs! {2} mentions! {3} candidates!\n".format(dataset_name, self.total_doc_num, self.total_ment_num, self.total_cand_num))
+                fout.write('gamma:{0:%f}, method: is_prior: {1:%r}, is_local: {2:%r}, is_global: {3:%r}\n'.format(self.gamma, self.is_prior, self.is_local, self.is_global))
                 fout.write("micro precision : {0:%f}({1:%d}/{2:%d}/{3:%d}), macro precision : {4:%f}\n".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
                 fout.write("*******************************************************************************************\n")
         if len(self.debug_file) > 0:
@@ -289,9 +313,9 @@ if __name__ == '__main__':
     # 1:prior, 2:local, 3:global
     method = 3
     gamma = 0.1
-    exp = 'exp2'
+    exp = 'exp9'
     it = 5
-    cur_lang = Options.en
+    cur_lang = Options.zh
     corpus_year = 2015
     doc_type = Options.doc_type[0]
 
@@ -362,5 +386,5 @@ if __name__ == '__main__':
 
     mentions15 = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, True), id_map=idmap)
     en_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, doc_type, mentions15)
-    dataset_name = Options.getFeatureFile(corpus_year, True, cur_lang, doc_type)
+    dataset_name = Options.getFeatureFile(corpus_year, True, cur_lang, doc_type, exp)
     sense_linker.disambiguate(en_eval_corpus, dataset_name)
