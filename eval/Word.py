@@ -11,6 +11,7 @@ class Word():
         self.vocab_size = 0
         self.layer_size = 0
         self.vectors = None
+        self.vocab = None
 
     def initVectorFormat(self, size):
         tmp_struct_fmt = []
@@ -19,14 +20,14 @@ class Word():
         p_struct_fmt = "".join(tmp_struct_fmt)
         return p_struct_fmt
 
-    def readVocab(self, file):
-        vocab = set()
+    def loadVocab(self, file):
+        if isinstance(self.vocab, type(None)):
+            self.vocab = set()
         with codecs.open(file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                vocab.add(items[0])
-        print('read {0} words!'.format(len(vocab)))
-        return vocab
+                self.vocab.add(items[0])
+        print('load vocab of {0} words!'.format(len(self.vocab)))
 
     def sample(self, subvocab_file, vector_file,  sample_file):
         new_vocab = self.readVocab(subvocab_file)

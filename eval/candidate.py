@@ -29,7 +29,7 @@ class Candidate:
         if lang == Options.en:
             tr_ment_name = ment_name
         return tr_ment_name
-
+    # cand:[[enwiki_id, langwiki_id],...]
     def getCandidates(self, ment_name, lang):
         en_cand = set()
         cand = []

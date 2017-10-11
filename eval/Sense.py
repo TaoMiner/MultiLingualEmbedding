@@ -10,6 +10,7 @@ titleRE = re.compile(r' \([^\(]*?\)$')
 class Sense():
 
     def __init__(self):
+        self.vocab = None
         self.vocab_size = 0
         self.layer_size = 0
         self.vectors = None
@@ -17,6 +18,15 @@ class Sense():
         self.mu = None
         self.mention_dic = None
         self.id_entity = None
+
+    def loadVocab(self, filename):
+        if isinstance(self.vocab, type(None)):
+            self.vocab = set()
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                self.vocab.add(items[0])
+        print('load vocab of {0} senses!'.format(len(self.vocab)))
 
     def getMentSense(self, mention):
         senses = []

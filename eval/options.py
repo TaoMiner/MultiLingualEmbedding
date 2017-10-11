@@ -56,7 +56,8 @@ class Options:
     def getKBPAnsFile(year, isEval):
         tmp_path = '/eval' if isEval else '/training'
         tmp_type = 'evaluation' if isEval else 'training'
-        return Options.getKBPRootPath() + str(year) + tmp_path + '/tac_kbp_2015_tedl_' + tmp_type + '_gold_standard_entity_mentions.tab'
+        tmp_edl = '_tedl_' if year == 2015 else '_edl_'
+        return Options.getKBPRootPath() + str(year) + tmp_path + '/tac_kbp_' + str(year) + tmp_edl + tmp_type + '_gold_standard_entity_mentions.tab'
 
     # languages = ['eng', 'cmn', 'spa']
     # doc_type = ['nw', 'df', 'newswire', 'discussion_forum']

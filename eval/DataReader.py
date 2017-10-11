@@ -382,7 +382,7 @@ if __name__ == '__main__':
     dr = DataReader()
     idmap = dr.loadKbidMap(kbid_map_file)
     enmention_dic, esmention_dic, zhmention_dic = dr.extractMentionDic(ans15_file, ans15_train_file,ans16_file, conll_file, id_map=idmap)
-    dr.saveMentionDic(enmention_dic,enmention_dic_file)
+    dr.saveMentionDic(enmention_dic, enmention_dic_file)
     dr.saveMentionDic(esmention_dic, esmention_dic_file)
     dr.saveMentionDic(zhmention_dic, zhmention_dic_file)
     # 15 16 en

@@ -13,6 +13,16 @@ class Entity():
         self.entity_id = None
         self.id_entity = None
         self.vectors = None
+        self.vocab = None
+
+    def loadVocab(self, filename):
+        if isinstance(self.vocab, type(None)):
+            self.vocab = set()
+        with codecs.open(filename, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                self.vocab.add(items[0])
+        print('load vocab of {0} entities!'.format(len(self.vocab)))
 
     @staticmethod
     def loadEntityDic(filename):
