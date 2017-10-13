@@ -14,6 +14,7 @@ from candidate import Candidate
 from DataReader import DataReader
 from options import Options
 
+
 class Features:
     "construct (mention, entity) pair's feature vectors, including base feature, \
     contextual feature and string feature"
@@ -34,6 +35,11 @@ class Features:
         self.has_kb_sense = False
         self.candidate = None
         self.isFilter = True
+        self.total_doc_num = 0
+        self.total_mention_num = 0
+        self.total_cand_num = 0
+
+    def resetTotalCount(self):
         self.total_doc_num = 0
         self.total_mention_num = 0
         self.total_cand_num = 0
@@ -491,4 +497,5 @@ if __name__ == '__main__':
     en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
 
     features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp))
+    features.resetTotalCount()
     features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp))

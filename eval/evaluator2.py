@@ -12,6 +12,7 @@ from options import Options
 from candidate import Candidate
 from DataReader import DataReader
 from DataReader import Doc
+from functools import cmp_to_key
 
 class SenseLinker:
     "given a doc, disambiguate each mention from less ambiguous to more"
@@ -143,8 +144,6 @@ class SenseLinker:
             kb_entity_label = self.kb_idwiki[mentions[i][2]] if mentions[i][2] in self.kb_idwiki else ''
 
             has_me_prob = True if kb_ment_name in self.kb_me_prob else False
-            if not has_me_prob and len(self.debug_file) > 0:
-                self.fout_debug.write('miss mention me prob: {0}, for {1}!\n'.format(kb_ment_name, kb_entity_label))
             kb_cand_set = self.candidate.getCandidates(ment_name, self.cur_lang)
 
             # filter according to sense embedding
@@ -160,13 +159,11 @@ class SenseLinker:
 
             for cand in kb_cand_set:
                 cand_id = cand[0]
+                # filter cand without sense embedding
                 if self.isFilter and cand_id not in self.kb_sense.vectors:
                     continue
                 pem = 0.000001
-                if has_me_prob and cand_id not in self.kb_me_prob[kb_ment_name]:
-                    if len(self.debug_file) > 0:
-                        self.fout_debug.write('miss entity: {0}, for mention: {1}!\n'.format(cand_id, kb_ment_name))
-                elif has_me_prob:
+                if has_me_prob and cand_id in self.kb_me_prob[kb_ment_name]:
                     pem = float(self.kb_me_prob[kb_ment_name][cand_id]) / self.kb_mcount[kb_ment_name]
                 if pem > 0.98:
                     del tmp_cand_set[:]
@@ -175,14 +172,17 @@ class SenseLinker:
                 tmp_cand_set.append([cand_id, pem, 0.0, 0.0, 0.0])
             m_order[-1].extend(tmp_cand_set)
         # order for disambiguation
-        m_order = sorted(m_order, cmp=lambda x, y: cmp(len(x), len(y)))
+        m_order.sort(key=cmp_to_key(lambda x, y: ((len(x)>len(y))-(len(x)<len(y))) ))
+        # m_order = sorted(m_order, cmp=lambda x, y: cmp(len(x), len(y)))
         # unambiguous tls vec in doc
         ge_actual = 0
         ge_vec = np.zeros(self.kb_sense.layer_size)
         for i in range(len(m_order)):   #[[mention_index, [cand_id, pem], [...]], ...]
             m = m_order[i]
             mention_index = m[0]
-            if len(m) < 2: continue
+            if len(m) < 2:
+                senses[mention_index] = ''      # no cand, skip
+                continue
             self.total_cand_num += len(m) - 1
             if len(m) == 2:
                 senses[mention_index] = m[1][0]
@@ -200,7 +200,7 @@ class SenseLinker:
                     # context vector
                     context_vec = np.zeros(self.cur_word.layer_size)
                     begin_pos = mentions[mention_index][0] - self.window if mentions[mention_index][0] - self.window > 0 else 0
-                    end_pos = mentions[mention_index][0] + mentions[mention_index][1]-1 + self.window if mentions[mention_index][0] + mentions[mention_index][1]-1+ self.window < len(doc) else len(doc) - 1
+                    end_pos = mentions[mention_index][0] + mentions[mention_index][1]-1 + self.window if mentions[mention_index][0] + mentions[mention_index][1]-1+ self.window < len(text) else len(text) - 1
                     for c in range(begin_pos, end_pos + 1):
                         if c >= mentions[mention_index][0] and c <=mentions[mention_index][0] + mentions[mention_index][1]-1: continue
                         if text[c] in self.cur_word.vectors:
@@ -239,12 +239,12 @@ class SenseLinker:
                 m_order[i][j][4] = tr_sim
                 self.total_cand_num += 1
             if self.is_prior:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[1],x[4]*x[1]))
+                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4]*y[1] > x[4]*x[1]) - (y[4]*y[1] < x[4]*x[1]))))
             elif self.is_local:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[2]*(y[1]**self.gamma), x[4]*x[2]*(x[1]**self.gamma)))
+                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4]*y[2]*(y[1]**self.gamma) > x[4]*x[2]*(x[1]**self.gamma)) - (y[4]*y[2]*(y[1]**self.gamma) < x[4]*x[2]*(x[1]**self.gamma)))))
             else:
-                m_order[i][1:] = sorted(m[1:], cmp=lambda x, y: cmp(y[4]*y[3]*y[2]*(y[1]**self.gamma), x[4]*x[3]*x[2]*(x[1]**self.gamma)))
-
+                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4] * y[3] * y[2] * (y[1] ** self.gamma) > x[4] * x[3] * x[2] * (x[1] ** self.gamma)) - (y[4] * y[3] * y[2] * (y[1] ** self.gamma) < x[4] * x[3] * x[2] * (x[1] ** self.gamma)))))
+            m_order[i][1:] = tmp_sort
             cand_id = m_order[i][1][0]
             senses[mention_index]=cand_id
             if cand_id in self.kb_sense.vectors:
@@ -254,22 +254,21 @@ class SenseLinker:
         if len(self.debug_file) > 0:
             self.fout_debug.write('*************************************************\n')
             self.fout_debug.write('doc {0}: has mentions {1}!\n'.format(doc_id, len(mentions)))
-            m_order = sorted(m_order, cmp=lambda x, y: cmp(x[0], y[0]))
+            m_order.sort(key=cmp_to_key(lambda x, y: ((x[0] > y[0]) - (x[0] < y[0]))))
             for m in m_order:       #[[mention_index, [cand_id, p(s_en|m_en),p(C_cur(m)|s_en), p(N_en(m)|s_en), p(m_en|m_cur)], [...]], ...]
                 ment_name = mentions[m[0]][3]
                 wiki_id = mentions[m[0]][2]
-                predict = m[1]
-                # ans
-                self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3],predict[4]))
-                # truth
-                if predict[0] != wiki_id and len(m)-1 >1:
-                    for cand in m[2:]:
-                        if cand[0] == wiki_id:
-                            self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
-                if predict[0] == wiki_id and len(m)-1 >1:
-                    for cand in m[2:]:
-                        if cand[1] > 0.9:
-                            self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
+                if len(m) < 2:
+                    self.fout_debug.write('{0}\t{1}\n'.format(ment_name, wiki_id))
+                else:
+                    predict = m[1]
+                    # ans
+                    self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3],predict[4]))
+                    # truth
+                    if predict[0] != wiki_id and len(m)-1 >1:
+                        for cand in m[2:]:
+                            if cand[0] == wiki_id:
+                                self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
             self.fout_debug.write('*************************************************\n')
         return senses
 
@@ -279,6 +278,7 @@ class SenseLinker:
             self.total_ment_num += len(senses)
             doc_tp = 0
             for i in range(len(mentions)):
+                if len(senses[i]) < 1: continue
                 if mentions[i][2] == senses[i]:
                     doc_tp += 1
             self.total_p += float(doc_tp)/len(senses)

@@ -4,6 +4,7 @@ import codecs
 import re
 import string
 from nltk.corpus import stopwords
+from functools import cmp_to_key
 # from stanfordcorenlp import StanfordCoreNLP
 
 '''
@@ -13,9 +14,10 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-headerRE = re.compile(r'<doc id="(.*?)".*>')
-s = '<doc id="12" url="https://en.wikipedia.org/wiki?curid=12" title="Anarchism">'
+m = [[1],[2,3],[4]]
 
-m = headerRE.match(s)
-if m:
-    print m.group(1)
+
+m.sort(key=cmp_to_key(lambda x, y: ((len(x) > len(y)) - (len(x) < len(y)))))
+
+
+print m

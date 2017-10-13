@@ -27,7 +27,7 @@ class Options:
     @staticmethod
     def getFeatureFile(year, isEval, lang, docType, exp):
         tmp = 'eval' if isEval else 'training'
-        return Options.root_path + 'kbp/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature_' + exp
+        return Options.root_path + 'features/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature_' + exp
 
     @staticmethod
     def getNlpToolUrl(lang):
@@ -116,9 +116,8 @@ class Options:
 
     @staticmethod
     # type: 'w': word, 'e' : entity, 's' : sense
-    def getExpVocabFile(exp, lang, type):
-        vocab_index = '1' if Options.getLangStr(lang) == 'en' else '2'
-        return Options.getExpPath(exp) + Options.getLangStr(lang) + 'vec/vocab' + vocab_index + '_' + type + '.txt'
+    def getExpVocabFile(lang, type):
+        return Options.root_path + 'etc/vocab/' + Options.getLangStr(lang) +'_vocab_' + type + '.txt'
 
     @staticmethod
     def getRedirectFile(lang):
