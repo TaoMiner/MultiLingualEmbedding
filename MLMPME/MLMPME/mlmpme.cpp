@@ -59,7 +59,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5, has_kg_att = 1, has_w_att = 1;
 long long layer_size = 100;
 const int table_size = 1e8;
 real alpha = 0.025, sample = 1e-3, bilbowa_grad=0;
@@ -1379,11 +1379,11 @@ real similarity(real *vec1, real *vec2){
     long a;
     for (a = 0; a < layer_size; a++){
         len_v1 += vec1[a] * vec1[a];
-        len_v1 = sqrt(len_v1);
         len_v2 += vec2[a] * vec2[a];
-        len_v2 = sqrt(len_v2);
-        len_v = len_v1 * len_v2;
     }
+    len_v1 = sqrt(len_v1);
+    len_v2 = sqrt(len_v2);
+    len_v = len_v1 * len_v2;
     if (len_v > 0) {
         for (a = 0; a < layer_size; a++)
             dist += vec1[a] * vec2[a] / len_v;
@@ -1482,7 +1482,7 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real att
 
 
 void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_index[NUM_LANG], real attention[NUM_LANG][MAX_SENTENCE_LENGTH]){
-    long i,j, total_w = 1;
+    long i,j;
     //real *word_matrix;
     real sum = 0.0, tmp_sim;
     
@@ -1490,7 +1490,6 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
             if (sen[i][j] == 0){
                 attention[i][j] = -1;
-                total_w *= j;
                 break;
             }
             tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][i].syn0[entity_index[i]*layer_size]);
@@ -1500,7 +1499,7 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
             if (attention[i][j] == -1) break;
             
-            if (sum == 0)
+            if (sum >= -0.000001 && sum <= 0.000001)
                 attention[i][j] = 1;
             else
                 attention[i][j] /= sum;
@@ -1548,13 +1547,16 @@ void *BilbowaThread(void *id) {
     while (cur_line < line_num) {
         for(int i=0;i<NUM_LANG;i++){
             par_sen[i][0] = 0;
-            attention[i][0] = -1;
             par_entity[i] = -1;
+            if (has_kg_att)
+                attention[i][0] = -1;
+            else
+                attention[i][0] = 1;
         }
         res = ReadSent(fi_par, par_sen, par_entity);
         cur_line ++;
         if (res <=0) continue;
-        SetAttention(par_sen, par_entity, attention);
+        if (has_kg_att) SetAttention(par_sen, par_entity, attention);
         BilBOWASentenceUpdate(par_sen, attention, deltas);
         //debug
         
@@ -1670,6 +1672,10 @@ int main(int argc, char **argv) {
         printf("\t\tSet the starting learning rate; default is 0.025 for skip-gram and 0.05 for CBOW\n");
         printf("\t-debug <int>\n");
         printf("\t\tSet the debug mode (default = 2 = more info during training)\n");
+        printf("\t-has_kg_att <int>\n");
+        printf("\t\tuse entity word similarity as attention to distant supervision\n");
+        printf("\t-has_w_att <int>\n");
+        printf("\t\tuse bilingual words alignment as attention\n");
         printf("\nExamples:\n");
         printf("./mlmpme -mono_anchor1 en_anchor.txt -mono_anchor2 zh_anchor.txt -mono_kg1 en_kg.txt -mono_kg2 zh_kg.txt -multi_context multi_context.txt -output1 ./en_vec/ -output2 ./zh_vec/ -save_mono_vocab1 ./en_vocab/ -save_mono_vocab2 ./zh_vocab/ -read_cross_link cross_links.txt -size 200 -window 5 -sample 1e-4 -negative 5 -threads 63  -save_iter 1 -iter 3\n\n");
         return 0;
@@ -1711,6 +1717,8 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-save_iter", argc, argv)) > 0) save_iter = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) hasSense = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atoi(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i < EXP_TABLE_SIZE; i++) {
