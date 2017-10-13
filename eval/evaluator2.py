@@ -108,10 +108,17 @@ class SenseLinker:
         return nearest_index
 
     def cosSim(self, v1, v2):
-        res = spatial.distance.cosine(v1,v2)
-        if math.isnan(res) or math.isinf(res) or res >1 or res <-1:
-            res = 1
-        return 1-res
+        res = 0
+        len_v1 = math.sqrt(np.dot(v1,v1))
+        len_v2 = math.sqrt(np.dot(v2,v2))
+        if len_v1 <= 0.000001 or len_v2 <= 0.000001:
+            self.fout_debug.write("v1:{0}\nv2:{1}\n".format(v1,v2))
+        else:
+            res = np.dot(v1,v2)/len_v1/len_v2
+            res = (res +1)/2
+        if math.isnan(res) or math.isinf(res) or res >1 or res <0:
+            res = 0
+        return res
 
     def maprule(self, str):
         # possessive case 's
@@ -238,12 +245,13 @@ class SenseLinker:
                     tr_sim = self.cosSim(cur_w_vec/cur_w_actual, kb_w_vec/kb_w_actual)
                 m_order[i][j][4] = tr_sim
                 self.total_cand_num += 1
+            tmp_sort = m[1:]
             if self.is_prior:
-                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4]*y[1] > x[4]*x[1]) - (y[4]*y[1] < x[4]*x[1]))))
+                tmp_sort.sort(key=cmp_to_key(lambda x, y: ((y[4]*y[1] > x[4]*x[1]) - (y[4]*y[1] < x[4]*x[1]))))
             elif self.is_local:
-                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4]*y[2]*(y[1]**self.gamma) > x[4]*x[2]*(x[1]**self.gamma)) - (y[4]*y[2]*(y[1]**self.gamma) < x[4]*x[2]*(x[1]**self.gamma)))))
+                tmp_sort.sort(key=cmp_to_key(lambda x, y: ((y[4]*y[2]*(y[1]**self.gamma) > x[4]*x[2]*(x[1]**self.gamma)) - (y[4]*y[2]*(y[1]**self.gamma) < x[4]*x[2]*(x[1]**self.gamma)))))
             else:
-                tmp_sort = m[1:].sort(key=cmp_to_key(lambda x, y: ((y[4] * y[3] * y[2] * (y[1] ** self.gamma) > x[4] * x[3] * x[2] * (x[1] ** self.gamma)) - (y[4] * y[3] * y[2] * (y[1] ** self.gamma) < x[4] * x[3] * x[2] * (x[1] ** self.gamma)))))
+                tmp_sort.sort(key=cmp_to_key(lambda x, y: ((y[4] * y[3] * y[2] * (y[1] ** self.gamma) > x[4] * x[3] * x[2] * (x[1] ** self.gamma)) - (y[4] * y[3] * y[2] * (y[1] ** self.gamma) < x[4] * x[3] * x[2] * (x[1] ** self.gamma)))))
             m_order[i][1:] = tmp_sort
             cand_id = m_order[i][1][0]
             senses[mention_index]=cand_id

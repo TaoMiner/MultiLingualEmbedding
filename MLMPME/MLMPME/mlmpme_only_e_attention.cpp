@@ -69,10 +69,6 @@ clock_t start;
 int cur_lang_id = -1, par_line_num = 0, num_clink = 0;       //indicator for the thread processing language.
 unsigned long long g_next_random = 0;
 
-//debug
-FILE *fdebug = NULL;
-
-
 //return the num of mention words
 //split_pos indicates word start position in mention, range from 0 to mention length -1
 int SplitMention(int *split_pos, char *mention) {
@@ -839,10 +835,6 @@ void *TrainTextModelThread(void *id) {
     clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
     real *neu1e = (real *)calloc(layer_size, sizeof(real));
-    //debug
-    real text_tmp_largest_err = 0, text_tmp_mean_err = 0;
-    long long text_tmp_total_err = 0;
-    
     //context vector
     real *tmp_context_vec = (real *)calloc(layer_size, sizeof(real));
     struct anchor_item *anchors = (struct anchor_item *)calloc(MAX_SENTENCE_LENGTH, sizeof(struct anchor_item));
@@ -980,13 +972,7 @@ void *TrainTextModelThread(void *id) {
                 for (c = 0; c < layer_size; c++) mono_words->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
             }
             // Learn weights input -> hidden
-            for (c = 0; c < layer_size; c++){
-                mono_words->syn0[c + l1] += neu1e[c];
-                if (text_tmp_largest_err < neu1e[c])
-                    text_tmp_largest_err = neu1e[c];
-                text_tmp_mean_err += neu1e[c];
-                text_tmp_total_err ++;
-            }
+            for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
         }
         
         sentence_position++;
@@ -1088,13 +1074,7 @@ void *TrainTextModelThread(void *id) {
                                 for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
                             }
                             // Learn weights input -> hidden
-                            for (c = 0; c < layer_size; c++){
-                                mono_words->syn0[c + l1] += neu1e[c];
-                                if (text_tmp_largest_err < neu1e[c])
-                                    text_tmp_largest_err = neu1e[c];
-                                text_tmp_mean_err += neu1e[c];
-                                text_tmp_total_err ++;
-                            }
+                            for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
                         }
                     if(hasSense){
                         //also use sense embedding to predict the entity
@@ -1124,13 +1104,7 @@ void *TrainTextModelThread(void *id) {
                             for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_senses->syn0[c + l1];
                         }
                         // Learn weights input -> hidden
-                        for (c = 0; c < layer_size; c++){
-                            mono_senses->syn0[c + l1] += neu1e[c];
-                            if (text_tmp_largest_err < neu1e[c])
-                                text_tmp_largest_err = neu1e[c];
-                            text_tmp_mean_err += neu1e[c];
-                            text_tmp_total_err ++;
-                        }
+                        for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
                     
                         //update cluster center mu and cluster size
                         if(cw>0){
@@ -1140,11 +1114,6 @@ void *TrainTextModelThread(void *id) {
                     }
                 }
             }
-            //debug
-            if (text_tmp_total_err>0){
-            text_tmp_mean_err /= text_tmp_total_err;
-            text_tmp_total_err = 0;
-            }
             
             sentence_length = 0;
             continue;
@@ -1153,9 +1122,6 @@ void *TrainTextModelThread(void *id) {
     fclose(fi);
     free(neu1);
     free(neu1e);
-    //debug
-    fprintf(fdebug, "text model largest err: %f, mean err: %f\n", text_tmp_largest_err, text_tmp_mean_err);
-    
     pthread_exit(NULL);
 }
 
@@ -1169,9 +1135,6 @@ void *TrainKgModelThread(void *id) {
     clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
     real *neu1e = (real *)calloc(layer_size, sizeof(real));
-    //debug
-    real kb_tmp_largest_err = 0, kb_tmp_mean_err = 0;
-    long long kb_tmp_total_err = 0;
     
     struct vocab *mono_entities = &model[KG_VOCAB][cur_lang_id];
     struct vocab *tmp_mono_entities;
@@ -1257,14 +1220,8 @@ void *TrainKgModelThread(void *id) {
                 for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_entities->syn0[c + l1];
             }
             // Learn weights input -> hidden
-            //debug
-            for (c = 0; c < layer_size; c++){
-                mono_entities->syn0[c + l1] += neu1e[c];
-                if (kb_tmp_largest_err < neu1e[c])
-                    kb_tmp_largest_err = neu1e[c];
-                kb_tmp_mean_err += neu1e[c];
-                kb_tmp_total_err ++;
-            }
+            for (c = 0; c < layer_size; c++) mono_entities->syn0[c + l1] += neu1e[c];
+        }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
         if (NUM_LANG >=2 && cross_index>0){
@@ -1302,33 +1259,16 @@ void *TrainKgModelThread(void *id) {
                         for (c = 0; c < layer_size; c++) tmp_mono_entities->syn1neg[c + l2] += g * mono_entities->syn0[c + l1];
                     }
                     // Learn weights input -> hidden
-                    //debug
-                    for (c = 0; c < layer_size; c++) {
-                        mono_entities->syn0[c + l1] += neu1e[c];
-                        if (kb_tmp_largest_err < neu1e[c])
-                            kb_tmp_largest_err = neu1e[c];
-                        kb_tmp_mean_err += neu1e[c];
-                        kb_tmp_total_err ++;
-                    }
+                    for (c = 0; c < layer_size; c++) mono_entities->syn0[c + l1] += neu1e[c];
                 }
-            }
             }
             
         }
-        //debug
-        if (kb_tmp_total_err > 0){
-        kb_tmp_mean_err /= kb_tmp_total_err;
-        kb_tmp_total_err = 0;
-        }
-        
         sentence_length = 0;
     }
     fclose(fi);
     free(neu1);
     free(neu1e);
-    //debug
-    fprintf(fdebug, "kg model largest err: %f, mean err: %f\n", kb_tmp_largest_err, kb_tmp_mean_err);
-    
     pthread_exit(NULL);
 }
 
@@ -1477,15 +1417,12 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real att
 
 
 void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_index[NUM_LANG], real attention[NUM_LANG][MAX_SENTENCE_LENGTH]){
-    long i,j, total_w = 1;
-    //real *word_matrix;
+    long i,j;
     real sum = 0.0, tmp_sim;
-    
     for (i=0;i<NUM_LANG;i++){
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
             if (sen[i][j] == 0){
                 attention[i][j] = -1;
-                total_w *= j;
                 break;
             }
             tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][i].syn0[entity_index[i]*layer_size]);
@@ -1503,17 +1440,6 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
         
         sum = 0.0;
     }
-    // word alignment attention
-    /*
-    word_matrix = (real *)calloc(total_w, sizeof(real));
-    for (i=0;i<NUM_LANG;i++){
-        for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            if (sen[i][j] == 0) break;
-            word_matrix[] = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[TEXT_VOCAB][j].syn0[sen[i][j]*layer_size]);
-        }
-    }
-    free(word_matrix);
-     */
 }
 
 /* Thread for performing the cross-lingual learning */
@@ -1525,9 +1451,6 @@ void *BilbowaThread(void *id) {
     real attention[NUM_LANG][MAX_SENTENCE_LENGTH];
     long long fi_size;
     int line_num = 0, cur_line = 0, res = 0;
-    //debug
-    real tmp_largest_err = 0, tmp_mean_err = 0;
-    long long tmp_total_err = 0;
     
     real deltas[layer_size];
     //seek for the position of the current thread
@@ -1551,21 +1474,8 @@ void *BilbowaThread(void *id) {
         if (res <=0) continue;
         SetAttention(par_sen, par_entity, attention);
         BilBOWASentenceUpdate(par_sen, attention, deltas);
-        for (int i=0;i<layer_size;i++){
-            if (tmp_largest_err < deltas[i])
-                tmp_largest_err = deltas[i];
-            tmp_mean_err += deltas[i];
-            tmp_total_err ++;
-        }
-        if (tmp_total_err > 0){
-            tmp_mean_err /= tmp_total_err;
-            tmp_total_err = 0;
-        }
-        //debug
     } // while training loop
     fclose(fi_par);
-    //debug
-    fprintf(fdebug, "cross model largest err: %f, mean err: %f\n", tmp_largest_err, tmp_mean_err);
     pthread_exit(NULL);
 }
 
@@ -1736,14 +1646,10 @@ int main(int argc, char **argv) {
     //start training
     local_iter = 0;
     if (save_iter <=0 || save_iter > iter) save_iter = iter;
-    //debug need del
-    fdebug = fopen("/home/caoyx/data/log/log_mlmpme", "w");
-    //debug
     while(local_iter<iter){
         local_iter++;
         printf("Start jointly training the %d time... ", local_iter);
         TrainModel();
-        /*
         if (local_iter%save_iter==0){
             printf("saving results...\n");
             for (i=0;i<NUM_LANG;i++){
@@ -1753,10 +1659,7 @@ int main(int argc, char **argv) {
                     SaveVector(&model[SENSE_VOCAB][i], local_iter);
             }
         }
-         */
     }
-    //debug need del
-    fclose(fdebug);
-    //debug
+    
     return 0;
 }

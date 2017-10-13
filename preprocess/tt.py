@@ -14,10 +14,11 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-m = [[1],[2,3],[4]]
+m = [[1],[4,3],[2],[5]]
 
+b = m[1:]
+b.sort(key=cmp_to_key(lambda x, y: ((x[0] > y[0]) - (x[0] < y[0]))))
 
-m.sort(key=cmp_to_key(lambda x, y: ((len(x) > len(y)) - (len(x) < len(y)))))
-
-
+print b
+m[1:] = b
 print m
