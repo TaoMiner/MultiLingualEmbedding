@@ -14,7 +14,7 @@
 
 
 #define inf 1000000000
-#define _clr(x,len) memset(x,-1,sizeof(int)*len)
+#define _clr(x) memset(x,-1,sizeof(int)*MAX_SENTENCE_LENGTH)
 
 #define MAX_STRING 1100          //>longest entity + longest mention + 1
 #define NUM_LANG 2
@@ -29,6 +29,14 @@
 #define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
+
+struct KM_var {
+    real matrix[MAX_SENTENCE_LENGTH][MAX_SENTENCE_LENGTH];
+    int match1[MAX_SENTENCE_LENGTH], match2[MAX_SENTENCE_LENGTH];
+    int s[MAX_SENTENCE_LENGTH], t[MAX_SENTENCE_LENGTH];
+    real l1[MAX_SENTENCE_LENGTH];
+    real l2[MAX_SENTENCE_LENGTH];
+};
 
 struct anchor_item {
     long long start_pos;
@@ -70,7 +78,7 @@ real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1;
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
-int cur_lang_id = -1, multi_lang_id1 = -1, multi_lang_id2 = -1, par_line_num[NUM_LANG-1], max_num_clink=0;       //indicator for the thread processing language.
+int cur_lang_id = -1, multi_lang_id1 = -1, multi_lang_id2 = -1, par_line_num[NUM_LANG-1], max_num_clink=0, cross_line_count = 0;       //indicator for the thread processing language.
 unsigned long long g_next_random = 0;
 
 //debug
@@ -1514,50 +1522,50 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[
 
 }
 
-real KM(int m,int n,real *mat,int *match1,int *match2)
+real KM(int m,int n,struct KM_var *km_var)
 {
     int p,q,i,j,k;
     real ret=0, inc=0;
-    int *s = (int *)calloc(MAX_SENTENCE_LENGTH, sizeof(int));
-    int *t = (int *)calloc(MAX_SENTENCE_LENGTH, sizeof(int));
-    real *l1 = (real *)calloc(MAX_SENTENCE_LENGTH, sizeof(real));
-    real *l2 = (real *)calloc(MAX_SENTENCE_LENGTH, sizeof(real));
+    int *s = km_var->s;
+    int *t = km_var->t;
+    real *l1 = km_var->l1;
+    real *l2 = km_var->l2;
     for(i=0;i<m;i++)
     {
         l1[i]=-inf;
         for(j=0;j<n;j++)
-            l1[i]=mat[i*n+j]>l1[i]?mat[i*n+j]:l1[i];
+            l1[i]=km_var->matrix[i][j]>l1[i]?km_var->matrix[i][j]:l1[i];
         if(l1[i]==-inf)  return -1;
     }
     for(i=0;i<n;i++)
         l2[i]=0;
-    _clr(match1, m);
-    _clr(match2, n);
+    _clr(km_var->match1);
+    _clr(km_var->match2);
     for(i=0;i<m;i++)
     {
-        _clr(t, MAX_SENTENCE_LENGTH);
+        _clr(t);
         p=0;q=0;
-        for(s[0]=i;p<=q&&match1[i]<0;p++)
+        for(s[0]=i;p<=q&&km_var->match1[i]<0;p++)
         {
-            for(k=s[p],j=0;j<n&&match1[i]<0;j++)
+            for(k=s[p],j=0;j<n&&km_var->match1[i]<0;j++)
             {
-                if(l1[k]+l2[j]==mat[k*n+j]&&t[j]<0)
+                if(l1[k]+l2[j]==km_var->matrix[k][j]&&t[j]<0)
                 {
-                    s[++q]=match2[j];
+                    s[++q]=km_var->match2[j];
                     t[j]=k;
                     if(s[q]<0)
                     {
                         for(p=j;p>=0;j=p)
                         {
-                            match2[j]=k=t[j];
-                            p=match1[k];
-                            match1[k]=j;
+                            km_var->match2[j]=k=t[j];
+                            p=km_var->match1[k];
+                            km_var->match1[k]=j;
                         }
                     }
                 }
             }
         }
-        if(match1[i]<0)
+        if(km_var->match1[i]<0)
         {
             i--;
             inc=inf;
@@ -1565,8 +1573,8 @@ real KM(int m,int n,real *mat,int *match1,int *match2)
             {
                 for(j=0;j<n;j++)
                 {
-                    if(t[j]<0&&l1[s[k]]+l2[j]-mat[s[k]*n+j]<inc)
-                        inc=l1[s[k]]+l2[j]-mat[s[k]*n+j];
+                    if(t[j]<0&&l1[s[k]]+l2[j]-km_var->matrix[s[k]][j]<inc)
+                        inc=l1[s[k]]+l2[j]-km_var->matrix[s[k]][j];
                 }
             }
             for(j=0;j<n;j++)
@@ -1576,11 +1584,7 @@ real KM(int m,int n,real *mat,int *match1,int *match2)
         }
     }
     for(i=0;i<m;i++)
-        ret+=mat[i*n+match1[i]];
-    free(l1);
-    free(l2);
-    free(s);
-    free(t);
+        ret+=km_var->matrix[i][km_var->match1[i]];
     return ret;
 }
 
@@ -1615,11 +1619,9 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
     }
 }
 
-void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_SENTENCE_LENGTH]){
+void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_SENTENCE_LENGTH], struct KM_var *km_var){
     long i,j;
     real sum = 0.0;
-    real *word_matrix=NULL;
-    int *match1 = NULL, *match2 = NULL;
     int lang_id[2], len[2], m,n;
     lang_id[0] = multi_lang_id1;
     lang_id[1] = multi_lang_id2;
@@ -1635,34 +1637,28 @@ void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_
     }
     // word alignment attention
     
-    word_matrix = (real *)calloc(len[0]*len[1], sizeof(real));
     m = len[0]<=len[1]?0:1;
     n = len[0]<=len[1]?1:0;
-    match1 = (int *)calloc(len[m], sizeof(int));
-    match2 = (int *)calloc(len[n], sizeof(int));
     
     for (i=0;i<len[m];i++){
         for (j=0;j<len[n];j++){
-            word_matrix[i*len[n]+j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
+            km_var->matrix[i][j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
         }
     }
-    sum = KM(len[m], len[n], word_matrix, match1, match2);
+    sum = KM(len[m], len[n], km_var);
     if (sum > 0.000001){
         for (j=0;j<len[m];j++)
-            if (match1[j] == -1)
+            if (km_var->match1[j] == -1)
                 attention[m][j] = 0;
             else
-                attention[m][j] = word_matrix[j*len[n]+match1[j]]/sum;
+                attention[m][j] = km_var->matrix[j][km_var->match1[j]]/sum;
         
         for (j=0;j<len[n];j++)
-            if (match2[j] == -1)
+            if (km_var->match2[j] == -1)
                 attention[n][j] = 0;
             else
-                attention[n][j] = word_matrix[match2[j]*len[n]+j]/sum;
+                attention[n][j] = km_var->matrix[km_var->match2[j]][j]/sum;
     }
-    free(word_matrix);
-    free(match1);
-    free(match2);
 }
 
 /* Thread for performing the cross-lingual learning */
@@ -1679,6 +1675,9 @@ void *BilbowaThread(void *id) {
     real tmp_largest_err = 0, tmp_mean_err = 0, tmp_err, mean_att = 0, largest_att=0;
     long long tmp_total_err = 0, att_num = 0;
     
+    //km parameter
+    struct KM_var km_var;
+    
     real deltas[layer_size];
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file[multi_lang_id2-1], "rb");
@@ -1692,11 +1691,14 @@ void *BilbowaThread(void *id) {
             kg_attention[i][j] = 1;
             w_attention[i][j] = 1;
         }
-    
     //skip the current line
     if((long long)id!=0) ReadSent(fi_par, par_sen, par_entity);
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
+        if ((debug_mode > 1)) {
+            printf("%cProgress: %.2f ", 13, (real)cross_line_count/par_line_num[multi_lang_id2-1]);
+            fflush(stdout);
+        }
         for(int i=0;i<2;i++){
             par_sen[i][0] = 0;
             par_entity[i] = -1;
@@ -1707,15 +1709,17 @@ void *BilbowaThread(void *id) {
         }
         res = ReadSent(fi_par, par_sen, par_entity);
         cur_line ++;
+        
         if (res <=0) continue;
         if (has_kg_att) SetKGAttention(par_sen, par_entity, kg_attention);
-        if (has_w_att) SetWAttention(par_sen, w_attention);
+        if (has_w_att) SetWAttention(par_sen, w_attention, &km_var);
         for (int i=0;i<2;i++)
             for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
                 if (kg_attention[i][j] == -1 || w_attention[i][j] == -1) break;
                 kg_attention[i][j] += w_attention[i][j]/2;
             }
         BilBOWASentenceUpdate(par_sen, kg_attention, deltas);
+        cross_line_count++;
         //debug
         
         for (int i=0;i<layer_size;i++){
