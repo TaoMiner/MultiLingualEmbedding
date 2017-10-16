@@ -5,10 +5,10 @@ import struct
 import rank_metrics as rm
 from Entity import Entity
 
-eval_file = '/data/m1/cyx/MultiMPME/expdata/test_relatedness_id.dat'
-entity_dic_file = '/data/m1/cyx/MultiMPME/data/dumps20170401/enwiki_cl/vocab_entity.dat'
-entity_vec_file = '/data/m1/cyx/MultiMPME/etc/test/envec/vectors1_entity.dat'
-log_file = '/data/m1/cyx/MultiMPME/expdata/log_entity'
+eval_file = '/home/caoyx/data/test_relatedness_id.dat'
+entity_dic_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
+entity_vec_file = '/home/caoyx/data/etc/exp15/envec/vectors1_entity5'
+log_file = '/home/caoyx/data/log/log_entity'
 
 ent_id_dic = Entity.loadEntityDic(entity_dic_file)
 id_ent_dic = Entity.loadEntityIdDic(entity_dic_file)

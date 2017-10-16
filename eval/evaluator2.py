@@ -271,12 +271,12 @@ class SenseLinker:
                 else:
                     predict = m[1]
                     # ans
-                    self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3],predict[4]))
+                    self.fout_debug.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n'.format(ment_name, len(m) - 1, wiki_id, predict[0], predict[1], predict[2], predict[3],predict[4]))
                     # truth
                     if predict[0] != wiki_id and len(m)-1 >1:
                         for cand in m[2:]:
                             if cand[0] == wiki_id:
-                                self.fout_debug.write('{0:%s}\t{1:%d}\t{2:%s}\t{3:%s}\t{4:%f}\t{5:%f}\t{6:%f}\t{7:%f}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
+                                self.fout_debug.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n'.format(ment_name, len(m)-1, wiki_id, cand[0], cand[1], cand[2], cand[3], cand[4]))
             self.fout_debug.write('*************************************************\n')
         return senses
 
@@ -304,13 +304,13 @@ class SenseLinker:
                     self.evaluate(self.disambiguateDoc(doc), doc.mentions)
         micro_p = float(self.total_tp) / self.mention_actual
         macro_p = self.total_p / self.doc_actual
-        print("micro precision : {0:%f}({1:%d}/{2:%d}/{3:%d}), macro precision : {4:%f}".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
+        print("micro precision : {0}({1}/{2}/{3}), macro precision : {4}".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
         if len(self.log_file) > 0:
             with codecs.open(self.log_file, 'a', encoding='UTF-8') as fout:
                 fout.write('*******************************************************************************************\n')
-                fout.write("dataset:{0:%s}, {1} docs! {2} mentions! {3} candidates!\n".format(dataset_name, self.total_doc_num, self.total_ment_num, self.total_cand_num))
-                fout.write('gamma:{0:%f}, method: is_prior: {1:%r}, is_local: {2:%r}, is_global: {3:%r}\n'.format(self.gamma, self.is_prior, self.is_local, self.is_global))
-                fout.write("micro precision : {0:%f}({1:%d}/{2:%d}/{3:%d}), macro precision : {4:%f}\n".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
+                fout.write("dataset:{0}, {1} docs! {2} mentions! {3} candidates!\n".format(dataset_name, self.total_doc_num, self.total_ment_num, self.total_cand_num))
+                fout.write('gamma:{0}, method: is_prior: {1}, is_local: {2}, is_global: {3}\n'.format(self.gamma, self.is_prior, self.is_local, self.is_global))
+                fout.write("micro precision : {0}({1}/{2}/{3}), macro precision : {4}\n".format(micro_p, self.total_tp, self.mention_actual, self.total_cand_num, macro_p))
                 fout.write("*******************************************************************************************\n")
         if len(self.debug_file) > 0:
             self.fout_debug.write('miss {0} senses!\n{1}\n'.format(len(self.miss_senses), '\n'.join(self.miss_senses)))

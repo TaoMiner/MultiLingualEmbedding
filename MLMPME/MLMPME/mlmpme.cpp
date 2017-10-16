@@ -12,6 +12,10 @@
 #include <math.h>
 #include <pthread.h>
 
+
+#define inf 1000000000
+#define _clr(x,len) memset(x,-1,sizeof(int)*len)
+
 #define MAX_STRING 1100          //>longest entity + longest mention + 1
 #define NUM_LANG 2
 #define NUM_MODEL 3
@@ -62,11 +66,11 @@ int *cross_links[NUM_LANG];
 int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5, has_kg_att = 1, has_w_att = 1;
 long long layer_size = 100;
 const int table_size = 1e8;
-real alpha = 0.025, sample = 1e-3, bilbowa_grad=0;
+real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1;
 real *expTable;
-char multi_context_file[MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[MAX_STRING];
+char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
-int cur_lang_id = -1, par_line_num = 0, num_clink = 0;       //indicator for the thread processing language.
+int cur_lang_id = -1, multi_lang_id1 = -1, multi_lang_id2 = -1, par_line_num[NUM_LANG-1], max_num_clink=0;       //indicator for the thread processing language.
 unsigned long long g_next_random = 0;
 
 //debug
@@ -228,7 +232,7 @@ int ReadText(char *item, FILE *fin) {
     return -1;
 }
 
-void ReadParText(char *item, FILE *fin) {
+void ReadItem(char *item, FILE *fin) {
     int a = 0, ch;
     while (!feof(fin)) {
         ch = fgetc(fin);
@@ -253,7 +257,7 @@ void ReadParText(char *item, FILE *fin) {
     }
     item[a] = 0;
 }
-
+/*
 // splite by tab
 void ReadParItem(char *item, FILE *fin) {
     int a = 0, ch;
@@ -301,7 +305,7 @@ void ReadItem(char *item, FILE *fin) {
     }
     item[a] = 0;
 }
-
+*/
 // Returns hash value of an item
 int GetItemHash(char *item, int vocab_hash_size) {
     unsigned long long a, hash = 0;
@@ -408,6 +412,7 @@ void ReadVocab(struct vocab *mono_vocab) {
     while (1) {
         ReadItem(item, fin);
         if (feof(fin)) break;
+        if (!strcmp(item, "</t>")) continue;
         a = AddItemToVocab(item, mono_vocab);
         fscanf(fin, "%lld%c", &mono_vocab->vocab[a].cn, &c);
     }
@@ -513,6 +518,7 @@ void LearnEntityVocabFromTrainFile(int lang_id) {
     while (1) {
         ReadItem(entity, fin);
         if (feof(fin)) break;
+        if (!strcmp(entity, "</t>")) continue;
         entity_vocab->train_items++;
         if ((debug_mode > 1) && (entity_vocab->train_items % 100000 == 0)) {
             printf("%lldK%c", entity_vocab->train_items / 1000, 13);
@@ -720,18 +726,18 @@ void InitModel(int model_type, int lang_id){
 /* Read parallel sentences into *sen for all languages from fi
  * fi point to the file: each line contains NUM_LANG sentences separated by tab 
  return 1 if read success, -1 false*/
-int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long entity_index[NUM_LANG]) {
+int ReadSent(FILE *fi, long long sen[2][MAX_SENTENCE_LENGTH], long long entity_index[2]) {
     long long index = -1;
     char word[MAX_STRING];
-    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, res = 1;
-    struct vocab *tmp_model = &model[SENSE_VOCAB][0];
+    int sentence_length = 0, cur_lang=0, item_count=0, rem = 0, i, res = 1, tmp_lang_id;
+    struct vocab *tmp_model = &model[SENSE_VOCAB][multi_lang_id1];
     while (1) {
-        ReadParText(word, fi);
+        ReadItem(word, fi);
         if (feof(fi) || !strcmp(word, "</s>")){
             sen[cur_lang][sentence_length] = 0;
             if (item_count < 3) res = -1;
             else{
-                for (i=0;i<NUM_LANG;i++)
+                for (i=0;i<2;i++)
                     if (entity_index[i] < 0 || sen[i][0] <=0){
                         res = -1;
                         break;
@@ -746,12 +752,16 @@ int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long e
                     sentence_length = 0;
                 }
                 item_count ++;
-                cur_lang = item_count%NUM_LANG;
-                rem = item_count/NUM_LANG;
-                if (rem == 0)
-                    tmp_model = &model[SENSE_VOCAB][cur_lang];
+                cur_lang = item_count%2;
+                if (cur_lang==0)
+                    tmp_lang_id = multi_lang_id1;
                 else
-                    tmp_model = &model[TEXT_VOCAB][cur_lang];
+                    tmp_lang_id = multi_lang_id2;
+                rem = item_count/2;
+                if (rem == 0)
+                    tmp_model = &model[SENSE_VOCAB][tmp_lang_id];
+                else
+                    tmp_model = &model[TEXT_VOCAB][tmp_lang_id];
                 continue;
             }
             index = SearchVocab(word, tmp_model);
@@ -769,11 +779,11 @@ int ReadSent(FILE *fi, long long sen[NUM_LANG][MAX_SENTENCE_LENGTH], long long e
     return res;
 }
 
-void InitMultiModel(char *cross_link_file){
-    int a, i, j, clink[NUM_LANG],b;
+// cross links between 2 languages
+void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
+    int a, lang_index, item_count=0, clink[2], entity_index, num_clink, line_count=0, tmp_clink_idx, tmp_clink;
     char item[MAX_STRING];
-    long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
-    long long par_entity[NUM_LANG];
+    bool hasInvalidEntity = false;
     FILE *fin = fopen(cross_link_file, "rb");
     if (fin == NULL) {
         printf("ERROR: training data file not found!\n");
@@ -781,50 +791,76 @@ void InitMultiModel(char *cross_link_file){
     }
     fscanf(fin, "%d", &num_clink);
     num_clink += 1;
-    for(i = 0; i < NUM_LANG; i++)
-        cross_links[i] = (int *)malloc(num_clink * sizeof(int));
-    i = 0;
-    j = 0;
-    b = 0;
-    for(a=0;a<NUM_LANG;a++) clink[a] = -1;
+    lang_index = lang1_idx;
+    for(a=0;a<2;a++) clink[a] = -1;
     while (1) {
-        ReadParItem(item, fin);
+        ReadItem(item, fin);
         if (feof(fin)) break;
-        if (!strcmp(item, "</s>")) {
-            b = 0;
-            // if there are less than two entities in this line, skip it
-            for(a=0;a<NUM_LANG;a++)
-                if (clink[a] != -1)
-                    b += 1;
-            if (b > 1){
-                for(a=0;a<NUM_LANG;a++){
-                    cross_links[a][j] = clink[a];
-                    if (clink[a] != -1)
-                        model[KG_VOCAB][a].vocab[clink[a]].index = j;
-                }
-                // skip 0 column to keep vocab.index=0 meaningful for sense context cluster size.
-                j++;
-            }
-            i = 0;
+        if (!strcmp(item, "</t>")) {
+            lang_index = lang2_idx;
             continue;
         }
-        if (i>=NUM_LANG) continue;
-        a = SearchVocab(item, &model[KG_VOCAB][i]);
-        clink[i] = a;
-        i++;
+        if (!strcmp(item, "</s>")) {
+            if (item_count == 2 && !hasInvalidEntity){
+                tmp_clink_idx = model[KG_VOCAB][lang1_idx].vocab[clink[0]].index;
+                if (tmp_clink_idx!=0){
+                    tmp_clink = cross_links[lang1_idx][tmp_clink_idx];
+                    if (tmp_clink == clink[0]){
+                        cross_links[lang2_idx][tmp_clink_idx] = clink[1];
+                        model[KG_VOCAB][lang2_idx].vocab[clink[1]].index = tmp_clink_idx;
+                    }
+                }
+                else{
+                    cross_links[lang1_idx][line_count] = clink[0];
+                    model[KG_VOCAB][lang1_idx].vocab[clink[0]].index = line_count;
+                    cross_links[lang2_idx][line_count] = clink[1];
+                    model[KG_VOCAB][lang2_idx].vocab[clink[1]].index = line_count;
+                    line_count++;
+                }
+            }
+            item_count = 0;
+            hasInvalidEntity = false;
+            continue;
+        }
+        if (item_count < 2){
+            entity_index = SearchVocab(item, &model[KG_VOCAB][lang_index]);
+            clink[item_count] = entity_index;
+            if (entity_index==-1) hasInvalidEntity = true;
+        }
+        item_count++;
     }
     fclose(fin);
-    num_clink = j;
-    for(i = 0; i < NUM_LANG; i++)
-        cross_links[i] = (int *)realloc(cross_links[i], num_clink * sizeof(int));
+    max_num_clink += line_count;
+    
+}
+
+int readContextLines(char *multi_context_file){
+    int line_count = 0;
+    long long par_sen[2][MAX_SENTENCE_LENGTH];
+    long long par_entity[2];
     // initialize the parallel context number
-    fin = fopen(multi_context_file, "rb");
+    FILE *fin = fopen(multi_context_file, "rb");
     while(1){
         ReadSent(fin, par_sen, par_entity);
-        par_line_num ++;
+        line_count ++;
         if (feof(fin)) break;
     }
     fclose(fin);
+    return line_count;
+}
+
+void InitMultiModel(){
+    int max_num = 1500000;            // 1m, max num clinks
+    for(int i = 0; i < NUM_LANG; i++)
+        cross_links[i] = (int *)malloc(max_num * sizeof(int));
+    for (int i=0;i<NUM_LANG-1;i++){
+        if(cross_link_file[i][0]!=0)
+            readCrossLinks(cross_link_file[i], 0, i+1);
+        if(multi_context_file[i][0]!=0)
+            par_line_num[i] = readContextLines(multi_context_file[i]);
+    }
+    for (int i=0;i<NUM_LANG-1;i++)
+        cross_links[i] = (int *)realloc(cross_links[i], max_num_clink * sizeof(int));
 }
 
 void *TrainTextModelThread(void *id) {
@@ -1201,6 +1237,7 @@ void *TrainKgModelThread(void *id) {
             while(1){
                 ReadItem(entity, fi);
                 if (feof(fi)) break;
+                if (!strcmp(entity, "</t>")) continue;
                 entity_count ++;
                 line_entity_count++;
                 if(is_read_head==1){
@@ -1401,7 +1438,7 @@ void UpdateEmbeddings(real *embeddings, int offset, int num_updates, real *delta
         if (step != step) {
             fprintf(stderr, "ERROR: step == NaN\n");
         }
-        step = step * weight;
+        step = step * weight * cross_model_weight;
         if (CLIP_UPDATES != 0) {
             if (step > CLIP_UPDATES) step = CLIP_UPDATES;
             if (step < -CLIP_UPDATES) step = -CLIP_UPDATES;
@@ -1450,14 +1487,14 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
 
 
 /* BilBOWA bag-of-words sentence update */
-void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real attention[NUM_LANG][MAX_SENTENCE_LENGTH],real *deltas) {
+void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[2][MAX_SENTENCE_LENGTH],real *deltas) {
     int a,i;
     real grad_norm;
     real *syn0_1, *syn0_2;
-    int len[NUM_LANG];
+    int len[2];
     // FPROP
     // length of sen
-    for (i=0;i<NUM_LANG;i++)
+    for (i=0;i<2;i++)
         for(a=0;a<MAX_SENTENCE_LENGTH;a++)
             if (sen[i][a]==0 || attention[i][a] == -1){
                 len[i] = a;
@@ -1466,33 +1503,100 @@ void BilBOWASentenceUpdate(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],real att
             }
     for (a = 0; a < layer_size; a++) deltas[a] = 0;
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
-    for (int i=0;i<NUM_LANG;i++){
-        if (len[i]==0) continue;
-        for (int j=i+1;j<NUM_LANG;j++){
-            if (len[j]==0) continue;
-            syn0_1 = model[TEXT_VOCAB][i].syn0;
-            syn0_2 = model[TEXT_VOCAB][j].syn0;
-            FpropSent(sen[i], attention[i], deltas, syn0_1, +1);
-            grad_norm = FpropSent(sen[j], attention[j], deltas, syn0_2, -1);
-            bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
-            UpdateSquaredError(sen[i], sen[j], deltas, syn0_1, syn0_2);
-        }
-    }
+    syn0_1 = model[TEXT_VOCAB][multi_lang_id1].syn0;
+    syn0_2 = model[TEXT_VOCAB][multi_lang_id2].syn0;
+    FpropSent(sen[0], attention[0], deltas, syn0_1, +1);
+    grad_norm = FpropSent(sen[1], attention[1], deltas, syn0_2, -1);
+    bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
+    UpdateSquaredError(sen[0], sen[1], deltas, syn0_1, syn0_2);
+
 }
 
+real KM(int m,int n,real *mat,int *match1,int *match2)
+{
+    int p,q,i,j,k;
+    real ret=0, inc=0;
+    int *s = (int *)calloc(m, sizeof(int));
+    int *t = (int *)calloc(n, sizeof(int));
+    real *l1 = (real *)calloc(m, sizeof(real));
+    real *l2 = (real *)calloc(n, sizeof(real));
+    for(i=0;i<m;i++)
+    {
+        l1[i]=-inf;
+        for(j=0;j<n;j++)
+            l1[i]=mat[i*n+j]>l1[i]?mat[i*n+j]:l1[i];
+        if(l1[i]==-inf)  return -1;
+    }
+    for(i=0;i<n;i++)
+        l2[i]=0;
+    _clr(match1, m);
+    _clr(match2, n);
+    for(i=0;i<m;i++)
+    {
+        _clr(t, n);
+        p=0;q=0;
+        for(s[0]=i;p<=q&&match1[i]<0;p++)
+        {
+            for(k=s[p],j=0;j<n&&match1[i]<0;j++)
+            {
+                if(l1[k]+l2[j]==mat[k*n+j]&&t[j]<0)
+                {
+                    s[++q]=match2[j];
+                    t[j]=k;
+                    if(s[q]<0)
+                    {
+                        for(p=j;p>=0;j=p)
+                        {
+                            match2[j]=k=t[j];
+                            p=match1[k];
+                            match1[k]=j;
+                        }
+                    }
+                }
+            }
+        }
+        if(match1[i]<0)
+        {
+            i--;
+            inc=inf;
+            for(k=0;k<=q;k++)
+            {
+                for(j=0;j<n;j++)
+                {
+                    if(t[j]<0&&l1[s[k]]+l2[j]-mat[s[k]*n+j]<inc)
+                        inc=l1[s[k]]+l2[j]-mat[s[k]*n+j];
+                }
+            }
+            for(j=0;j<n;j++)
+                l2[j]+=t[j]<0?0:inc;
+            for(k=0;k<=q;k++)
+                l1[s[k]]-=inc;
+        }
+    }
+    for(i=0;i<m;i++)
+        ret+=mat[i*n+match1[i]];
+    free(l1);
+    free(l2);
+    free(s);
+    free(t);
+    return ret;
+}
 
-void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_index[NUM_LANG], real attention[NUM_LANG][MAX_SENTENCE_LENGTH]){
+void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index[2], real attention[2][MAX_SENTENCE_LENGTH]){
     long i,j;
-    //real *word_matrix;
     real sum = 0.0, tmp_sim;
+    int lang_id[2], len[2];
+    lang_id[0] = multi_lang_id1;
+    lang_id[1] = multi_lang_id2;
     
-    for (i=0;i<NUM_LANG;i++){
+    for (i=0;i<2;i++){
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
             if (sen[i][j] == 0){
                 attention[i][j] = -1;
+                len[i] = j;
                 break;
             }
-            tmp_sim = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][i].syn0[entity_index[i]*layer_size]);
+            tmp_sim = similarity(&model[TEXT_VOCAB][lang_id[i]].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][lang_id[1]].syn0[entity_index[i]*layer_size]);
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
@@ -1507,26 +1611,66 @@ void SetAttention(long long sen[NUM_LANG][MAX_SENTENCE_LENGTH],long long entity_
         
         sum = 0.0;
     }
-    // word alignment attention
-    /*
-    word_matrix = (real *)calloc(total_w, sizeof(real));
-    for (i=0;i<NUM_LANG;i++){
+}
+
+void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_SENTENCE_LENGTH]){
+    long i,j;
+    real sum = 0.0;
+    real *word_matrix=NULL;
+    int *match1 = NULL, *match2 = NULL;
+    int lang_id[2], len[2], m,n;
+    lang_id[0] = multi_lang_id1;
+    lang_id[1] = multi_lang_id2;
+    
+    for (i=0;i<2;i++){
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            if (sen[i][j] == 0) break;
-            word_matrix[] = similarity(&model[TEXT_VOCAB][i].syn0[sen[i][j]*layer_size], &model[TEXT_VOCAB][j].syn0[sen[i][j]*layer_size]);
+            if (sen[i][j] == 0){
+                attention[i][j] = -1;
+                len[i] = j;
+                break;
+            }
         }
     }
+    // word alignment attention
+    
+    word_matrix = (real *)calloc(len[0]*len[1], sizeof(real));
+    m = len[0]<=len[1]?0:1;
+    n = len[0]<=len[1]?1:0;
+    match1 = (int *)calloc(len[m], sizeof(int));
+    match2 = (int *)calloc(len[n], sizeof(int));
+    
+    for (i=0;i<len[m];i++){
+        for (j=0;j<len[n];j++){
+            word_matrix[i*len[n]+j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
+        }
+    }
+    sum = KM(len[m], len[n], word_matrix, match1, match2);
+    if (sum > 0.000001){
+        for (j=0;j<len[m];j++)
+            if (word_matrix[j*len[n]+match1[j]] == -1)
+                attention[m][j] = 0;
+            else
+                attention[m][j] = word_matrix[j*len[n]+match1[j]]/sum;
+        
+        for (j=0;j<len[n];j++)
+            if (word_matrix[match2[j]*len[n]+j] == -1)
+                attention[n][j] = 0;
+            else
+                attention[n][j] = word_matrix[match2[j]*len[n]+j]/sum;
+    }
     free(word_matrix);
-     */
+    free(match1);
+    free(match2);
 }
 
 /* Thread for performing the cross-lingual learning */
 void *BilbowaThread(void *id) {
     
     // Each thread will be responsible for reading a portion of both lang_id1 and lang_id2 files. portion size is: file_size/num_threads
-    long long par_sen[NUM_LANG][MAX_SENTENCE_LENGTH];
-    long long par_entity[NUM_LANG];
-    real attention[NUM_LANG][MAX_SENTENCE_LENGTH];
+    long long par_sen[2][MAX_SENTENCE_LENGTH];
+    long long par_entity[2];
+    real kg_attention[2][MAX_SENTENCE_LENGTH];
+    real w_attention[2][MAX_SENTENCE_LENGTH];
     long long fi_size;
     int line_num = 0, cur_line = 0, res = 0;
     //debug
@@ -1535,29 +1679,41 @@ void *BilbowaThread(void *id) {
     
     real deltas[layer_size];
     //seek for the position of the current thread
-    FILE *fi_par = fopen(multi_context_file, "rb");
+    FILE *fi_par = fopen(multi_context_file[multi_lang_id2-1], "rb");
     fseek(fi_par, 0, SEEK_END);
     fi_size = ftell(fi_par);
     fseek(fi_par, fi_size / (long long)num_threads * (long long)id, SEEK_SET);
-    line_num = par_line_num / (long long)num_threads;
+    line_num = par_line_num[multi_lang_id2-1] / (long long)num_threads;
+    
+    for (int i=0;i<2;i++)
+        for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
+            kg_attention[i][j] = 1;
+            w_attention[i][j] = 1;
+        }
     
     //skip the current line
     if((long long)id!=0) ReadSent(fi_par, par_sen, par_entity);
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
-        for(int i=0;i<NUM_LANG;i++){
+        for(int i=0;i<2;i++){
             par_sen[i][0] = 0;
             par_entity[i] = -1;
             if (has_kg_att)
-                attention[i][0] = -1;
-            else
-                attention[i][0] = 1;
+                kg_attention[i][0] = -1;
+            if (has_w_att)
+                w_attention[i][0] = -1;
         }
         res = ReadSent(fi_par, par_sen, par_entity);
         cur_line ++;
         if (res <=0) continue;
-        if (has_kg_att) SetAttention(par_sen, par_entity, attention);
-        BilBOWASentenceUpdate(par_sen, attention, deltas);
+        if (has_kg_att) SetKGAttention(par_sen, par_entity, kg_attention);
+        if (has_w_att) SetWAttention(par_sen, w_attention);
+        for (int i=0;i<2;i++)
+            for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
+                if (kg_attention[i][j] == -1 || w_attention[i][j] == -1) break;
+                kg_attention[i][j] += w_attention[i][j]/2;
+            }
+        BilBOWASentenceUpdate(par_sen, kg_attention, deltas);
         //debug
         
         for (int i=0;i<layer_size;i++){
@@ -1574,9 +1730,9 @@ void *BilbowaThread(void *id) {
         att_num = 1;
         for (int i=0;i<NUM_LANG;i++)
             for(int j=0;j<MAX_SENTENCE_LENGTH;j++){
-                if (attention[i][j] == -1) break;
+                if (kg_attention[i][j] == -1) break;
                 att_num ++;
-                tmp_err = fabsf(attention[i][j]);
+                tmp_err = fabsf(kg_attention[i][j]);
                 mean_att += tmp_err;
                 if (largest_att < tmp_err)
                     largest_att = tmp_err;
@@ -1592,10 +1748,11 @@ void *BilbowaThread(void *id) {
 }
 
 void TrainMultiModel(){
+    if (multi_lang_id1==-1 || multi_lang_id2<1) return;
     long a;
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
-    printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num, multi_context_file);
+    printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num[multi_lang_id2-1], multi_context_file[multi_lang_id2-1]);
     for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, BilbowaThread, (void *)a);
     for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
 }
@@ -1610,8 +1767,11 @@ void TrainModel(){
         TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
-    if (NUM_LANG>=2)
+    for (i=0;i<NUM_LANG-1;i++){
+        multi_lang_id1 = 0;
+        multi_lang_id2 = i+1;
         TrainMultiModel();
+    }
 }
 
 int ArgPos(char *str, int argc, char **argv) {
@@ -1681,17 +1841,14 @@ int main(int argc, char **argv) {
         return 0;
     }
     
-    multi_context_file[0]=0;
-    cross_link_file[0]=0;
     for(i=0;i<NUM_LANG;i++){
         output_path[i][0]=0;
         read_mono_vocab_path[i][0]=0;
         save_mono_vocab_path[i][0]=0;
+        if (i == NUM_LANG-1) continue;
+        multi_context_file[i][0]=0;
+        cross_link_file[i][0]=0;
     }
-    
-    if ((i = ArgPos((char *)"-multi_context", argc, argv)) > 0) strcpy(multi_context_file, argv[i + 1]);
-    if ((i = ArgPos((char *)"-read_cross_link", argc, argv)) > 0) strcpy(cross_link_file, argv[i + 1]);
-    
     
     for(j=0;j<NUM_LANG;j++){
         sprintf(temp_arg, "-mono_anchor%d", j+1);
@@ -1704,6 +1861,11 @@ int main(int argc, char **argv) {
         if ((i = ArgPos(temp_arg, argc, argv)) > 0) strcpy(save_mono_vocab_path[j], argv[i + 1]);
         sprintf(temp_arg, "-read_mono_vocab%d", j+1);
         if ((i = ArgPos(temp_arg, argc, argv)) > 0) strcpy(read_mono_vocab_path[j], argv[i + 1]);
+        if (j == NUM_LANG-1) continue;
+        sprintf(temp_arg, "-multi_context%d", j+1);
+        if ((i = ArgPos(temp_arg, argc, argv)) > 0) strcpy(multi_context_file[j], argv[i + 1]);
+        sprintf(temp_arg, "-read_cross_link%d", j+1);
+        if ((i = ArgPos(temp_arg, argc, argv)) > 0) strcpy(cross_link_file[j], argv[i + 1]);
     }
     
     if ((i = ArgPos((char *)"-size", argc, argv)) > 0) layer_size = atoi(argv[i + 1]);
@@ -1719,6 +1881,7 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-cross_model_weight", argc, argv)) > 0) cross_model_weight = atof(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i < EXP_TABLE_SIZE; i++) {
@@ -1758,8 +1921,8 @@ int main(int argc, char **argv) {
             InitModel(SENSE_VOCAB, i);
     }
     printf("init model finished!");
-    if(cross_link_file[0]!=0 && NUM_LANG>=2)
-        InitMultiModel(cross_link_file);
+    if (NUM_LANG >=2 )
+        InitMultiModel();
     
     //start training
     local_iter = 0;
