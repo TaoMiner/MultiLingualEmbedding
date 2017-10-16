@@ -14,11 +14,11 @@ props={'annotators': 'tokenize,lemma','pipelineLanguage':'en','outputFormat':'te
 sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
-m = [[1],[4,3],[2],[5]]
 
-b = m[1:]
-b.sort(key=cmp_to_key(lambda x, y: ((x[0] > y[0]) - (x[0] < y[0]))))
+gamma = 0.1
+
+b = [['25204117', 0.14814814814814814, 0.88074702722472553, 0.83709255326725329, 0.54181770782883032], ['189322', 0.37037037037037035, 0.88771092816823971, 0.88144302702310784, 0.54181770782883032], ['46765776', 0.25925925925925924, 0.89317344691872291, 0.88763913819752971, 0.54181770782883032]]
+
+b.sort(key=lambda x : x[4] * x[3] * x[2] * (x[1] ** gamma), reverse = True)
 
 print b
-m[1:] = b
-print m

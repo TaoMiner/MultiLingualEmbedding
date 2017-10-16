@@ -26,10 +26,10 @@ cand.loadTranslations()
 cand.loadCrossLinks(Options.cross_links_file)
 
 en_entity = Entity()
-en_entity.loadVocab(Options.getExpVocabFile('exp9', Options.en, Options.entity_type) )
+en_entity.loadVocab(Options.getExpVocabFile(Options.en, Options.entity_type) )
 
 en_sense = Sense()
-en_sense.loadVocab(Options.getExpVocabFile('exp9', Options.en, Options.sense_type) )
+en_sense.loadVocab(Options.getExpVocabFile(Options.en, Options.sense_type) )
 
 en_nw_entity_count = 0
 en_df_entity_count = 0

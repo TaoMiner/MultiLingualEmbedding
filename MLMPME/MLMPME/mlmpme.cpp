@@ -854,8 +854,10 @@ void InitMultiModel(){
     for(int i = 0; i < NUM_LANG; i++)
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
     for (int i=0;i<NUM_LANG-1;i++){
+        multi_lang_id1 = 0;
+        multi_lang_id2 = i+1;
         if(cross_link_file[i][0]!=0)
-            readCrossLinks(cross_link_file[i], 0, i+1);
+            readCrossLinks(cross_link_file[i], multi_lang_id1, multi_lang_id2);
         if(multi_context_file[i][0]!=0)
             par_line_num[i] = readContextLines(multi_context_file[i]);
     }
@@ -1516,10 +1518,10 @@ real KM(int m,int n,real *mat,int *match1,int *match2)
 {
     int p,q,i,j,k;
     real ret=0, inc=0;
-    int *s = (int *)calloc(m, sizeof(int));
-    int *t = (int *)calloc(n, sizeof(int));
-    real *l1 = (real *)calloc(m, sizeof(real));
-    real *l2 = (real *)calloc(n, sizeof(real));
+    int *s = (int *)calloc(MAX_SENTENCE_LENGTH, sizeof(int));
+    int *t = (int *)calloc(MAX_SENTENCE_LENGTH, sizeof(int));
+    real *l1 = (real *)calloc(MAX_SENTENCE_LENGTH, sizeof(real));
+    real *l2 = (real *)calloc(MAX_SENTENCE_LENGTH, sizeof(real));
     for(i=0;i<m;i++)
     {
         l1[i]=-inf;
@@ -1533,7 +1535,7 @@ real KM(int m,int n,real *mat,int *match1,int *match2)
     _clr(match2, n);
     for(i=0;i<m;i++)
     {
-        _clr(t, n);
+        _clr(t, MAX_SENTENCE_LENGTH);
         p=0;q=0;
         for(s[0]=i;p<=q&&match1[i]<0;p++)
         {
@@ -1596,7 +1598,7 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
                 len[i] = j;
                 break;
             }
-            tmp_sim = similarity(&model[TEXT_VOCAB][lang_id[i]].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][lang_id[1]].syn0[entity_index[i]*layer_size]);
+            tmp_sim = similarity(&model[TEXT_VOCAB][lang_id[i]].syn0[sen[i][j]*layer_size], &model[SENSE_VOCAB][lang_id[i]].syn0[entity_index[i]*layer_size]);
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
@@ -1647,13 +1649,13 @@ void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_
     sum = KM(len[m], len[n], word_matrix, match1, match2);
     if (sum > 0.000001){
         for (j=0;j<len[m];j++)
-            if (word_matrix[j*len[n]+match1[j]] == -1)
+            if (match1[j] == -1)
                 attention[m][j] = 0;
             else
                 attention[m][j] = word_matrix[j*len[n]+match1[j]]/sum;
         
         for (j=0;j<len[n];j++)
-            if (word_matrix[match2[j]*len[n]+j] == -1)
+            if (match2[j] == -1)
                 attention[n][j] = 0;
             else
                 attention[n][j] = word_matrix[match2[j]*len[n]+j]/sum;
@@ -1901,16 +1903,16 @@ int main(int argc, char **argv) {
         
         //initialize save vocab file
         if(save_mono_vocab_path[i][0]!=0){
-            sprintf(model[TEXT_VOCAB][i].save_vocab_file, "%svocab%d_word.txt", save_mono_vocab_path[i], i+1);
-            sprintf(model[KG_VOCAB][i].save_vocab_file, "%svocab%d_entity.txt", save_mono_vocab_path[i], i+1);
-            sprintf(model[SENSE_VOCAB][i].save_vocab_file, "%svocab%d_sense.txt", save_mono_vocab_path[i], i+1);
+            sprintf(model[TEXT_VOCAB][i].save_vocab_file, "%svocab_word.txt", save_mono_vocab_path[i]);
+            sprintf(model[KG_VOCAB][i].save_vocab_file, "%svocab_entity.txt", save_mono_vocab_path[i]);
+            sprintf(model[SENSE_VOCAB][i].save_vocab_file, "%svocab_sense.txt", save_mono_vocab_path[i]);
         }
         
         // read vocab
         if(read_mono_vocab_path[i][0]!=0){
-            sprintf(model[TEXT_VOCAB][i].read_vocab_file, "%svocab%d_word.txt", read_mono_vocab_path[i], i+1);
-            sprintf(model[KG_VOCAB][i].read_vocab_file, "%svocab%d_entity.txt", read_mono_vocab_path[i], i+1);
-            sprintf(model[SENSE_VOCAB][i].read_vocab_file, "%svocab%d_sense.txt", read_mono_vocab_path[i], i+1);
+            sprintf(model[TEXT_VOCAB][i].read_vocab_file, "%svocab_word.txt", read_mono_vocab_path[i]);
+            sprintf(model[KG_VOCAB][i].read_vocab_file, "%svocab_entity.txt", read_mono_vocab_path[i]);
+            sprintf(model[SENSE_VOCAB][i].read_vocab_file, "%svocab_sense.txt", read_mono_vocab_path[i]);
         }
         
         //read vocab & initilize text model and kg model，//use read_xx_path to decide whether use pre-trained xx model

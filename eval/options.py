@@ -117,7 +117,7 @@ class Options:
     @staticmethod
     # type: 'w': word, 'e' : entity, 's' : sense
     def getExpVocabFile(lang, type):
-        return Options.root_path + 'etc/vocab/' + Options.getLangStr(lang) +'_vocab_' + type + '.txt'
+        return Options.root_path + 'etc/vocab/'+ Options.getLangStr(lang) +'vocab/vocab_' + type + '.txt'
 
     @staticmethod
     def getRedirectFile(lang):

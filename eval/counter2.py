@@ -8,15 +8,15 @@ import codecs
 import re
 
 en_entity = Entity()
-en_entity.loadVocab(Options.getExpVocabFile('exp9', Options.en, Options.entity_type) )
+en_entity.loadVocab(Options.getExpVocabFile( Options.en, Options.entity_type) )
 es_entity = Entity()
-es_entity.loadVocab(Options.getExpVocabFile('exp9', Options.es, Options.entity_type) )
+es_entity.loadVocab(Options.getExpVocabFile( Options.es, Options.entity_type) )
 
 en_sense = Sense()
-en_sense.loadVocab(Options.getExpVocabFile('exp9', Options.en, Options.sense_type) )
+en_sense.loadVocab(Options.getExpVocabFile( Options.en, Options.sense_type) )
 
 es_sense = Sense()
-es_sense.loadVocab(Options.getExpVocabFile('exp9', Options.es, Options.sense_type) )
+es_sense.loadVocab(Options.getExpVocabFile( Options.es, Options.sense_type) )
 
 en_entity_count = 0
 es_entity_count = 0
