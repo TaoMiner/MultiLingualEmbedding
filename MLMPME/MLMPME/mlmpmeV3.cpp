@@ -83,9 +83,6 @@ clock_t start;
 int cur_lang_id = -1, multi_lang_id1 = -1, multi_lang_id2 = -1, par_line_num[NUM_LANG-1], max_num_clink=0, cross_line_count = 0;       //indicator for the thread processing language.
 unsigned long long g_next_random = 0;
 
-//debug
-FILE *fdebug = NULL;
-
 bool isequal(real a,real b)
 {
     if(fabs(a-b)<0.000001)
@@ -799,7 +796,7 @@ int ReadSent(FILE *fi, long long sen[2][MAX_SENTENCE_LENGTH], long long entity_i
 
 // cross links between 2 languages
 void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
-    int a, lang_index, item_count=0, clink[2], entity_index, num_clink, line_count=0, tmp_clink_idx, tmp_clink;
+    int a, lang_index, item_count=0, clink[2], entity_index, num_clink, line_count=0, tmp_clink_idx, tmp_clink, total_num = 0;
     char item[MAX_STRING];
     bool hasInvalidEntity = false;
     FILE *fin = fopen(cross_link_file, "rb");
@@ -826,6 +823,7 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
                     if (tmp_clink == clink[0]){
                         cross_links[lang2_idx][tmp_clink_idx] = clink[1];
                         model[KG_VOCAB][lang2_idx].vocab[clink[1]].index = tmp_clink_idx;
+                        total_num ++;
                     }
                 }
                 else{
@@ -834,6 +832,7 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
                     cross_links[lang2_idx][line_count] = clink[1];
                     model[KG_VOCAB][lang2_idx].vocab[clink[1]].index = line_count;
                     line_count++;
+                    total_num ++;
                 }
             }
             item_count = 0;
@@ -849,7 +848,9 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
     }
     fclose(fin);
     max_num_clink += line_count;
-    
+    if (debug_mode > 0) {
+        printf("Totally %d cross links! Read %d cross links from lang %d to lang %d from file: %s!\n",max_num_clink, total_num, lang1_idx, lang2_idx, cross_link_file);
+    }
 }
 
 int readContextLines(char *multi_context_file){
@@ -865,6 +866,9 @@ int readContextLines(char *multi_context_file){
         line_count ++;
     }
     fclose(fin);
+    if (debug_mode > 0) {
+        printf("Read %d parallel sents from lang %d to lang %d from file: %s!\n", line_count, multi_lang_id1, multi_lang_id2, multi_context_file);
+    }
     return line_count;
 }
 
@@ -875,15 +879,16 @@ void InitMultiModel(){
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
         _clr(cross_links[i],max_num);
     }
+    
+    multi_lang_id1 = 0;
     for (int i=0;i<NUM_LANG-1;i++){
-        multi_lang_id1 = 0;
         multi_lang_id2 = i+1;
         if(cross_link_file[i][0]!=0)
             readCrossLinks(cross_link_file[i], multi_lang_id1, multi_lang_id2);
         if(multi_context_file[i][0]!=0)
             par_line_num[i] = readContextLines(multi_context_file[i]);
     }
-    for (int i=0;i<NUM_LANG-1;i++)
+    for (int i=0;i<NUM_LANG;i++)
         cross_links[i] = (int *)realloc(cross_links[i], max_num_clink * sizeof(int));
 }
 
@@ -899,9 +904,6 @@ void *TrainTextModelThread(void *id) {
     clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
     real *neu1e = (real *)calloc(layer_size, sizeof(real));
-    //debug
-    real text_tmp_largest_err = 0, text_tmp_mean_err = 0, tmp_err;
-    long long text_tmp_total_err = 0;
     
     //context vector
     real *tmp_context_vec = (real *)calloc(layer_size, sizeof(real));
@@ -1038,14 +1040,7 @@ void *TrainTextModelThread(void *id) {
                 for (c = 0; c < layer_size; c++) mono_words->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
             }
             // Learn weights input -> hidden
-            for (c = 0; c < layer_size; c++){
-                mono_words->syn0[c + l1] += neu1e[c];
-                tmp_err = fabsf(neu1e[c]);
-                if (text_tmp_largest_err < tmp_err)
-                    text_tmp_largest_err = tmp_err;
-                text_tmp_mean_err += tmp_err;
-                text_tmp_total_err ++;
-            }
+            for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
         }
         
         sentence_position++;
@@ -1102,14 +1097,7 @@ void *TrainTextModelThread(void *id) {
                                 for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
                             }
                             // Learn weights input -> hidden
-                            for (c = 0; c < layer_size; c++){
-                                mono_words->syn0[c + l1] += neu1e[c];
-                                tmp_err = fabsf(neu1e[c]);
-                                if (text_tmp_largest_err < tmp_err)
-                                    text_tmp_largest_err = tmp_err;
-                                text_tmp_mean_err += tmp_err;
-                                text_tmp_total_err ++;
-                            }
+                            for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
                         }
                     //also use sense embedding to predict the entity
                     last_word_index = anchors[anchor_position].sense_index;
@@ -1144,22 +1132,10 @@ void *TrainTextModelThread(void *id) {
                             for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_senses->syn0[c + l1];
                         }
                         // Learn weights input -> hidden
-                        for (c = 0; c < layer_size; c++){
-                            mono_senses->syn0[c + l1] += neu1e[c];
-                            tmp_err = fabsf(neu1e[c]);
-                            if (text_tmp_largest_err < tmp_err)
-                                text_tmp_largest_err = tmp_err;
-                            text_tmp_mean_err += tmp_err;
-                            text_tmp_total_err ++;
-                        }
+                        for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
                     }
                     
                 }
-            }
-            //debug
-            if (text_tmp_total_err>0){
-                text_tmp_mean_err /= text_tmp_total_err;
-                text_tmp_total_err = 0;
             }
             
             sentence_length = 0;
@@ -1169,8 +1145,6 @@ void *TrainTextModelThread(void *id) {
     fclose(fi);
     free(neu1);
     free(neu1e);
-    //debug
-    fprintf(fdebug, "text model largest err: %f, mean err: %f\n", text_tmp_largest_err, text_tmp_mean_err);
     
     pthread_exit(NULL);
 }
@@ -1185,9 +1159,6 @@ void *TrainKgModelThread(void *id) {
     clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
     real *neu1e = (real *)calloc(layer_size, sizeof(real));
-    //debug
-    real kb_tmp_largest_err = 0, kb_tmp_mean_err = 0, tmp_err;
-    long long kb_tmp_total_err = 0;
     
     struct vocab *mono_entities = &model[KG_VOCAB][cur_lang_id];
     struct vocab *tmp_mono_entities;
@@ -1274,15 +1245,7 @@ void *TrainKgModelThread(void *id) {
                 for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_entities->syn0[c + l1];
             }
             // Learn weights input -> hidden
-            //debug
-            for (c = 0; c < layer_size; c++){
-                mono_entities->syn0[c + l1] += neu1e[c];
-                tmp_err = fabsf(neu1e[c]);
-                if (kb_tmp_largest_err < tmp_err)
-                    kb_tmp_largest_err = tmp_err;
-                kb_tmp_mean_err += tmp_err;
-                kb_tmp_total_err ++;
-            }
+            for (c = 0; c < layer_size; c++) mono_entities->syn0[c + l1] += neu1e[c];
         }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
@@ -1322,24 +1285,9 @@ void *TrainKgModelThread(void *id) {
                         for (c = 0; c < layer_size; c++) tmp_mono_entities->syn1neg[c + l2] += g * mono_entities->syn0[c + l1];
                     }
                     // Learn weights input -> hidden
-                    //debug
-                    for (c = 0; c < layer_size; c++) {
-                        mono_entities->syn0[c + l1] += neu1e[c];
-                        tmp_err = fabsf(neu1e[c]);
-                        if (kb_tmp_largest_err < tmp_err)
-                            kb_tmp_largest_err = tmp_err;
-                        kb_tmp_mean_err += tmp_err;
-                        kb_tmp_total_err ++;
-                    }
+                    for (c = 0; c < layer_size; c++) mono_entities->syn0[c + l1] += neu1e[c];
                 }   // end train
             }   // end lang
-        }
-            
-        
-        //debug
-        if (kb_tmp_total_err > 0){
-            kb_tmp_mean_err /= kb_tmp_total_err;
-            kb_tmp_total_err = 0;
         }
         
         sentence_length = 0;
@@ -1347,8 +1295,6 @@ void *TrainKgModelThread(void *id) {
     fclose(fi);
     free(neu1);
     free(neu1e);
-    //debug
-    fprintf(fdebug, "kg model largest err: %f, mean err: %f\n", kb_tmp_largest_err, kb_tmp_mean_err);
     
     pthread_exit(NULL);
 }
@@ -1651,10 +1597,6 @@ void *BilbowaThread(void *id) {
     //km parameter
     struct KM_var km_var;
     
-    //debug
-    real tmp_largest_err = 0, tmp_mean_err = 0, tmp_err, mean_att = 0, largest_att=0;
-    long long tmp_total_err = 0, att_num = 0;
-    
     real deltas[layer_size];
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file[multi_lang_id2-1], "rb");
@@ -1701,36 +1643,9 @@ void *BilbowaThread(void *id) {
         BilBOWASentenceUpdate(par_sen, kg_attention, deltas);
         cur_line ++;
         cross_line_count++;
-        //debug
         
-        for (int i=0;i<layer_size;i++){
-            tmp_err = fabsf(deltas[i]);
-            if (tmp_largest_err < tmp_err)
-                tmp_largest_err = tmp_err;
-            tmp_mean_err += tmp_err;
-            tmp_total_err ++;
-        }
-        if (tmp_total_err > 0){
-            tmp_mean_err /= tmp_total_err;
-            tmp_total_err = 0;
-        }
-        att_num = 1;
-        for (int i=0;i<NUM_LANG;i++)
-            for(int j=0;j<MAX_SENTENCE_LENGTH;j++){
-                if (kg_attention[i][j] == -1) break;
-                att_num ++;
-                tmp_err = fabsf(kg_attention[i][j]);
-                mean_att += tmp_err;
-                if (largest_att < tmp_err)
-                    largest_att = tmp_err;
-            }
-        mean_att /= att_num;
-        
-        //debug
     } // while training loop
     fclose(fi_par);
-    //debug
-    fprintf(fdebug, "cross model largest err: %f, mean err: %f, largest att:%f, mean att:%f\n", tmp_largest_err, tmp_mean_err, largest_att, mean_att);
     pthread_exit(NULL);
 }
 
@@ -1915,9 +1830,6 @@ int main(int argc, char **argv) {
     //start training
     local_iter = 0;
     if (save_iter <=0 || save_iter > iter) save_iter = iter;
-    //debug need del
-    fdebug = fopen("/home/caoyx/data/log/log_mlmpme", "w");
-    //debug
     while(local_iter<iter){
         local_iter++;
         printf("Start jointly training the %d time... ", local_iter);
@@ -1932,8 +1844,5 @@ int main(int argc, char **argv) {
             }
         }
     }
-    //debug need del
-    fclose(fdebug);
-    //debug
     return 0;
 }
