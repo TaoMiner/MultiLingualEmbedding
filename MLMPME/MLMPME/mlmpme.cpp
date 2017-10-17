@@ -850,13 +850,14 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
 }
 
 int readContextLines(char *multi_context_file){
-    int line_count = 0;
+    int line_count = 0, res;
     long long par_sen[2][MAX_SENTENCE_LENGTH];
     long long par_entity[2];
     // initialize the parallel context number
     FILE *fin = fopen(multi_context_file, "rb");
     while(1){
-        ReadSent(fin, par_sen, par_entity);
+        res = ReadSent(fin, par_sen, par_entity);
+        if (res < 0) continue;
         line_count ++;
         if (feof(fin)) break;
     }
@@ -1711,7 +1712,7 @@ void *BilbowaThread(void *id) {
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
         if ((debug_mode > 1)) {
-            printf("%cProgress: %.2f ", 13, (real)cross_line_count/par_line_num[multi_lang_id2-1]);
+            printf("%cProgress: %.2f%% ", 13, (real)cross_line_count/par_line_num[multi_lang_id2-1]*100);
             fflush(stdout);
         }
         for(int i=0;i<2;i++){
@@ -1771,6 +1772,7 @@ void *BilbowaThread(void *id) {
 void TrainMultiModel(){
     if (multi_lang_id1==-1 || multi_lang_id2<1) return;
     long a;
+    cross_line_count = 0;
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
     printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num[multi_lang_id2-1], multi_context_file[multi_lang_id2-1]);
