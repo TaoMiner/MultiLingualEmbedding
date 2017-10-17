@@ -75,7 +75,7 @@ int *cross_links[NUM_LANG];
 int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, hasSense = 1, min_count = 5, has_kg_att = 1, has_w_att = 1;
 long long layer_size = 100;
 const int table_size = 1e8;
-real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1;
+real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, cross_starting_alpha, cross_alpha;
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
@@ -857,9 +857,9 @@ int readContextLines(char *multi_context_file){
     FILE *fin = fopen(multi_context_file, "rb");
     while(1){
         res = ReadSent(fin, par_sen, par_entity);
+        if (feof(fin)) break;
         if (res < 0) continue;
         line_count ++;
-        if (feof(fin)) break;
     }
     fclose(fin);
     return line_count;
@@ -867,6 +867,7 @@ int readContextLines(char *multi_context_file){
 
 void InitMultiModel(){
     int max_num = 1500000;            // 1m, max num clinks
+    cross_alpha = alpha;
     for(int i = 0; i < NUM_LANG; i++)
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
     for (int i=0;i<NUM_LANG-1;i++){
@@ -1452,7 +1453,7 @@ void UpdateEmbeddings(real *embeddings, int offset, int num_updates, real *delta
     real step;
     for (a = 0; a < num_updates; a++) {
         // Regular SGD
-        step = alpha * deltas[a];
+        step = cross_alpha * deltas[a];
         if (step != step) {
             fprintf(stderr, "ERROR: step == NaN\n");
         }
@@ -1711,10 +1712,14 @@ void *BilbowaThread(void *id) {
     if((long long)id!=0) ReadSent(fi_par, par_sen, par_entity);
     // Continue training while monolingual models are still training
     while (cur_line < line_num) {
+        if (feof(fi_par)) break;
         if ((debug_mode > 1)) {
-            printf("%cProgress: %.2f%% ", 13, (real)cross_line_count/par_line_num[multi_lang_id2-1]*100);
+            printf("%cCross Model: Alpha: %f Progress: %.2f%% ", 13, cross_alpha,(real)cross_line_count/par_line_num[multi_lang_id2-1]*100);
             fflush(stdout);
         }
+        cross_alpha = cross_starting_alpha * (1 - cross_line_count / (real)(iter * par_line_num[multi_lang_id2-1] + 1));
+        if (cross_alpha < cross_starting_alpha * 0.0001) cross_alpha = cross_starting_alpha * 0.0001;
+        
         for(int i=0;i<2;i++){
             par_sen[i][0] = 0;
             par_entity[i] = -1;
@@ -1724,7 +1729,6 @@ void *BilbowaThread(void *id) {
                 w_attention[i][0] = -1;
         }
         res = ReadSent(fi_par, par_sen, par_entity);
-        cur_line ++;
         
         if (res <=0) continue;
         if (has_kg_att) SetKGAttention(par_sen, par_entity, kg_attention);
@@ -1735,6 +1739,7 @@ void *BilbowaThread(void *id) {
                 kg_attention[i][j] += w_attention[i][j]/2;
             }
         BilBOWASentenceUpdate(par_sen, kg_attention, deltas);
+        cur_line ++;
         cross_line_count++;
         //debug
         
@@ -1773,6 +1778,7 @@ void TrainMultiModel(){
     if (multi_lang_id1==-1 || multi_lang_id2<1) return;
     long a;
     cross_line_count = 0;
+    cross_starting_alpha = cross_alpha;
     pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
     start = clock();
     printf("\nStarting training %d lines in multilingual text model using file %s\n", par_line_num[multi_lang_id2-1], multi_context_file[multi_lang_id2-1]);
