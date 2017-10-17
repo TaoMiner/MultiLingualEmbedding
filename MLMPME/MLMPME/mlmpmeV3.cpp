@@ -366,7 +366,7 @@ int AddItemToVocab(char *item, struct vocab *mono_vocab) {
     mono_vocab->vocab[mono_vocab->vocab_size].item = (char *)calloc(length, sizeof(char));
     strcpy(mono_vocab->vocab[mono_vocab->vocab_size].item, item);
     mono_vocab->vocab[mono_vocab->vocab_size].cn = 0;
-    mono_vocab->vocab[mono_vocab->vocab_size].index = 0;
+    mono_vocab->vocab[mono_vocab->vocab_size].index = -1;
     mono_vocab->vocab[mono_vocab->vocab_size].entity_index = -1;
     mono_vocab->vocab_size++;
     // Reallocate memory if needed
@@ -796,7 +796,7 @@ int ReadSent(FILE *fi, long long sen[2][MAX_SENTENCE_LENGTH], long long entity_i
 
 // cross links between 2 languages
 void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
-    int a, lang_index, item_count=0, clink[2], entity_index, num_clink, line_count=0, tmp_clink_idx, tmp_clink, total_num = 0;
+    int a, lang_index[2], item_count=0, clink[2], entity_index, num_clink, line_count=0, tmp_clink_idx, tmp_clink, total_num = 0;
     char item[MAX_STRING];
     bool hasInvalidEntity = false;
     FILE *fin = fopen(cross_link_file, "rb");
@@ -806,19 +806,17 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
     }
     fscanf(fin, "%d", &num_clink);
     num_clink += 1;
-    lang_index = lang1_idx;
+    lang_index[0] = lang1_idx;
+    lang_index[1] = lang2_idx;
     for(a=0;a<2;a++) clink[a] = -1;
     while (1) {
         ReadItem(item, fin);
         if (feof(fin)) break;
-        if (!strcmp(item, "</t>")) {
-            lang_index = lang2_idx;
-            continue;
-        }
+        if (!strcmp(item, "</t>")) continue;
         if (!strcmp(item, "</s>")) {
             if (item_count == 2 && !hasInvalidEntity){
                 tmp_clink_idx = model[KG_VOCAB][lang1_idx].vocab[clink[0]].index;
-                if (tmp_clink_idx!=0){
+                if (tmp_clink_idx!=-1){
                     tmp_clink = cross_links[lang1_idx][tmp_clink_idx];
                     if (tmp_clink == clink[0]){
                         cross_links[lang2_idx][tmp_clink_idx] = clink[1];
@@ -840,7 +838,7 @@ void readCrossLinks(char *cross_link_file, int lang1_idx, int lang2_idx){
             continue;
         }
         if (item_count < 2){
-            entity_index = SearchVocab(item, &model[KG_VOCAB][lang_index]);
+            entity_index = SearchVocab(item, &model[KG_VOCAB][lang_index[item_count]]);
             clink[item_count] = entity_index;
             if (entity_index==-1) hasInvalidEntity = true;
         }
@@ -1249,8 +1247,7 @@ void *TrainKgModelThread(void *id) {
         }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
-        if (NUM_LANG >=2 && cross_index>0){
-            for (c = 0; c < layer_size; c++) neu1[c] = 0;
+        if (NUM_LANG >=2 && cross_index>=0){
             for (c = 0; c < layer_size; c++) neu1e[c] = 0;
             for (int k=0;k<NUM_LANG;k++){
                 if (k==cur_lang_id) continue;
