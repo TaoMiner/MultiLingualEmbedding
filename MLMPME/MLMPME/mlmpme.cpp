@@ -14,7 +14,7 @@
 
 
 #define inf 1000000000
-#define _clr(x) memset(x,-1,sizeof(int)*MAX_SENTENCE_LENGTH)
+#define _clr(x, len) memset(x,-1,sizeof(int)*len)
 
 #define MAX_STRING 1100          //>longest entity + longest mention + 1
 #define NUM_LANG 2
@@ -868,8 +868,10 @@ int readContextLines(char *multi_context_file){
 void InitMultiModel(){
     int max_num = 1500000;            // 1m, max num clinks
     cross_alpha = alpha;
-    for(int i = 0; i < NUM_LANG; i++)
+    for(int i = 0; i < NUM_LANG; i++){
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
+        _clr(cross_links[i],max_num);
+    }
     for (int i=0;i<NUM_LANG-1;i++){
         multi_lang_id1 = 0;
         multi_lang_id2 = i+1;
@@ -1325,6 +1327,7 @@ void *TrainKgModelThread(void *id) {
                 kb_tmp_mean_err += tmp_err;
                 kb_tmp_total_err ++;
             }
+        }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
         if (NUM_LANG >=2 && cross_index>0){
@@ -1333,6 +1336,7 @@ void *TrainKgModelThread(void *id) {
             for (int k=0;k<NUM_LANG;k++){
                 if (k==cur_lang_id) continue;
                 tmp_head_entity_index = cross_links[k][cross_index];
+                if (tmp_head_entity_index==-1) continue;
                 tmp_mono_entities = &model[KG_VOCAB][k];
                 //train skip-gram
                 for (; sentence_position<sentence_length; sentence_position++){
@@ -1372,9 +1376,7 @@ void *TrainKgModelThread(void *id) {
                         kb_tmp_total_err ++;
                     }
                 }
-            }
-            }
-            
+            }   
         }
         //debug
         if (kb_tmp_total_err > 0){
@@ -1553,11 +1555,11 @@ real km_match(struct KM_var *km_var)
     
     for(i=0;i<n;i++)
         l2[i]=0;
-    _clr(km_var->match1);
-    _clr(km_var->match2);
+    _clr(km_var->match1,MAX_SENTENCE_LENGTH);
+    _clr(km_var->match2,MAX_SENTENCE_LENGTH);
     for(i=0;i<m;i++)
     {
-        _clr(t);
+        _clr(t,MAX_SENTENCE_LENGTH);
         p=0;q=0;
         for(s[0]=i;p<=q&&km_var->match1[i]<0;p++)
         {
