@@ -24,6 +24,8 @@ class Options:
 
     output_file = '../etc/output_senselink'
 
+    wordsim353_file = root_path+'wordsim353_agreed.txt'
+
     @staticmethod
     def getFeatureFile(year, isEval, lang, docType, exp):
         tmp = 'eval' if isEval else 'training'

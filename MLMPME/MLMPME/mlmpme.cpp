@@ -1697,11 +1697,12 @@ void TrainModel(){
         TrainMonoModel(TEXT_VOCAB, i);
     
     //align cross lingual words
-    for (i=0;i<NUM_LANG-1;i++){
-        multi_lang_id1 = 0;
-        multi_lang_id2 = i+1;
-        TrainMultiModel();
-    }
+    if (cross_model_weight>0)
+        for (i=0;i<NUM_LANG-1;i++){
+            multi_lang_id1 = 0;
+            multi_lang_id2 = i+1;
+            TrainMultiModel();
+        }
     
     if (is_normal==1)
         normalize();
@@ -1856,7 +1857,7 @@ int main(int argc, char **argv) {
         InitModel(SENSE_VOCAB, i);
     }
     printf("init model finished!");
-    if (NUM_LANG >=2 )
+    if (NUM_LANG >=2 && cross_model_weight>0)
         InitMultiModel();
     
     //start training

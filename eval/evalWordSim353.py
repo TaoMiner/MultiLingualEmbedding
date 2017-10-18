@@ -6,6 +6,7 @@ from Sense import Sense
 from Entity import Entity
 from scipy import stats
 from scipy import spatial
+from options import Options
 
 class Evaluator:
     def __init__(self):
@@ -69,16 +70,12 @@ class Evaluator:
         return stats.spearmanr(self.standard, glb), stats.spearmanr(self.standard, avg), stats.spearmanr(self.standard, simmax)
 
 if __name__ == '__main__':
-    base_path = '/data/m1/cyx/MultiMPME/'
-    word_vector_file = base_path + 'etc/exp1/envec/vectors1_word.dat'
-    sense_vector_file = base_path + 'etc/exp1/envec/vectors1_senses.dat'
-    word_sim_file = base_path + 'expdata/wordsim353_agreed.txt'
+    exp = 'exp18'
+    it = 5
     output_file = base_path + 'expdata/log_wordsim353'
-    entity_dic_file = base_path + 'data/dumps20170401/enwiki_cl/vocab_entity.dat'
-    has_sense = False
 
-    wiki_word = Word()
-    wiki_word.loadVector(word_vector_file)
+    w = Word()
+    w.loadVector(Options.getExpVecFile(exp, Options.en, Options.word_type, it))
     print len(wiki_word.vectors)
     if has_sense:
         wiki_sense = Sense()

@@ -16,6 +16,7 @@ class Sense():
         self.vocab_dic = None
         # context cluster center
         self.mu = None
+        self.w_sense_dic = None
 
     def loadVocab(self, filename):
         vocab = set()
