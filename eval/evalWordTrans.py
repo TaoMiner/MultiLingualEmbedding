@@ -4,6 +4,8 @@ from Word import Word
 from scipy import spatial
 from options import Options
 import heapq
+import math
+import numpy as np
 
 class evaluator():
 
@@ -51,7 +53,6 @@ class evaluator():
                 items = re.split(r'\t', line.strip())
                 if len(items) < 2 : continue
                 es_label = re.sub(r'_', ' ', items[0])
-
                 if es_label not in self.words[1].vectors : continue
                 en_labels = re.split(r' ', items[1])
                 for label in en_labels:
@@ -61,6 +62,17 @@ class evaluator():
                     self.lex.append([es_label, en_labels])
         print("successfully load {0} word pairs!".format(len(self.lex)))
 
+    def cosSim(self, v1, v2):
+        res = 0
+        len_v1 = math.sqrt(np.dot(v1,v1))
+        len_v2 = math.sqrt(np.dot(v2,v2))
+        if len_v1 > 0.000001 and len_v2 > 0.000001:
+            res = np.dot(v1,v2)/len_v1/len_v2
+            res = (res +1)/2
+        if math.isnan(res) or math.isinf(res) or res >1 or res <0:
+            res = 0
+        return res
+
     def eval(self, log_file = None):
         count = 0
         for p in self.lex:
@@ -68,20 +80,19 @@ class evaluator():
             lang2_w = p[0]
             lang1_ws = p[1]
             is_correct = False
-            for en_w in lang1_ws:
-                if en_w in self.words[0].vectors:
-                    vec = self.words[0].vectors[en_w]
-                    sim = []
-                    for w in self.words[1].vectors:
-                        sim.append([w, spatial.distance.cosine(vec, self.words[1].vectors[w])])
-                    sorted_sim = heapq.nlargest(self.topn, sim, key=lambda x: x[1])
-
-                    for s in sorted_sim:
-                        if lang2_w.lower() == s[0].lower():
+            sim = []
+            if lang2_w in self.words[1].vectors:
+                vec = self.words[1].vectors[lang2_w]
+                for w in self.words[0].vectors:
+                    sim.append([w, self.cosSim(vec, self.words[0].vectors[w])])
+                sorted_sim = heapq.nlargest(self.topn, sim, key=lambda x: x[1])
+                for cand in sorted_sim:
+                    for en_w in lang1_ws:
+                        if en_w.lower() == cand[0].lower():
                             self.tp += 1
                             is_correct = True
                             break
-                if is_correct: break
+                    if is_correct: break
             if count % 10 == 0:
                 print("{0}/{1}, tp is {2}!".format(count, len(self.lex), self.tp))
         print("top {0} acc is {1}".format(topn, float(self.tp) / len(self.lex)))
@@ -94,13 +105,13 @@ class evaluator():
             fout.close()
 
 if __name__ == '__main__':
-    exp = 'exp18'
+    exp = 'exp17'
     it = 5
     topn = 1
     lang1 = Options.en
-    lang2 = Options.es
-    topn1 = 100000
-    topn2 = 100000
+    lang2 = Options.zh
+    topn1 = 50000
+    topn2 = 50000
     log_file = Options.getLogFile('log_trans')
 
     w1 = Word()
