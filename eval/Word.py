@@ -11,7 +11,7 @@ class Word():
         self.vocab_size = 0
         self.layer_size = 0
         self.vectors = None
-        self.vocab = None
+        self.vocab_dic = None
 
     def initVectorFormat(self, size):
         tmp_struct_fmt = []
@@ -21,103 +21,31 @@ class Word():
         return p_struct_fmt
 
     def loadVocab(self, file):
-        if isinstance(self.vocab, type(None)):
-            self.vocab = set()
+        vocab = set()
         with codecs.open(file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                self.vocab.add(items[0])
-        print('load vocab of {0} words!'.format(len(self.vocab)))
+                if (items[0] == '</s>'): continue
+                vocab.add(items[0])
+        print('load vocab of {0} words!'.format(len(vocab)))
+        return vocab
 
-    def sample(self, subvocab_file, vector_file,  sample_file):
-        new_vocab = self.readVocab(subvocab_file)
-        new_vocab_size = len(new_vocab)
-        new_word_count = 0
-        vocab_size = 0
-        layer_size = 0
-        print('new vocab size: {0}\n'.format(new_vocab_size))
-        with codecs.open(vector_file, 'rb') as fin_vec:
-            with codecs.open(sample_file, 'wb') as fout_vec:
-                # read file head: vocab size and layer size
-                char_set = []
-                while True:
-                    ch = fin_vec.read(1)
-                    if ch == ' ':
-                        vocab_size = (int)("".join(char_set))
-                        del char_set[:]
-                        continue
-                    if ch == '\n':
-                        layer_size = (int)("".join(char_set))
-                        break
-                    char_set.append(ch)
-                fout_vec.write("{0} {1}\n".format(new_vocab_size, layer_size))
-                for i in xrange(vocab_size):
-                    # read entity label
-                    del char_set[:]
-                    while True:
-                        ch = struct.unpack('c', fin_vec.read(1))[0]
-                        if ch == '\t':
-                            break
-                        char_set.append(ch)
-                    label = "".join(char_set).decode('utf-8')
-                    if label in new_vocab:
-                        new_word_count += 1
-                        fout_vec.write("{0}\t".format(label.encode('utf-8')))
-                        fout_vec.write(fin_vec.read(4 * layer_size))
-                        fout_vec.write(fin_vec.read(1))
-                    else:
-                        fin_vec.read(4 * layer_size)
-                        fin_vec.read(1)  # \n
-        print('sample {0} words!'.format(new_word_count))
+    def loadVocabDic(self, file, topn = 0):
+        count = 0
+        if isinstance(self.vocab_dic, type(None)):
+            self.vocab_dic = {}
+        with codecs.open(file, 'r', encoding='UTF-8') as fin:
+            for line in fin:
+                items = re.split(r'\t', line.strip())
+                if (items[0] == '</s>'): continue
+                count += 1
+                if topn <= 0 or count >= topn: break
+                self.vocab_dic[items[0]] = int(items[1])
+        print('load vocab of {0} words!'.format(len(self.vocab_dic)))
 
-    def sampleMulti(self, vocab_file, vector_file,  sample_file, lang):
-        new_vocab = self.readVocab(vocab_file)
-        new_vocab_size = len(new_vocab)
-        new_word_count = 0
-        vocab_size = 0
-        layer_size = 0
-        print('new vocab size: {0}\n'.format(new_vocab_size))
-        with codecs.open(vector_file, 'rb') as fin_vec:
-            with codecs.open(sample_file, 'wb') as fout_vec:
-                # read file head: vocab size and layer size
-                char_set = []
-                while True:
-                    ch = fin_vec.read(1)
-                    if ch == ' ':
-                        vocab_size = (int)("".join(char_set))
-                        del char_set[:]
-                        continue
-                    if ch == '\n':
-                        layer_size = (int)("".join(char_set))
-                        break
-                    char_set.append(ch)
-                for i in xrange(vocab_size):
-                    # read entity label
-                    del char_set[:]
-                    while True:
-                        ch = struct.unpack('c', fin_vec.read(1))[0]
-                        if ch == '\t':
-                            break
-                        char_set.append(ch)
-                    label = "".join(char_set).decode('utf-8')
-                    label = lang + ":" + label
-                    str_o = ''
-                    if label in new_vocab:
-                        new_word_count += 1
-                        str_o = label.encode('utf-8')
-                        for i in xrange(layer_size):
-                            str_o = "{0} {1:%17f}".format(str_o, struct.unpack('f', fin_vec.read(4))[0])
-                        str_o += '\n'
-                        fin_vec.read(1)
-                        fout_vec.write(str_o)
-                    else:
-                        fin_vec.read(4 * layer_size)
-                        fin_vec.read(1)  # \n
-        print('sample {0} words!'.format(new_word_count))
-
-    def loadVector(self, filename):
-        if isinstance(self.vectors, type(None)): self.vectors = {}
-        else: self.vectors.clear()
+    def loadVector(self, filename, vocab = None):
+        if isinstance(self.vectors, type(None)):
+            self.vectors = {}
         with codecs.open(filename, 'rb') as fin_vec:
             # read file head: vocab size and layer size
             char_set = []
@@ -142,19 +70,23 @@ class Word():
                         break
                     char_set.append(ch)
                 label = b''.join(char_set).decode('utf-8')
-                self.vectors[label] = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
+                tmp_vec = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
+                if not isinstance(vocab, type(None)) and label in vocab:
+                    self.vectors[label] = tmp_vec
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
             print('load {0} words!'.format(self.vocab_size))
 
+    def saveVector(self, filename):
+        with codecs.open(filename, 'wb') as fout:
+            fout.write("{0} {1}\n".format(self.vocab_size, self.layer_size))
+            for label in self.vectors:
+                fout.write("{0}\t".format(label.encode('utf-8')))
+                for i in range(self.layer_size):
+                    fout.write(struct.pack('f', self.vectors[label][i]))
+                fout.write('\n')
+
+
 if __name__ == '__main__':
     w = Word()
     word_vector_file = '/Users/ethan/Downloads/sub_words2'
-    '''
-    lang = 'en'
-    word_vector_file = '/home/caoyx/data/etc/exp2/' + lang + 'vec/vectors1_word5'
-    vocab_file = '/home/caoyx/data/evaluation_vocabulary3'
-    output_file = '/home/caoyx/data/etc/exp2/' + lang + 'vec/sub_words'
-    word = Word()
-    word.sampleMulti(vocab_file,word_vector_file,output_file, lang)
-    '''

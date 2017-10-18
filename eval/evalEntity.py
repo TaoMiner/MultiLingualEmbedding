@@ -4,11 +4,15 @@ import codecs
 import struct
 import rank_metrics as rm
 from Entity import Entity
+from options import Options
 
-eval_file = '/home/caoyx/data/test_relatedness_id.dat'
-entity_dic_file = '/home/caoyx/data/dump20170401/enwiki_cl/vocab_entity.dat'
-entity_vec_file = '/home/caoyx/data/etc/exp15/envec/vectors1_entity5'
-log_file = '/home/caoyx/data/log/log_entity'
+exp = 'exp18'
+it = 5
+
+eval_file = Options.entity_relatedness_file
+entity_dic_file = Options.getExpVocabFile(Options.en, Options.entity_type)
+entity_vec_file = Options.getExpVecFile(exp,Options.en, Options.entity_type, it)
+log_file = Options.getLogFile('log_entity')
 
 ent_id_dic = Entity.loadEntityDic(entity_dic_file)
 id_ent_dic = Entity.loadEntityIdDic(entity_dic_file)
@@ -27,8 +31,8 @@ def loadEvalFile():
                 e_id = tmp_q[0]
                 c_id = tmp_q[1]
                 label = int(tmp_q[2])
-		if e_id not in entity.vectors or c_id not in entity.vectors:
-			continue
+                if e_id not in entity.vectors or c_id not in entity.vectors:
+                    continue
                 if e_id in eval_query and c_id not in eval_query[e_id]:
                     eval_query[e_id][c_id] = label
                 else:
@@ -85,9 +89,8 @@ for ent in eval_query:
 
 if len(eval_query) > 0:
     act_ent_count = len(eval_query)-ent_skip_count
-
     with codecs.open(log_file, 'a', encoding='UTF-8') as fout_log:
         fout_log.write("**********************************\n")
-        fout_log.write("eval %d(%d) entities with %d(%d) candidate entities for %s!\n" % (act_ent_count,len(eval_query),can_count/act_ent_count,relatedness_pair_num/len(eval_query), entity_vec_file))
-        fout_log.write("ndcg1 : %f, ndcg5 : %f, ndcg10 : %f, map : %f\n" % (float(ndcg1_sum/act_ent_count),float(ndcg5_sum/act_ent_count),float(ndcg10_sum/act_ent_count),float(map_sum/act_ent_count)))
+        fout_log.write("{0}, eval {1}({2}) entities with {3}({4}) candidate entities!\n".format(exp, act_ent_count,len(eval_query),can_count/act_ent_count,relatedness_pair_num/len(eval_query)))
+        fout_log.write("ndcg1 : {0}, ndcg5 : {1}, ndcg10 : {2}, map : {3}\n".format(float(ndcg1_sum/act_ent_count),float(ndcg5_sum/act_ent_count),float(ndcg10_sum/act_ent_count),float(map_sum/act_ent_count)))
         fout_log.write("**********************************\n")

@@ -15,7 +15,7 @@ class Options:
     yago_candidate_file = '/home/caoyx/JTextKgForEL/data/conll/yago_candidates'
 
     cross_links_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
-
+    entity_relatedness_file = '/home/caoyx/data/test_relatedness_id.dat'
     aida_file = '/home/caoyx/data/conll/AIDA-YAGO2-dataset.tsv'
     train_feature_file = '/home/caoyx/data/train15_file.csv'
     eval_feature_file = '/home/caoyx/data/eval15_file.csv'
@@ -123,5 +123,12 @@ class Options:
     def getRedirectFile(lang):
         return Options.root_path + 'dump20170401/' + Options.getLangStr(lang) + 'wiki_cl/redirect_article_title'
 
+    @staticmethod
+    def getBiLexFile(lang):
+        if lang == Options.zh:
+            return Options.root_path + 'ldc_cedict.gb.v3'
+        elif lang == Options.es:
+            return Options.root_path + 'all.es-en.lex'
+        return ''
 if __name__ == '__main__':
     print(Options.getKBPAnsFile(2015,False))

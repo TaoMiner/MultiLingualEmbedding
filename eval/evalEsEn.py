@@ -3,6 +3,7 @@ import regex as re
 from Word import Word
 from scipy import spatial
 import os
+from options import Options
 
 languages = [u'en',u'es']
 topn = 1
@@ -10,10 +11,8 @@ topn = 1
 class evaluator():
 
     def __init__(self):
-        self.expnum = 8
-        self.vec_path = '/home/caoyx/data/etc/exp' + str(self.expnum)
-        self.en_word_file = self.vec_path + '/envec/vectors1_word5'
-        self.es_word_file = self.vec_path + '/esvec/vectors2_word5'
+        self.en_word_file = ''
+        self.es_word_file = ''
         self.lex_file = '/home/caoyx/data/all.es-en.lex'
 
         self.words = [Word(), Word()]
@@ -75,8 +74,12 @@ class evaluator():
             fout.close()
 
 if __name__ == '__main__':
+    exp = 'exp18'
+    it = 5
     log_file = './distance.out'
     evaluator = evaluator()
+    evaluator.en_word_file = Options.getExpVecFile(exp, Options.en, Options.word_type, it)
+    evaluator.es_word_file = Options.getExpVecFile(exp, Options.es, Options.word_type, it)
     evaluator.loadWords()
     evaluator.loadBiLexicon()
     evaluator.eval(log_file=log_file)

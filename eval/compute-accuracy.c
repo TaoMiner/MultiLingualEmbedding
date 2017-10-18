@@ -22,16 +22,18 @@
 const long long max_size = 2000;         // max length of strings
 const long long N = 1;                   // number of closest words
 const long long max_w = 50;              // max length of vocabulary entries
+const long long max_line = 50;              // max length of log file
 
 int main(int argc, char **argv)
 {
   FILE *f, *f_log;
   char st1[max_size], st2[max_size], st3[max_size], st4[max_size], bestw[N][max_size], file_name[max_size],log_file[max_size], ch;
+  char log_str[max_line][max_size];
   float dist, len, bestd[N], vec[max_size];
   long long words, size, i, a, b, c, d, b1, b2, b3, threshold = 0;
   float *M;
   char *vocab;
-  int TCN, CCN = 0, TACN = 0, CACN = 0, SECN = 0, SYCN = 0, SEAC = 0, SYAC = 0, QID = 0, TQ = 0, TQS = 0;
+  int TCN, CCN = 0, TACN = 0, CACN = 0, SECN = 0, SYCN = 0, SEAC = 0, SYAC = 0, QID = 0, TQ = 0, TQS = 0, log_line_count = 0;
   if (argc < 2) {
     printf("Usage: ./compute-accuracy <FILE> <LOGFILE> <threshold>\nwhere FILE contains word projections, and threshold is used to reduce vocabulary of the model for fast approximate evaluation (0 = off, otherwise typical value is 30000)\n");
     return 0;
@@ -45,9 +47,9 @@ int main(int argc, char **argv)
     return -1;
   }
   //log eval print
-  f_log = fopen(log_file, "w");
-  fprintf(f_log, "****************************************************\n");
-  fprintf(f_log, "compute word accuracy for : %s\n", file_name);
+  log_line_count = 0;
+  sprintf(&log_str[log_line_count++], "****************************************************\n");
+  sprintf(&log_str[log_line_count++], "compute word accuracy for : %s\n", file_name);
   fscanf(f, "%lld", &words);
   if (threshold) if (words > threshold) words = threshold;
   fscanf(f, "%lld", &size);
@@ -84,14 +86,14 @@ int main(int argc, char **argv)
       if (QID != 0) {
         printf("ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100, CCN, TCN);
         printf("Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
-        fprintf(f_log,"ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100, CCN, TCN);
-        fprintf(f_log,"Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
+        sprintf(&log_str[log_line_count++],"ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100, CCN, TCN);
+        sprintf(&log_str[log_line_count++],"Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
       }
       QID++;
       scanf("%s", st1);
       if (feof(stdin)) break;
       printf("%s:\n", st1);
-      fprintf(f_log,"%s:\n", st1);
+      sprintf(&log_str[log_line_count++],"%s:\n", st1);
       TCN = 0;
       CCN = 0;
       continue;
@@ -149,7 +151,10 @@ int main(int argc, char **argv)
     TACN++;
   }
   printf("Questions seen / total: %d %d   %.2f %% \n", TQS, TQ, TQS/(float)TQ*100);
-  fprintf(f_log,"Questions seen / total: %d %d   %.2f %% \n", TQS, TQ, TQS/(float)TQ*100);
+  sprintf(&log_str[log_line_count++],"Questions seen / total: %d %d   %.2f %% \n", TQS, TQ, TQS/(float)TQ*100);
+  f_log = fopen(log_file, "a");
+  for(i=0;i<log_line_count;i++)
+    fprintf(f_log, "%s", &log_str[i]);
   fclose(f_log);
   return 0;
 }

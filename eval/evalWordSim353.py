@@ -4,7 +4,6 @@ import numpy as np
 from Word import Word
 from Sense import Sense
 from Entity import Entity
-import math
 from scipy import stats
 from scipy import spatial
 
