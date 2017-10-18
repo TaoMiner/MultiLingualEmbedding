@@ -1865,7 +1865,7 @@ int main(int argc, char **argv) {
     if (save_iter <=0 || save_iter > iter) save_iter = iter;
     while(local_iter<iter){
         local_iter++;
-        printf("Start jointly training the %d time... ", local_iter);
+        printf("\nStart jointly training the %d time... ", local_iter);
         TrainModel();
         
         if (local_iter%save_iter==0){

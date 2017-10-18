@@ -15,9 +15,8 @@ sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
 
-a = 1
-b = 2
-c = 3
+a = [2,3,1]
 
-if a==0 or b==2 and c==3:
-    print 'success'
+a.sort(key=lambda x:x, reverse=True)
+
+print a

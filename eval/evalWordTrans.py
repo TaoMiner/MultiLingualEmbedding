@@ -12,11 +12,9 @@ class evaluator():
     def __init__(self):
         self.words = []
         self.lang = []
-        self.lex = []
-        self.tp = 0
         self.exp = ''
+        self.lex = []
         self.topn = 1
-        self.max_heap = None
 
     def setTopN(self, topn):
         self.topn = topn
@@ -54,10 +52,12 @@ class evaluator():
                 if len(items) < 2 : continue
                 es_label = re.sub(r'_', ' ', items[0])
                 if es_label not in self.words[1].vectors : continue
-                en_labels = re.split(r' ', items[1])
-                for label in en_labels:
+                en_labels = []
+                tmp_en_labels = re.split(r' ', items[1])
+                for label in tmp_en_labels:
                     label = re.sub(r'_', ' ', label)
                     if len(label) < 1 or label not in self.words[0].vectors: continue
+                    en_labels.append(label)
                 if len(en_labels) > 0:
                     self.lex.append([es_label, en_labels])
         print("successfully load {0} word pairs!".format(len(self.lex)))
@@ -73,8 +73,10 @@ class evaluator():
             res = 0
         return res
 
-    def eval(self, log_file = None):
+    def evalHit(self, log_file = None):
         count = 0
+        total_p = 0
+        actual_pairs = 0
         for p in self.lex:
             count += 1
             lang2_w = p[0]
@@ -82,25 +84,62 @@ class evaluator():
             is_correct = False
             sim = []
             if lang2_w in self.words[1].vectors:
+                actual_pairs += 1
                 vec = self.words[1].vectors[lang2_w]
                 for w in self.words[0].vectors:
                     sim.append([w, self.cosSim(vec, self.words[0].vectors[w])])
                 sorted_sim = heapq.nlargest(self.topn, sim, key=lambda x: x[1])
+                # print("{0}:{1}\n{2}\n".format(lang2_w,lang1_ws,sorted_sim))
                 for cand in sorted_sim:
                     for en_w in lang1_ws:
                         if en_w.lower() == cand[0].lower():
-                            self.tp += 1
+                            total_p += 1
                             is_correct = True
                             break
                     if is_correct: break
+                    # print("{0}:{1},{2}\n".format(cand[0],en_w,self.cosSim(self.words[0].vectors[cand[0]], self.words[0].vectors[en_w])))
             if count % 10 == 0:
-                print("{0}/{1}, tp is {2}!".format(count, len(self.lex), self.tp))
-        print("top {0} acc is {1}".format(topn, float(self.tp) / len(self.lex)))
+                print("{0}/{1}, tp is {2}!".format(count, actual_pairs, total_p))
+        print("top {0} acc is {1}".format(topn, float(total_p) / actual_pairs))
 
         if not isinstance(log_file, type(None)):
             fout = codecs.open(log_file, 'a', encoding='UTF-8')
             fout.write('*************************************************\n')
-            fout.write('{0}, lang1:{1}, lang2:{2}, topn:{3}, acc:{4}.\n'.format(self.exp, self.lang[0], self.lang[1], self.topn, float(self.tp) / len(self.lex)))
+            fout.write('{0}, lang1:{1}, lang2:{2}, topn:{3}, hit acc:{4}.\n'.format(self.exp, self.lang[0], self.lang[1], self.topn, float(total_p) / actual_pairs))
+            fout.write('*************************************************\n')
+            fout.close()
+
+    def evalRank(self, log_file = None):
+        count = 0
+        total_rank = 0
+        actual_pairs = 0
+        for p in self.lex:
+            count += 1
+            lang2_w = p[0]
+            lang1_ws = p[1]
+            sim = []
+            smallest_rank = self.words[0].vocab_size+1
+            if lang2_w in self.words[1].vectors:
+                actual_pairs += 1
+                vec = self.words[1].vectors[lang2_w]
+                for w in self.words[0].vectors:
+                    sim.append([w, self.cosSim(vec, self.words[0].vectors[w])])
+                sim.sort(key=lambda x: x[1], reverse=True)
+                for en_w in lang1_ws:
+                    for i in range(len(sim)):
+                        if sim[i][0] == en_w:
+                            if smallest_rank > i+1:
+                                smallest_rank = i+1
+                            break
+                total_rank += smallest_rank
+            if count % 10 == 0:
+                print("{0}/{1}, sum rank is {2}!".format(count, actual_pairs, total_rank))
+        print("mean rank {0}".format(float(total_rank) / actual_pairs))
+
+        if not isinstance(log_file, type(None)):
+            fout = codecs.open(log_file, 'a', encoding='UTF-8')
+            fout.write('*************************************************\n')
+            fout.write('{0}, lang1:{1}, lang2:{2}, topn:{3}, mean rank:{4}.\n'.format(self.exp, self.lang[0], self.lang[1], self.topn, float(total_rank) / actual_pairs))
             fout.write('*************************************************\n')
             fout.close()
 
@@ -110,6 +149,7 @@ if __name__ == '__main__':
     topn = 1
     lang1 = Options.en
     lang2 = Options.zh
+    # >1000, en:51935, es:23878, zh:15148. small scale: en-zh, en:5154,zh:3349. en-es, en:6637,es:4774
     topn1 = 50000
     topn2 = 50000
     log_file = Options.getLogFile('log_trans')
@@ -127,4 +167,4 @@ if __name__ == '__main__':
     evaluator.setTopN(topn)
     evaluator.loadWords(w1, w2, lang1, lang2)
     evaluator.loadLex()
-    evaluator.eval(log_file=log_file)
+    evaluator.evalHit(log_file=log_file)
