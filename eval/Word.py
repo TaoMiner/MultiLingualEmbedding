@@ -37,7 +37,7 @@ class Word():
         with codecs.open(file, 'r', encoding='UTF-8') as fin:
             for line in fin:
                 items = re.split(r'\t', line.strip())
-                if (items[0] == '</s>'): continue
+                if (len(items)<2 or items[0] == '</s>'): continue
                 count += 1
                 if topn <= 0 or count >= topn: break
                 self.vocab_dic[items[0]] = int(items[1])
@@ -71,7 +71,7 @@ class Word():
                     char_set.append(ch)
                 label = b''.join(char_set).decode('utf-8')
                 tmp_vec = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
-                if not isinstance(vocab, type(None)) and label in vocab:
+                if isinstance(vocab, type(None)) or (not isinstance(vocab, type(None)) and label in vocab):
                     self.vectors[label] = tmp_vec
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)

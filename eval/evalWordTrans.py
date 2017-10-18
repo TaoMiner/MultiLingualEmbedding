@@ -105,11 +105,11 @@ if __name__ == '__main__':
 
     w1 = Word()
     w1.loadVocabDic(Options.getExpVocabFile(lang1, Options.word_type), topn=topn1)
-    w1.loadVector(Options.getExpVecFile(exp, lang1, Options.word_type, it))
+    w1.loadVector(Options.getExpVecFile(exp, lang1, Options.word_type, it), vocab=w1.vocab_dic)
 
     w2 = Word()
     w2.loadVocabDic(Options.getExpVocabFile(lang2, Options.word_type), topn=topn2)
-    w2.loadVector(Options.getExpVecFile(exp, lang2, Options.word_type, it))
+    w2.loadVector(Options.getExpVecFile(exp, lang2, Options.word_type, it), vocab=w2.vocab_dic)
 
     evaluator = evaluator()
     evaluator.exp = exp

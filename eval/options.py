@@ -111,8 +111,7 @@ class Options:
     @staticmethod
     # type: 'w': word, 'e' : entity, 's' : sense
     def getExpVecFile(exp, lang, type, it):
-        vocab_index = '1' if Options.getLangStr(lang) == 'en' else '2'
-        return Options.getExpPath(exp) + Options.getLangStr(lang) + 'vec/vectors' + vocab_index + '_' + type + str(it)
+        return Options.getExpPath(exp) + Options.getLangStr(lang) + 'vec/vectors_' + type + str(it)
 
     @staticmethod
     # type: 'w': word, 'e' : entity, 's' : sense

@@ -1830,9 +1830,9 @@ int main(int argc, char **argv) {
         
         // initialize output file
         if(output_path[i][0]!=0){
-            sprintf(model[TEXT_VOCAB][i].output_file, "%svectors%d_word", output_path[i], i+1);
-            sprintf(model[KG_VOCAB][i].output_file, "%svectors%d_entity", output_path[i], i+1);
-            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors%d_sense", output_path[i], i+1);
+            sprintf(model[TEXT_VOCAB][i].output_file, "%svectors_word", output_path[i]);
+            sprintf(model[KG_VOCAB][i].output_file, "%svectors_entity", output_path[i]);
+            sprintf(model[SENSE_VOCAB][i].output_file, "%svectors_sense", output_path[i]);
         }
         
         //initialize save vocab file
