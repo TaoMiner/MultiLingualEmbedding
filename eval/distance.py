@@ -50,6 +50,7 @@ class Distance():
 
         while (1):
             mode_index = int(input(out))
+            self.output("choose {0}\n".format(mode_index))
             if mode_index<=0 or mode_index >= 6 : continue
             if mode_index==5 : break
             if (item_type == Options.entity_type and mode_index % 2 == 1) or (item_type == Options.word_type and mode_index % 2 == 0):
@@ -148,8 +149,11 @@ class Distance():
             self.fout_log.write("{0}".format(output_str))
         print(output_str)
 
-    def setLogFile(self, filename):
-        self.fout_log = codecs.open(filename, 'w', encoding='UTF-8')
+    def setLogFile(self, filename, exp=''):
+        self.fout_log = codecs.open(filename, 'a', encoding='UTF-8')
+        self.fout_log.write('*************************************************\n')
+        if len(exp) > 0:
+            self.fout_log.write("{0}\n".format(exp))
 
     def process(self):
         while (1):
@@ -167,6 +171,7 @@ class Distance():
             item_lang = Options.getLangType(tmp_lang)
             self.findNeighbors(item, item_type, item_lang)
         if not isinstance(self.fout_log, type(None)):
+            self.fout_log.write('*************************************************\n')
             self.fout_log.close()
 
 
