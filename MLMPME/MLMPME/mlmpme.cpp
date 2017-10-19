@@ -1429,7 +1429,7 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
     long long c, d, offset;
     int len = 0;
     for (len = 0;len<MAX_SENTENCE_LENGTH;len++)
-        if (sen[len] == 0 || attention[len] == -1) break;
+        if (sen[len] == 0 || isequal(attention[len], -1)) break;
     for (d = 0; d < MAX_SENTENCE_LENGTH; d++) {
         if (sen[d]==0) break;
         offset = layer_size * sen[d];
@@ -1453,7 +1453,7 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[
     // length of sen
     for (i=0;i<2;i++)
         for(a=0;a<MAX_SENTENCE_LENGTH;a++)
-            if (sen[i][a]==0 || attention[i][a] == -1){
+            if (sen[i][a]==0 || isequal(attention[i][a], -1)){
                 len[i] = a;
                 if (a==0) return;       // disgard those have empty sents
                 break;
