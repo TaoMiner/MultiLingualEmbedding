@@ -105,7 +105,7 @@ class evaluator():
         if not isinstance(log_file, type(None)):
             fout = codecs.open(log_file, 'a', encoding='UTF-8')
             fout.write('*************************************************\n')
-            fout.write('{0}, lang1:{1}, lang2:{2}, topn:{3}, hit acc:{4}.\n'.format(self.exp, self.lang[0], self.lang[1], self.topn, float(total_p) / actual_pairs))
+            fout.write('{0}, lang1:{1}, vocab size:{2}. lang2:{3}, vocab size:{4} topn:{5}, hit acc:{6}.\n'.format(self.exp, self.lang[0], self.words[0].vocab_size, self.lang[1], self.words[1].vocab_size, self.topn, float(total_p) / actual_pairs))
             fout.write('*************************************************\n')
             fout.close()
 
@@ -139,7 +139,7 @@ class evaluator():
         if not isinstance(log_file, type(None)):
             fout = codecs.open(log_file, 'a', encoding='UTF-8')
             fout.write('*************************************************\n')
-            fout.write('{0}, lang1:{1}, lang2:{2}, topn:{3}, mean rank:{4}.\n'.format(self.exp, self.lang[0], self.lang[1], self.topn, float(total_rank) / actual_pairs))
+            fout.write('{0}, lang1:{1}, vocab size:{2}. lang2:{3}, vocab size:{4} topn:{5}, mean rank:{6}.\n'.format(self.exp,self.lang[0],self.words[0].vocab_size,self.lang[1],self.words[1].vocab_size,self.topn,float(total_rank) / actual_pairs))
             fout.write('*************************************************\n')
             fout.close()
 
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     lang1 = Options.en
     lang2 = Options.zh
     # >1000, en:51935, es:23878, zh:15148. small scale: en-zh, en:5154,zh:3349. en-es, en:6637,es:4774
-    topn1 = 50000
-    topn2 = 50000
+    topn1 = 51935
+    topn2 = 15148
     log_file = Options.getLogFile('log_trans')
 
     w1 = Word()
