@@ -91,6 +91,16 @@ class Options:
         return tmp_lang
 
     @staticmethod
+    def getLangType(lang):
+        if lang == 'en':
+            return Options.en
+        if lang == 'es':
+            return Options.es
+        if lang == 'zh':
+            return Options.zh
+        return ''
+
+    @staticmethod
     def getEntityIdFile(lang = 'eng'):
         return Options.root_path + 'dump20170401/' + Options.getLangStr(lang) + 'wiki_cl/vocab_entity.dat'
 

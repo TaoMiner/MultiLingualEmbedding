@@ -99,7 +99,7 @@ class evaluator():
                     if is_correct: break
                     # print("{0}:{1},{2}\n".format(cand[0],en_w,self.cosSim(self.words[0].vectors[cand[0]], self.words[0].vectors[en_w])))
             if count % 10 == 0:
-                print("{0}/{1}, tp is {2}!".format(count, actual_pairs, total_p))
+                print("{0}/{1}, tp is {2}!".format(count, len(self.lex), total_p))
         print("top {0} acc is {1}".format(topn, float(total_p) / actual_pairs))
 
         if not isinstance(log_file, type(None)):

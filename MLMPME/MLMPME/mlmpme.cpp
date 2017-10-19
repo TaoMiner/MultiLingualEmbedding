@@ -1702,10 +1702,9 @@ void TrainModel(){
             multi_lang_id1 = 0;
             multi_lang_id2 = i+1;
             TrainMultiModel();
+            if (is_normal==1)
+                normalize();
         }
-    
-    if (is_normal==1)
-        normalize();
 }
 
 int ArgPos(char *str, int argc, char **argv) {
