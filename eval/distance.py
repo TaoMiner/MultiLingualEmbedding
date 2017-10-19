@@ -47,16 +47,17 @@ class Distance():
                             3: nearest type in other languages.\n\
                             4: nearest other type in other languages.\n\
                             5: EXIT.\n'.format(item_type, Options.getLangStr(lang), item)
-
+        res = 0
         while (1):
             mode_index = int(input(out))
-            self.output("choose {0}\n".format(mode_index))
             if mode_index<=0 or mode_index >= 6 : continue
             if mode_index==5 : break
+            self.output("choose {0}\n".format(mode_index))
             if (item_type == Options.entity_type and mode_index % 2 == 1) or (item_type == Options.word_type and mode_index % 2 == 0):
-                self.findEntityNeighbor(mode_index, item, lang)
+                res = self.findEntityNeighbor(mode_index, item, lang)
             else :
-                self.findWordNeighbor(mode_index, item, lang)
+                res = self.findWordNeighbor(mode_index, item, lang)
+            if not res: break
 
     def findWordNeighbor(self, mode_index, label, lang):
         # model index 1,3 means label is a word, 2,4 means label is a entity
@@ -69,20 +70,20 @@ class Distance():
                 id = self.entities[lang_index].id_entity[label]
             else:
                 self.output("no such entity:{0}!".format(label))
-                return
+                return False
             if id in self.entities[lang_index].vectors:
                 v1 = self.entities[lang_index].vectors[id]
                 type_str = "Entity: {0}".format(id)
             else:
                 self.output("no such entity embedding:{0}!".format(label))
-                return
+                return False
         else:
             if label in self.words[lang_index].vectors:
                 v1 = self.words[lang_index].vectors[label]
                 type_str = "Word"
             else:
                 self.output("no such word embedding:{0}!".format(label))
-                return
+                return False
 
         # single language
         if mode_index <= 2:
@@ -94,30 +95,31 @@ class Distance():
                 self.output("{0}:{1}'s nearest {2} neighbors in lang: {3}.\n".format(type_str, label, self.topN,
                                                                                              self.lang[i]))
                 self.findNearest(v1, self.words[i])
+        return True
 
     def findEntityNeighbor(self, mode_index, label, lang):
         lang_index = self.lang.index(lang)
         # model index 1,3 means label is a entity, 2,4 means label is a word
         type_str = ''
         if mode_index %2 ==1:
-            if not isinstance(self.entities[lang_index].id_entity, type(None)) and label in self.entities[lang_index].id_entity:
-                id = self.entities[lang_index].id_entity[label]
+            if not isinstance(self.entities[lang_index].entity_id, type(None)) and label in self.entities[lang_index].entity_id:
+                id = self.entities[lang_index].entity_id[label]
             else:
                 self.output("no such entity:{0}!".format(label))
-                return
+                return False
             if id in self.entities[lang_index].vectors:
                 v1 = self.entities[lang_index].vectors[id]
                 type_str = "Entity: {0}".format(id)
             else:
                 self.output("no such entity embedding:{0}!".format(label))
-                return
+                return False
         else:
             if label in self.words[lang_index].vectors:
                 v1 = self.words[lang_index].vectors[label]
                 type_str = "Word"
             else:
                 self.output("no such word embedding:{0}!".format(label))
-                return
+                return False
 
         # single language
         if mode_index <=2:
@@ -128,6 +130,7 @@ class Distance():
                 if i == lang_index: continue
                 self.output("{0}:{1}'s nearest {2} entity neighbors in lang: {3}.\n".format(type_str, label, self.topN, self.lang[i]))
                 self.findNearest(v1, self.entities[i], idDic=self.entities[i].id_entity)
+        return True
 
     def findNearest(self, vec, model, item='', idDic = None):
         sim = []
@@ -185,15 +188,18 @@ if __name__ == '__main__':
     w1.loadVector(Options.getExpVecFile(exp, lang[0], Options.word_type, it))
     e1 = Entity()
     e1.id_entity = e1.loadEntityIdDic(Options.getEntityIdFile(lang[0]))
+    e1.entity_id = e1.loadEntityDic(Options.getEntityIdFile(lang[0]))
     e1.loadVector(Options.getExpVecFile(exp, lang[0], Options.entity_type, it))
 
     w2 = Word()
     w2.loadVector(Options.getExpVecFile(exp, lang[1], Options.word_type, it))
     e2 = Entity()
     e2.id_entity = e2.loadEntityIdDic(Options.getEntityIdFile(lang[1]))
+    e2.entity_id = e2.loadEntityDic(Options.getEntityIdFile(lang[1]))
     e2.loadVector(Options.getExpVecFile(exp, lang[1], Options.entity_type, it))
 
     dis = Distance()
     dis.setLogFile(log_file)
     dis.loadModels(w1, e1, lang[0])
+    dis.loadModels(w2, e2, lang[1])
     dis.process()

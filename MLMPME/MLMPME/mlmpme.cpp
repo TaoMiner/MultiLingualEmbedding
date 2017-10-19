@@ -73,10 +73,10 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, shareSyn0 = 1, min_count = 5, has_kg_att = 1, has_w_att = 1, is_normal = 1;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1,save_iter = 1, negative = 5, iter = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 1;
 long long layer_size = 100;
 const int table_size = 1e8;
-real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, cross_starting_alpha, cross_alpha;
+real alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, cross_starting_alpha, cross_alpha,has_kg_att = 1, has_w_att = 1;
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
@@ -874,6 +874,7 @@ int readContextLines(char *multi_context_file){
 
 void InitMultiModel(){
     int max_num = 1500000;            // 1m, max num clinks
+    real sum;
     cross_alpha = alpha;
     for(int i = 0; i < NUM_LANG; i++){
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
@@ -890,6 +891,13 @@ void InitMultiModel(){
     }
     for (int i=0;i<NUM_LANG;i++)
         cross_links[i] = (int *)realloc(cross_links[i], max_num_clink * sizeof(int));
+    
+    // init kg and w att weight
+    if (has_w_att!=0 || has_kg_att!=0){
+        sum = has_kg_att + has_w_att;
+        has_w_att /= sum;
+        has_kg_att /= sum;
+    }
 }
 
 void *TrainTextModelThread(void *id) {
@@ -1618,6 +1626,7 @@ void *BilbowaThread(void *id) {
     long long par_entity[2];
     real kg_attention[2][MAX_SENTENCE_LENGTH];
     real w_attention[2][MAX_SENTENCE_LENGTH];
+    real attention[2][MAX_SENTENCE_LENGTH];
     long long fi_size;
     int line_num = 0, cur_line = 0, res = 0;
     //km parameter
@@ -1635,6 +1644,10 @@ void *BilbowaThread(void *id) {
         for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
             kg_attention[i][j] = 1;
             w_attention[i][j] = 1;
+            if (isequal(has_kg_att, 0) && isequal(has_w_att, 0))
+                attention[i][j] = 1;
+            else
+                attention[i][j] = 0;
         }
     //skip the current line
     if((long long)id!=0) ReadSent(fi_par, par_sen, par_entity);
@@ -1651,22 +1664,23 @@ void *BilbowaThread(void *id) {
         for(int i=0;i<2;i++){
             par_sen[i][0] = 0;
             par_entity[i] = -1;
-            if (has_kg_att)
-                kg_attention[i][0] = -1;
-            if (has_w_att)
-                w_attention[i][0] = -1;
         }
         res = ReadSent(fi_par, par_sen, par_entity);
         
         if (res <=0) continue;
-        if (has_kg_att) SetKGAttention(par_sen, par_entity, kg_attention);
-        if (has_w_att) SetWAttention(par_sen, w_attention, &km_var);
-        for (int i=0;i<2;i++)
-            for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
-                if (kg_attention[i][j] == -1 || w_attention[i][j] == -1) break;
-                kg_attention[i][j] += w_attention[i][j]/2;
-            }
-        BilBOWASentenceUpdate(par_sen, kg_attention, deltas);
+        if (has_kg_att>0 || has_w_att>0){
+            if (has_kg_att>0) SetKGAttention(par_sen, par_entity, kg_attention);
+            if (has_w_att>0) SetWAttention(par_sen, w_attention, &km_var);
+            for (int i=0;i<2;i++)
+                for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
+                    if (kg_attention[i][j] == -1 || w_attention[i][j] == -1) {
+                        attention[i][j] = -1;
+                        break;
+                    }
+                    attention[i][j] = has_kg_att*kg_attention[i][j] + has_w_att*w_attention[i][j];
+                }
+        }
+        BilBOWASentenceUpdate(par_sen, attention, deltas);
         cur_line ++;
         cross_line_count++;
         
@@ -1814,8 +1828,8 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-save_iter", argc, argv)) > 0) save_iter = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-share_syn", argc, argv)) > 0) shareSyn0 = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atof(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atof(argv[i + 1]);
     if ((i = ArgPos((char *)"-is_normal", argc, argv)) > 0) is_normal = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-cross_model_weight", argc, argv)) > 0) cross_model_weight = atof(argv[i + 1]);
     
