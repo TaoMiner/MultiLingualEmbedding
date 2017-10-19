@@ -41,15 +41,15 @@ class Distance():
         return res
 
     def findNeighbors(self, item, item_type, lang):
-        out = 'Choose neighbors type:\n\
+        out = 'OK!{0}:{1}:{2}, Choose neighbors type:\n\
                             1: nearest type in current language.\n\
                             2: nearest other type in current language.\n\
                             3: nearest type in other languages.\n\
                             4: nearest other type in other languages.\n\
-                            5: EXIT.\n'
+                            5: EXIT.\n'.format(item_type, Options.getLangStr(lang), item)
 
         while (1):
-            mode_index = int(raw_input(out))
+            mode_index = int(input(out))
             if mode_index<=0 or mode_index >= 6 : continue
             if mode_index==5 : break
             if (item_type == Options.entity_type and mode_index % 2 == 1) or (item_type == Options.word_type and mode_index % 2 == 0):
@@ -57,45 +57,75 @@ class Distance():
             else :
                 self.findWordNeighbor(mode_index, item, lang)
 
-    def findWordNeighbor(self, mode_index, item, lang):
+    def findWordNeighbor(self, mode_index, label, lang):
+        # model index 1,3 means label is a word, 2,4 means label is a entity
         lang_index = self.lang.index(lang)
-        if item in self.words[lang_index].vectors:
-            v1 = self.words[lang_index].vectors[item]
+
+        type_str = ''
+        if mode_index % 2 == 0:
+            if not isinstance(self.entities[lang_index].id_entity, type(None)) and label in self.entities[
+                lang_index].id_entity:
+                id = self.entities[lang_index].id_entity[label]
+            else:
+                self.output("no such entity:{0}!".format(label))
+                return
+            if id in self.entities[lang_index].vectors:
+                v1 = self.entities[lang_index].vectors[id]
+                type_str = "Entity: {0}".format(id)
+            else:
+                self.output("no such entity embedding:{0}!".format(label))
+                return
         else:
-            self.output("no such word embedding:{0}!".format(item))
-            return
+            if label in self.words[lang_index].vectors:
+                v1 = self.words[lang_index].vectors[label]
+                type_str = "Word"
+            else:
+                self.output("no such word embedding:{0}!".format(label))
+                return
+
         # single language
         if mode_index <= 2:
-            self.output("Word: {0}'s nearest {1} neighbors in lang: {2}.\n".format(item, self.topN, lang))
-            self.findNearest(v1, self.words[lang_index], item=item)
+            self.output("{0}:{1}'s nearest {2} neighbors in lang: {3}.\n".format(type_str, label, self.topN, lang))
+            self.findNearest(v1, self.words[lang_index], item=label)
         else:  # cross lingual
             for i in range(len(self.lang)):
                 if i == lang_index: continue
-                self.output("Word: {0}'s nearest {1} neighbors in lang: {2}.\n".format(item, self.topN,
+                self.output("{0}:{1}'s nearest {2} neighbors in lang: {3}.\n".format(type_str, label, self.topN,
                                                                                              self.lang[i]))
                 self.findNearest(v1, self.words[i])
 
     def findEntityNeighbor(self, mode_index, label, lang):
         lang_index = self.lang.index(lang)
-        if not isinstance(self.entities[lang_index].id_entity, type(None)) and label in self.entities[lang_index].id_entity:
-            id = self.entities[lang_index].id_entity[label]
+        # model index 1,3 means label is a entity, 2,4 means label is a word
+        type_str = ''
+        if mode_index %2 ==1:
+            if not isinstance(self.entities[lang_index].id_entity, type(None)) and label in self.entities[lang_index].id_entity:
+                id = self.entities[lang_index].id_entity[label]
+            else:
+                self.output("no such entity:{0}!".format(label))
+                return
+            if id in self.entities[lang_index].vectors:
+                v1 = self.entities[lang_index].vectors[id]
+                type_str = "Entity: {0}".format(id)
+            else:
+                self.output("no such entity embedding:{0}!".format(label))
+                return
         else:
-            self.output("no such entity:{0}!".format(label))
-            return
-        if id in self.entities[lang_index].vectors:
-            v1 = self.entities[lang_index].vectors[id]
-        else:
-            self.output("no such entity embedding:{0}!".format(label))
-            return
+            if label in self.words[lang_index].vectors:
+                v1 = self.words[lang_index].vectors[label]
+                type_str = "Word"
+            else:
+                self.output("no such word embedding:{0}!".format(label))
+                return
 
         # single language
         if mode_index <=2:
-            self.output("Entity: {0}:{1}'s nearest {2} neighbors in lang: {3}.\n".format(id, label, self.topN, lang))
+            self.output("{0}:{1}'s nearest {2} entity neighbors in lang: {3}.\n".format(type_str, label, self.topN, lang))
             self.findNearest(v1, self.entities[lang_index], idDic=self.entities[lang_index].id_entity)
         else:   #cross lingual
             for i in range(len(self.lang)):
                 if i == lang_index: continue
-                self.output("Entity: {0}:{1}'s nearest {2} neighbors in lang: {3}.\n".format(id, label, self.topN, self.lang[i]))
+                self.output("{0}:{1}'s nearest {2} entity neighbors in lang: {3}.\n".format(type_str, label, self.topN, self.lang[i]))
                 self.findNearest(v1, self.entities[i], idDic=self.entities[i].id_entity)
 
     def findNearest(self, vec, model, item='', idDic = None):
@@ -123,7 +153,7 @@ class Distance():
 
     def process(self):
         while (1):
-            item = raw_input("Enter word or entity (EXIT to break): ")
+            item = input("Enter word or entity (EXIT to break): ")
             if item == 'EXIT': break
             m = inputRE.match(item)
             if not m:
