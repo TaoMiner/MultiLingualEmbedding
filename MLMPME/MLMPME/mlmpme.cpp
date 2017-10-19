@@ -1673,13 +1673,34 @@ void *BilbowaThread(void *id) {
             if (has_w_att>0) SetWAttention(par_sen, w_attention, &km_var);
             for (int i=0;i<2;i++)
                 for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
-                    if (kg_attention[i][j] == -1 || w_attention[i][j] == -1) {
+                    if (isequal(kg_attention[i][j], -1) || isequal(w_attention[i][j], -1)) {
                         attention[i][j] = -1;
                         break;
                     }
                     attention[i][j] = has_kg_att*kg_attention[i][j] + has_w_att*w_attention[i][j];
                 }
         }
+        /* kg att * w att
+        if (has_kg_att>0 || has_w_att>0){
+            if (has_kg_att>0) SetKGAttention(par_sen, par_entity, kg_attention);
+            if (has_w_att>0) SetWAttention(par_sen, w_attention, &km_var);
+            for (int i=0;i<2;i++){
+                for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
+                    if (isequal(kg_attention[i][j], -1) ||isequal(w_attention[i][j], -1)) {
+                        attention[i][j] = -1;
+                        break;
+                    }
+                    attention[i][j] =kg_attention[i][j] * w_attention[i][j];
+                    sum += attention[i][j];
+                }
+                if (sum>0)
+                    for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
+                        if (isequal(attention[i][j], -1)) break;
+                        attention[i][j]/=sum;}
+                sum = 0;
+            }
+        }
+         */
         BilBOWASentenceUpdate(par_sen, attention, deltas);
         cur_line ++;
         cross_line_count++;
