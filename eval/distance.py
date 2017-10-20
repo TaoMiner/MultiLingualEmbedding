@@ -65,9 +65,9 @@ class Distance():
 
         type_str = ''
         if mode_index % 2 == 0:
-            if not isinstance(self.entities[lang_index].id_entity, type(None)) and label in self.entities[
-                lang_index].id_entity:
-                id = self.entities[lang_index].id_entity[label]
+            if not isinstance(self.entities[lang_index].entity_id, type(None)) and label in self.entities[
+                lang_index].entity_id:
+                id = self.entities[lang_index].entity_id[label]
             else:
                 self.output("no such entity:{0}!".format(label))
                 return False
