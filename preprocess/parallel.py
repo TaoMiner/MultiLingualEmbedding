@@ -153,10 +153,10 @@ class Parallel():
                     if len(sent_words[i]) > 0:
                         tmp_contexts.add(sent_words[i])
                 if len(tmp_contexts) > 0:
-                    tmp_context_set = contexts_dict[anc[0]] if anc[0] in contexts_dict else set()
-                    tmp_context_set.update(tmp_contexts)
+                    tmp_context_set = contexts_dict[anc[0]] if anc[0] in contexts_dict else []
+                    tmp_context_set.append(tmp_contexts)
                     contexts_dict[anc[0]] = tmp_context_set
-        return contexts_dict
+        return contexts_dict            # {ent_id:[context_set, ...], ...}
 
     # keep the anchor
     def extractContext2(self, sents, entity_dic=None, has_brace = False):
@@ -231,12 +231,12 @@ class Parallel():
             sents2 = self.corpus[1][self.clinks[cl]]
             contexts_dict1 = self.extractContext(sents1, stop_words=self.stop_words[0], words=self.words[0])
             contexts_dict2 = self.extractContext(sents2, stop_words=self.stop_words[1], words=self.words[1])
-            for t1 in contexts_dict1:
+            for t1 in contexts_dict1:       # {ent_id:[context_set, ...], ...}
                 if t1 not in self.clinks or self.clinks[t1] not in contexts_dict2:
                     continue
-                context_set1 = contexts_dict1[t1]
-                context_set2 = contexts_dict2[self.clinks[t1]]
-                self.parallel_contexts.append([cl, self.clinks[cl], context_set1, context_set2])
+                context_list1 = contexts_dict1[t1]
+                context_list2 = contexts_dict2[self.clinks[t1]]
+                self.parallel_contexts.append([cl, self.clinks[cl], context_list1, context_list2])
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
     def saveParaData(self, filename):
@@ -244,7 +244,9 @@ class Parallel():
             for context in self.parallel_contexts:
                 if len(context) != 4: continue
                 if len(context[0]) <1 or len(context[1])<1 or len(context[2])<1 or len(context[3])<1: continue
-                fout.write("%s\t%s\t%s\t%s\n" % (context[0], context[1], ' '.join(context[2]), ' '.join(context[3])))
+                fout.write("%s\t%s\n" % (context[0], "\t".join(" ".join(x) for x in context[2])))
+                fout.write("%s\t%s\n" % (context[1], "\t".join(" ".join(x) for x in context[3])))
+                #fout.write("%s\t%s\t%s\t%s\n" % (context[0], context[1], ' '.join(context[2]), ' '.join(context[3])))
 
 if __name__ == '__main__':
     str_lang1 = 'en'
@@ -252,7 +254,7 @@ if __name__ == '__main__':
     cross_file = '/home/caoyx/data/paradata/cross_links_all_id.dat'
     par_file = '/home/caoyx/data/paradata/para_contexts.' + str_lang1 + '-' + str_lang2
     stop_word_file = ['/home/caoyx/data/en_stop_words', '/home/caoyx/data/es_stop_words','/home/caoyx/data/zh_stop_words']
-    word_vocab_file = ['/home/caoyx/data/etc/exp2/envec/vocab1_word.txt', '/home/caoyx/data/etc/exp2/esvec/vocab2_word.txt', '/home/caoyx/data/etc/exp3/zhvec/vocab2_word.txt']
+    word_vocab_file = ['/home/caoyx/data/etc/vocab/envocab/vocab_word.txt', '/home/caoyx/data/etc/vocab/esvocab/vocab_word.txt', '/home/caoyx/data/etc/vocab/zhvocab/vocab_word.txt']
     lang1 = languages.index(str_lang1)
     lang2 = languages.index(str_lang2)
     par = Parallel(lang1, lang2)

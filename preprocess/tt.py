@@ -15,8 +15,6 @@ sentence = "We don't live here."
 print nlp.annotate(sentence, properties=props)
 '''
 
-a = [2,3,1]
+a = [set(['a','b']),set(['c','d','c']),set(['e','f'])]
 
-a.sort(key=lambda x:x, reverse=True)
-
-print a
+print "%s\n" % ",".join("-".join(x) for x in a)
