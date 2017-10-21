@@ -153,8 +153,8 @@ class Parallel():
                     if len(sent_words[i]) > 0:
                         tmp_contexts.add(sent_words[i])
                 if len(tmp_contexts) > 0:
-                    tmp_context_set = contexts_dict[anc[0]] if anc[0] in contexts_dict else []
-                    tmp_context_set.append(tmp_contexts)
+                    tmp_context_set = contexts_dict[anc[0]] if anc[0] in contexts_dict else set()
+                    tmp_context_set.update(tmp_contexts)
                     contexts_dict[anc[0]] = tmp_context_set
         return contexts_dict            # {ent_id:[context_set, ...], ...}
 
@@ -234,18 +234,18 @@ class Parallel():
             for t1 in contexts_dict1:       # {ent_id:[context_set, ...], ...}
                 if t1 not in self.clinks or self.clinks[t1] not in contexts_dict2:
                     continue
-                context_list1 = contexts_dict1[t1]
-                context_list2 = contexts_dict2[self.clinks[t1]]
-                self.parallel_contexts.append([cl, self.clinks[cl], context_list1, context_list2])
+                context_set1 = contexts_dict1[t1]
+                context_set2 = contexts_dict2[self.clinks[t1]]
+                self.parallel_contexts.append([cl, t1, context_set1, self.clinks[cl], self.clinks[t1], context_set2])
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
     def saveParaData(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for context in self.parallel_contexts:
-                if len(context) != 4: continue
-                if len(context[0]) <1 or len(context[1])<1 or len(context[2])<1 or len(context[3])<1: continue
-                fout.write("%s\t%s\n" % (context[0], "\t".join(" ".join(x) for x in context[2])))
-                fout.write("%s\t%s\n" % (context[1], "\t".join(" ".join(x) for x in context[3])))
+                if len(context) != 6: continue
+                if len(context[0]) <1 or len(context[1])<1 or len(context[2])<1 or len(context[3])<1 or len(context[4])<1 or len(context[5])<1: continue
+                fout.write("1\t%s\t%s\t%s\n" % (context[0], context[1], " ".join(context[2])))
+                fout.write("2\t%s\t%s\t%s\n" % (context[3], context[4], " ".join(context[5])))
                 #fout.write("%s\t%s\t%s\t%s\n" % (context[0], context[1], ' '.join(context[2]), ' '.join(context[3])))
 
 if __name__ == '__main__':
