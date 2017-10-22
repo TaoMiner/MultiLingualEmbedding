@@ -1511,8 +1511,10 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
     if (shareSyn0!=1) VOCAB = SENSE_VOCAB;
     
     for (i = 0; i<2; i++)
-        for (j=0;j<layer_size;j++)
-            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
+        for (j=0;j<layer_size;j++){
+            //rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
+            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j];
+        }
     
     for (i=0;i<2;i++){
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
@@ -1641,7 +1643,7 @@ void *BilbowaThread(void *id) {
         
         if (has_kg_att>0 && valid_entity) SetKGAttention(par_sen, par_entity, kg_attention);
         if (has_w_att>0) SetWAttention(par_sen, w_attention, &km_var);
-
+/*
         if ( (has_kg_att>0 && valid_entity) || has_w_att>0){
             
             for (int i=0;i<2;i++)
@@ -1653,7 +1655,7 @@ void *BilbowaThread(void *id) {
                     attention[i][j] = has_kg_att*kg_attention[i][j] + has_w_att*w_attention[i][j];
                 }
         }
-        /* kg att * w att
+         kg att * w att  */
          if ( (has_kg_att>0 && valid_entity) || has_w_att>0){
             for (int i=0;i<2;i++){
                 for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
@@ -1672,7 +1674,7 @@ void *BilbowaThread(void *id) {
                 sum = 0;
             }
          }
-         */
+        
         BilBOWASentenceUpdate(par_sen, attention, deltas);
     } // while training loop
     fclose(fi_par);
