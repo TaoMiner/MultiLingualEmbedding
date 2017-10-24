@@ -803,16 +803,16 @@ void readCrossLinks(char *cross_link_file, int lang_id[2]){
                 if (tmp_clink_idx!=-1){
                     tmp_clink = cross_links[lang_id[0]][tmp_clink_idx];
                     if (tmp_clink == clink[0]){
-                        cross_links[lang_id[2]][tmp_clink_idx] = clink[1];
-                        model[KG_VOCAB][lang_id[2]].vocab[clink[1]].index = tmp_clink_idx;
+                        cross_links[lang_id[1]][tmp_clink_idx] = clink[1];
+                        model[KG_VOCAB][lang_id[1]].vocab[clink[1]].index = tmp_clink_idx;
                         total_num ++;
                     }
                 }
                 else{
-                    cross_links[lang_id[1]][line_count] = clink[0];
-                    model[KG_VOCAB][lang_id[1]].vocab[clink[0]].index = line_count;
-                    cross_links[lang_id[2]][line_count] = clink[1];
-                    model[KG_VOCAB][lang_id[2]].vocab[clink[1]].index = line_count;
+                    cross_links[lang_id[0]][line_count] = clink[0];
+                    model[KG_VOCAB][lang_id[0]].vocab[clink[0]].index = line_count;
+                    cross_links[lang_id[1]][line_count] = clink[1];
+                    model[KG_VOCAB][lang_id[1]].vocab[clink[1]].index = line_count;
                     line_count++;
                     total_num ++;
                 }
@@ -849,7 +849,7 @@ int readContextLines(char *multi_context_file, int lang_id[2]){
     }
     fclose(fin);
     if (debug_mode > 0) {
-        printf("Read %d parallel sents from lang %d to lang %d from file: %s!\n", line_count, lang_id[0], lang_id[2], multi_context_file);
+        printf("Read %d parallel sents from lang %d to lang %d from file: %s!\n", line_count, lang_id[0], lang_id[1], multi_context_file);
     }
     return line_count;
 }
@@ -921,11 +921,12 @@ void *TrainTextModelThread(void *id) {
     long long a, b, d, cw, word_index=-1, last_word_index, sentence_length = 0, sentence_position = 0;
     long long word_count = 0, anchor_count = 0, anchor_position=0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1], all_train_items;
     long long l1, l2, c, target, label = 0;
-    unsigned long long next_random = (long long)id;
+    int lang_id = (long long)id / num_threads-NUM_LANG, thread_id = (long long)id % num_threads;
+    unsigned long long next_random = (long long)thread_id;
     int anchor_pos = -1, word_begin[MAX_NUM_MENTION], mention_length = 1;
     char item[MAX_STRING], tmp_word[MAX_STRING], word[MAX_STRING], entity[MAX_STRING], out_str[MAX_STRING];
     size_t tmp_word_len = 0;
-    int lang_id = (long long)id / num_threads-NUM_LANG, thread_id = (long long)id % num_threads;
+    
     real f, g;
     clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
@@ -962,11 +963,11 @@ void *TrainTextModelThread(void *id) {
                 now = clock();
                 sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, item_count_actual / (real)(all_train_items + 1) * 100, mono_words->epoch);
                 for (int l = 0;l <NUM_LANG;l++)
-                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l, model[KG_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG;l++)
-                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l, model[TEXT_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+1,bilbowa_grad);
+                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+1+1,bilbowa_grad);
                 printf("%sWords/sec: %.2fK  ", out_str,
                        item_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
