@@ -74,11 +74,11 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1;
-long long layer_size = 100, max_train_items = 0, item_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1,has_kg_att = 1, has_w_att = 1;
+long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
-real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1,has_kg_att = 1, has_w_att = 1, XLING_LAMBDA = 1;
+real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, XLING_LAMBDA = 1;
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
@@ -391,8 +391,6 @@ void ReadVocab(struct vocab *mono_vocab) {
         printf("Size of Vocab %d for lang %d: %lld\n", mono_vocab->vocab_type, mono_vocab->lang, mono_vocab->vocab_size);
         printf("Items in train file: %lld\n", mono_vocab->train_items);
     }
-    if (mono_vocab->train_items > max_train_items)
-        max_train_items = mono_vocab->train_items;
     fin = fopen(mono_vocab->train_file, "rb");
     if (fin == NULL) {
         printf("ERROR: training data file not found!\n");
@@ -467,8 +465,6 @@ void LearnWordVocabFromTrainFile(int lang_id) {
         printf("lang %d: Word Vocab size: %lld\n", lang_id, mono_vocab->vocab_size);
         printf("lang %d: Words in train file: %lld\n", lang_id, mono_vocab->train_items);
     }
-    if (mono_vocab->train_items > max_train_items)
-        max_train_items = mono_vocab->train_items;
     mono_vocab->file_size = ftell(fin);
     fclose(fin);
 }
@@ -511,8 +507,6 @@ void LearnEntityVocabFromTrainFile(int lang_id) {
         printf("lang %d: Entity vocab size: %lld\n", lang_id, entity_vocab->vocab_size);
         printf("lang %d: Entities in train file: %lld\n", lang_id, entity_vocab->train_items);
     }
-    if (entity_vocab->train_items > max_train_items)
-        max_train_items = entity_vocab->train_items;
     entity_vocab->file_size = ftell(fin);
     fclose(fin);
 }
@@ -581,8 +575,6 @@ void LearnSenseVocabFromTrainFile(int lang_id) {
         printf("Lang %d: Sense Vocab size: %lld\n", lang_id, sense_vocab->vocab_size);
         printf("Lang %d: Anchors in train file: %lld\n", lang_id, sense_vocab->train_items);
     }
-    if (sense_vocab->train_items > max_train_items)
-        max_train_items = sense_vocab->train_items;
     sense_vocab->file_size = ftell(fin);
     fclose(fin);
 }
@@ -631,8 +623,6 @@ void LearnVocabFromTrainFile(int model_type, int lang_id){
     else if(KG_VOCAB == model_type) LearnEntityVocabFromTrainFile(lang_id);
     else if(SENSE_VOCAB == model_type) LearnSenseVocabFromTrainFile(lang_id);
     else printf("no such model type!");
-    if (model[model_type][lang_id].train_items > max_train_items)
-        max_train_items = model[model_type][lang_id].train_items;
 }
 
 void InitNet(struct vocab *mono_vocab) {
@@ -856,7 +846,6 @@ int readContextLines(char *multi_context_file, int lang_id[2]){
 
 void InitMultiModel(){
     int max_num = 1500000, lang_id[2];            // 1m, max num clinks
-    real sum;
     for(int i = 0; i < NUM_LANG; i++){
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
         _clr(cross_links[i],max_num);
@@ -871,13 +860,6 @@ void InitMultiModel(){
     }
     for (int i=0;i<NUM_LANG;i++)
         cross_links[i] = (int *)realloc(cross_links[i], max_num_clink * sizeof(int));
-    
-    // init kg and w att weight
-    if (has_w_att!=0 || has_kg_att!=0){
-        sum = has_kg_att + has_w_att;
-        has_w_att /= sum;
-        has_kg_att /= sum;
-    }
 }
 
 void UpdateEmbeddings(real *embeddings, real *grads, int offset, int num_updates, real *deltas, real weight) {
@@ -919,7 +901,7 @@ void resetSenseCluster(int lang_id){
 
 void *TrainTextModelThread(void *id) {
     long long a, b, d, cw, word_index=-1, last_word_index, sentence_length = 0, sentence_position = 0;
-    long long word_count = 0, anchor_count = 0, anchor_position=0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1], all_train_items;
+    long long word_count = 0, anchor_count = 0, anchor_position=0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1], all_train_words;
     long long l1, l2, c, target, label = 0;
     int lang_id = (long long)id / num_threads-NUM_LANG, thread_id = (long long)id % num_threads;
     unsigned long long next_random = (long long)thread_id;
@@ -946,37 +928,39 @@ void *TrainTextModelThread(void *id) {
         // If two languages have different amounts of training data,
         // recycle the smaller language data while there is more data
         // for the other language
-        all_train_items = max_train_items * NUM_EPOCHS * NUM_LANG * (NUM_MODEL-1);
+        all_train_words = max_train_words * NUM_EPOCHS * NUM_LANG;
     else {
-        all_train_items = EARLY_STOP;
+        all_train_words = EARLY_STOP;
     }
     if (dump_every < 0) {
-        dump_every = max_train_items / abs(dump_every);
+        dump_every = max_train_words / abs(dump_every);
     }
     fseek(fi, mono_words->file_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
     for(a=0;a<MAX_NUM_MENTION;a++) word_begin[a] = 0;
     while (1) {
         if (word_count - last_word_count > 10000) {
-            item_count_actual += word_count - last_word_count;
+            word_count_actual += word_count - last_word_count;
             last_word_count = word_count;
             if ((debug_mode > 1)) {
                 now = clock();
-                sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, item_count_actual / (real)(all_train_items + 1) * 100, mono_words->epoch);
+                sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, word_count_actual / (real)(all_train_words + 1) * 100, mono_words->epoch);
                 for (int l = 0;l <NUM_LANG;l++)
                     sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG-1;l++)
                     sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
-                printf("%sWords/sec: %.2fK  ", out_str,
-                       item_count_actual / ((real)(now - start + 1) /
+                sprintf(out_str, "%sWords/sec: %.2fK  ",out_str, word_count_actual / ((real)(now - start + 1) /
+                                                                                      (real)CLOCKS_PER_SEC * 1000));
+                printf("%sEntities/sec: %.2fK  ", out_str,
+                       entity_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
                 fflush(stdout);
             }
             if (!adagrad) {
-                if (item_count_actual < (all_train_items + 1)) {
+                if (word_count_actual < (all_train_words + 1)) {
                     alpha = starting_alpha *
-                    (1.0 - item_count_actual / (real)(all_train_items + 1));
+                    (1.0 - word_count_actual / (real)(all_train_words + 1));
                 } else alpha = starting_alpha * 0.0001;
                 //if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
             }
@@ -1021,9 +1005,18 @@ void *TrainTextModelThread(void *id) {
                     }
                     else
                         word_index = SearchVocab(word, mono_words);
-                    word_count++;
                     if (word_index == -1) continue;
+                    word_count++;
+                    
+                    mono_words->lang_updates ++;
+                    if (dump_every > 0)
+                        if (mono_words->lang_updates % dump_every == 0){
+                            SaveVector(mono_words,mono_words->dump_iters++);
+                            SaveVector(mono_senses,mono_senses->dump_iters++);
+                            SaveVector(mono_entities,mono_entities->dump_iters++);
+                        }
                     if (word_index == 0) break;
+                    
                     // The subsampling randomly discards frequent words while keeping the ranking same
                     if (sample > 0) {
                         real ran = (sqrt(mono_words->vocab[word_index].cn / (sample * mono_words->train_items)) + 1) * (sample * mono_words->train_items) / mono_words->vocab[word_index].cn;
@@ -1049,15 +1042,14 @@ void *TrainTextModelThread(void *id) {
             }
             sentence_position = 0;
         }
-        if (mono_words->lang_updates > all_train_items/(NUM_MODEL-1) / NUM_LANG) break;
+        if (mono_words->lang_updates > all_train_words/ NUM_LANG) break;
         if (mono_words->lang_updates > 0 &&
-            mono_words->lang_updates % max_train_items == 0) {
+            mono_words->lang_updates % max_train_words == 0) {
             mono_words->epoch++;
-            for (int i=0;i<NUM_LANG;i++)
-                resetSenseCluster(i);
+            resetSenseCluster(lang_id);
         }
         if (feof(fi) || (word_count > mono_words->train_items / num_threads)) {
-            item_count_actual += word_count - last_word_count;
+            word_count_actual += word_count - last_word_count;
             word_count = 0;
             last_word_count = 0;
             sentence_length = 0;
@@ -1066,7 +1058,7 @@ void *TrainTextModelThread(void *id) {
             continue;
         }
         if (EARLY_STOP) {
-            if (item_count_actual > EARLY_STOP) {
+            if (word_count_actual > EARLY_STOP) {
                 printf("EARLY STOP point reached (thread %lld)\n", (long long)id);
                 break;
             }
@@ -1116,6 +1108,7 @@ void *TrainTextModelThread(void *id) {
         }
         
         sentence_position++;
+            
         if (sentence_position >= sentence_length) {
             // train word embedding finished! start train mention sense embedding ...
             if (anchor_count > 0 && has_sense){
@@ -1215,14 +1208,7 @@ void *TrainTextModelThread(void *id) {
                     
                 }
             }
-            if (dump_every > 0)
-                if (mono_words->lang_updates % dump_every > mono_words->lang_updates + sentence_length+1 % dump_every){
-                    SaveVector(mono_words,mono_words->dump_iters++);
-                    SaveVector(mono_senses,mono_senses->dump_iters++);
-                }
             
-            
-            mono_words->lang_updates += (sentence_length+1);
             sentence_length = 0;
             continue;
         }
@@ -1236,14 +1222,13 @@ void *TrainTextModelThread(void *id) {
 
 void *TrainKgModelThread(void *id) {
     long long d, entity_index, head_entity_index = -1, tmp_head_entity_index=-1, cross_index=-1, line_entity_count = 0, is_read_head = 1, sentence_length = 0, sentence_position = 0;
-    long long entity_count = 0, last_entity_count = 0, sen[MAX_SENTENCE_LENGTH + 1],all_train_items;
+    long long entity_count = 0, last_entity_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
     long long l1, l2, c, target, label;
     int lang_id = (long long)id / num_threads, thread_id = (long long)id % num_threads;
     
     unsigned long long next_random = (long long)thread_id;
-    char entity[MAX_STRING], out_str[MAX_STRING];
+    char entity[MAX_STRING];
     real f, g;
-    clock_t now;
     real *neu1 = (real *)calloc(layer_size, sizeof(real));
     real *neu1e = (real *)calloc(layer_size, sizeof(real));
     real *syn1negDelta = (real *)calloc(layer_size, sizeof(real));
@@ -1252,46 +1237,15 @@ void *TrainKgModelThread(void *id) {
     struct vocab *tmp_mono_entities;
     FILE *fi = fopen(mono_entities->train_file, "rb");
     
-    if (!EARLY_STOP)
-        // If two languages have different amounts of training data,
-        // recycle the smaller language data while there is more data
-        // for the other language
-        all_train_items = max_train_items * NUM_EPOCHS * NUM_LANG * (NUM_MODEL-1);
-    else {
-        all_train_items = EARLY_STOP;
-    }
-    if (dump_every < 0) {
-        dump_every = max_train_items / abs(dump_every);
-    }
     fseek(fi, mono_entities->file_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
     head_entity_index = -1;
     is_read_head = 1;
     line_entity_count = 0;
-    while (1) {
+    while (MONO_DONE_TRAINING < NUM_LANG * num_threads) {
         if (entity_count - last_entity_count > 10000) {
-            item_count_actual += entity_count - last_entity_count;
+            entity_count_actual += entity_count - last_entity_count;
             last_entity_count = entity_count;
-            if ((debug_mode > 1)) {
-                now = clock();
-                sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, item_count_actual / (real)(all_train_items + 1) * 100, mono_entities->epoch);
-                for (int l = 0;l <NUM_LANG;l++)
-                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1,model[KG_VOCAB][l].lang_updates / (real)1000000);
-                for (int l=0;l<NUM_LANG;l++)
-                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1,model[TEXT_VOCAB][l].lang_updates / (real)1000000);
-                for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
-                printf("%sWords/sec: %.2fK  ", out_str,
-                       item_count_actual / ((real)(now - start + 1) /
-                                            (real)CLOCKS_PER_SEC * 1000));
-                fflush(stdout);
-            }
-            if (!adagrad) {
-                if (item_count_actual < (all_train_items + 1)) {
-                    alpha = starting_alpha *
-                    (1.0 - item_count_actual / (real)(all_train_items + 1));
-                } else alpha = starting_alpha * 0.0001;
-                //if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
-            }
+            
         }
         if (sentence_length == 0) {
             while(1){
@@ -1299,6 +1253,7 @@ void *TrainKgModelThread(void *id) {
                 if (feof(fi)) break;
                 if (!strcmp(entity, "</t>")) continue;
                 entity_count ++;
+                mono_entities->lang_updates ++;
                 line_entity_count++;
                 if(is_read_head==1){
                     head_entity_index = SearchVocab(entity, mono_entities);
@@ -1323,14 +1278,14 @@ void *TrainKgModelThread(void *id) {
             }
             sentence_position = 0;
         }
-        if (mono_entities->lang_updates > all_train_items/(NUM_MODEL-1) / NUM_LANG) break;
+        // kg training is almost 6 times faster than text
+        // if (mono_entities->lang_updates/6 > all_train_items/(NUM_MODEL-1) / NUM_LANG) break;
         if (mono_entities->lang_updates > 0 &&
-            mono_entities->lang_updates % max_train_items == 0) {
+            mono_entities->lang_updates % max_train_words == 0) {
             mono_entities->epoch++;
-            
         }
         if (feof(fi) || (entity_count > mono_entities->train_items / num_threads)) {
-            item_count_actual += entity_count - last_entity_count;
+            entity_count_actual += entity_count - last_entity_count;
             fseek(fi, mono_entities->file_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
             head_entity_index = -1;
             is_read_head = 1;
@@ -1339,12 +1294,6 @@ void *TrainKgModelThread(void *id) {
             entity_count = 0;
             last_entity_count = 0;
             continue;
-        }
-        if (EARLY_STOP) {
-            if (item_count_actual > EARLY_STOP) {
-                printf("EARLY STOP point reached (thread %lld)\n", (long long)id);
-                break;
-            }
         }
         for (c = 0; c < layer_size; c++) neu1[c] = 0;
         for (c = 0; c < layer_size; c++) neu1e[c] = 0;
@@ -1427,18 +1376,11 @@ void *TrainKgModelThread(void *id) {
             }   // end lang
         }
         
-        if (dump_every > 0)
-            if (mono_entities->lang_updates % dump_every > mono_entities->lang_updates + sentence_length+1 % dump_every)
-                SaveVector(mono_entities,mono_entities->dump_iters++);
-            
-        
-        mono_entities->lang_updates += (sentence_length+1);
         sentence_length = 0;
     }
     fclose(fi);
     free(neu1);
     free(neu1e);
-    MONO_DONE_TRAINING++;
     pthread_exit(NULL);
 }
 
@@ -1627,8 +1569,8 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
     
     for (i = 0; i<2; i++)
         for (j=0;j<layer_size;j++){
-            //rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
-            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j];
+            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
+            //rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j];
         }
     
     for (i=0;i<2;i++){
@@ -1642,9 +1584,7 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
             attention[i][j] = tmp_sim;
             sum += tmp_sim;
         }
-        for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            if (isequal(attention[i][j], -1) ) break;
-            
+        for (j=0;j<len[i];j++){
             if (isequal(sum, 0))
                 attention[i][j] = 1;
             else
@@ -1723,7 +1663,7 @@ void *BilbowaThread(void *id) {
     fseek(fi_par, fi_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
     line_num = par_line_num[lang_id[1]-1] / (long long)num_threads;
     
-    while (MONO_DONE_TRAINING < (NUM_MODEL-1) * NUM_LANG * num_threads) {
+    while (MONO_DONE_TRAINING < NUM_LANG * num_threads) {
         for(int i=0;i<2;i++) par_sen[i][0] = 0;
         for(int i=0;i<4;i++) par_entity[i] = -1;
         
@@ -1747,7 +1687,7 @@ void *BilbowaThread(void *id) {
             for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
                 kg_attention[i][j] = 1;
                 w_attention[i][j] = 1;
-                if ( (isequal(has_kg_att, 0) || !valid_entity) && isequal(has_w_att, 0))
+                if ( (has_kg_att==0 || !valid_entity) && has_w_att==0)
                     attention[i][j] = 1;
                 else
                     attention[i][j] = 0;
@@ -1755,19 +1695,7 @@ void *BilbowaThread(void *id) {
         
         if (has_kg_att>0 && valid_entity) SetKGAttention(par_sen, par_entity, kg_attention, lang_id);
         if (has_w_att>0) SetWAttention(par_sen, w_attention, &km_var, lang_id);
-/*
-        if ( (has_kg_att>0 && valid_entity) || has_w_att>0){
-            
-            for (int i=0;i<2;i++)
-                for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
-                    if (isequal(kg_attention[i][j], -1) || isequal(w_attention[i][j], -1)) {
-                        attention[i][j] = -1;
-                        break;
-                    }
-                    attention[i][j] = has_kg_att*kg_attention[i][j] + has_w_att*w_attention[i][j];
-                }
-        }
-         kg att * w att  */
+
          if ( (has_kg_att>0 && valid_entity) || has_w_att>0){
             for (int i=0;i<2;i++){
                 for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
@@ -1939,8 +1867,8 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-dump-every", argc, argv)) > 0) dump_every = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-share_syn", argc, argv)) > 0) shareSyn0 = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atof(argv[i + 1]);
-    if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atof(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-is_normal", argc, argv)) > 0) is_normal = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) has_sense = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-cross_model_weight", argc, argv)) > 0) cross_model_weight = atof(argv[i + 1]);
@@ -1950,7 +1878,7 @@ int main(int argc, char **argv) {
         expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
         expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
     }
-    max_train_items = 0;
+    max_train_words = 0;
     for (i=0; i< NUM_LANG; i++){
         // training senses also using anchors
         strcpy(model[SENSE_VOCAB][i].train_file, model[TEXT_VOCAB][i].train_file);
@@ -1981,6 +1909,8 @@ int main(int argc, char **argv) {
         InitModel(TEXT_VOCAB, i);
         InitModel(KG_VOCAB, i);
         InitModel(SENSE_VOCAB, i);
+        if (model[TEXT_VOCAB][i].train_items > max_train_words)
+            max_train_words = model[TEXT_VOCAB][i].train_items;
     }
     printf("init model finished!");
     if (NUM_LANG >=2 && cross_model_weight>0)
