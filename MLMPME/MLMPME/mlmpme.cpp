@@ -967,7 +967,7 @@ void *TrainTextModelThread(void *id) {
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+1+1,bilbowa_grad);
+                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
                 printf("%sWords/sec: %.2fK  ", out_str,
                        item_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
@@ -1275,11 +1275,11 @@ void *TrainKgModelThread(void *id) {
                 now = clock();
                 sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, item_count_actual / (real)(all_train_items + 1) * 100, mono_entities->epoch);
                 for (int l = 0;l <NUM_LANG;l++)
-                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l,model[KG_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1,model[KG_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG;l++)
-                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l,model[TEXT_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1,model[TEXT_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+1,bilbowa_grad);
+                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
                 printf("%sWords/sec: %.2fK  ", out_str,
                        item_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
@@ -1486,21 +1486,19 @@ real similarity(real *vec1, real *vec2){
     return dist;
 }
 
-void UpdateSquaredError(long long sen[2][MAX_SENTENCE_LENGTH],int lang_id[2], real *delta, real weight) {
+void UpdateSquaredError(long long sen[2][MAX_SENTENCE_LENGTH],int len[2], int lang_id[2], real *delta, real weight) {
     int d, offset;
     // To minimize squared error:
     // delta = d .5*|| e - f ||^2 = ±(e - f)
     // d/den = +delta
-    for (d = 0; d < MAX_SENTENCE_LENGTH; d++) {
-        if (sen[0][d]==0) break;
+    for (d = 0; d < len[0]; d++) {
         offset = layer_size * sen[0][d];
         // update in -d/den = -delta direction
         UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0,model[TEXT_VOCAB][lang_id[0]].syn0Grad, offset, layer_size, delta, -weight);
     }
     // d/df = -delta
-    for (d = 0; d < MAX_SENTENCE_LENGTH; d++) {
-        if (sen[1][d]==0) break;
-        offset = layer_size * sen[0][d];
+    for (d = 0; d < len[1]; d++) {
+        offset = layer_size * sen[1][d];
         // update in -d/df = +delta direction
         UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, offset, layer_size, delta, weight);
     }
@@ -1512,8 +1510,7 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
     int len = 0;
     for (len = 0;len<MAX_SENTENCE_LENGTH;len++)
         if (sen[len] == 0 || isequal(attention[len], -1)) break;
-    for (d = 0; d < MAX_SENTENCE_LENGTH; d++) {
-        if (sen[d]==0) break;
+    for (d = 0; d < len; d++) {
         offset = layer_size * sen[d];
         for (c = 0; c < layer_size; c++) {
             // We compute the attentive sentence vector
@@ -1544,7 +1541,7 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[
     FpropSent(sen[0], attention[0], deltas, model[TEXT_VOCAB][lang_id[0]].syn0, +1);
     grad_norm = FpropSent(sen[1], attention[1], deltas, model[TEXT_VOCAB][lang_id[1]].syn0, -1);
     bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
-    UpdateSquaredError(sen, lang_id, deltas, XLING_LAMBDA * xling_balancer);
+    UpdateSquaredError(sen, len, lang_id, deltas, XLING_LAMBDA * xling_balancer);
     
 }
 
@@ -1646,9 +1643,9 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
             sum += tmp_sim;
         }
         for (j=0;j<MAX_SENTENCE_LENGTH;j++){
-            if (attention[i][j] == -1) break;
+            if (isequal(attention[i][j], -1) ) break;
             
-            if (sum >= -0.000001 && sum <= 0.000001)
+            if (isequal(sum, 0))
                 attention[i][j] = 1;
             else
                 attention[i][j] /= sum;
@@ -1684,7 +1681,7 @@ void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_
         }
     }
     sum = km_match(km_var);
-    if (sum > 0.000001){
+    if (!isequal(sum, 0)){
         for (j=0;j<len[m];j++)
             if (km_var->match1[j] == -1)
                 attention[m][j] = 0;
@@ -1731,7 +1728,7 @@ void *BilbowaThread(void *id) {
         for(int i=0;i<4;i++) par_entity[i] = -1;
         
         res = ReadSent(fi_par, par_sen, par_entity, lang_id);
-        if (feof(fi_par)){
+        if (feof(fi_par) || cur_line>=line_num){
             fseek(fi_par, fi_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
             continue;
         }
@@ -1781,7 +1778,7 @@ void *BilbowaThread(void *id) {
                     attention[i][j] =kg_attention[i][j] * w_attention[i][j];
                     sum += attention[i][j];
                 }
-                if (sum>0)
+                if (!isequal(sum, 0))
                     for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
                         if (isequal(attention[i][j], -1)) break;
                         attention[i][j]/=sum;
