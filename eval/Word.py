@@ -69,7 +69,8 @@ class Word():
                     if ch==b' ' or ch==b'\t':
                         break
                     char_set.append(ch)
-                label = b''.join(char_set).decode('utf-8')
+                label = b''.join(char_set)
+                label = label.decode('utf-8','ignore')
                 tmp_vec = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 if isinstance(vocab, type(None)) or (not isinstance(vocab, type(None)) and label in vocab):
                     self.vectors[label] = tmp_vec

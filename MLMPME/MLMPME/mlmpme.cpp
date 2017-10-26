@@ -877,7 +877,7 @@ void UpdateEmbeddings(real *embeddings, real *grads, int offset, int num_updates
         if (step != step) {
             fprintf(stderr, "ERROR: step == NaN\n");
         }
-        step = step * weight * cross_model_weight;
+        step = step * weight;
         if (CLIP_UPDATES != 0) {
             if (step > CLIP_UPDATES) step = CLIP_UPDATES;
             if (step < -CLIP_UPDATES) step = -CLIP_UPDATES;
@@ -1483,7 +1483,7 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[
     FpropSent(sen[0], attention[0], deltas, model[TEXT_VOCAB][lang_id[0]].syn0, +1);
     grad_norm = FpropSent(sen[1], attention[1], deltas, model[TEXT_VOCAB][lang_id[1]].syn0, -1);
     bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
-    UpdateSquaredError(sen, len, lang_id, deltas, XLING_LAMBDA * xling_balancer);
+    UpdateSquaredError(sen, len, lang_id, deltas, XLING_LAMBDA * xling_balancer*cross_model_weight);
     
 }
 
@@ -1669,6 +1669,7 @@ void *BilbowaThread(void *id) {
         
         res = ReadSent(fi_par, par_sen, par_entity, lang_id);
         if (feof(fi_par) || cur_line>=line_num){
+            cur_line = 0;
             fseek(fi_par, fi_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
             continue;
         }
