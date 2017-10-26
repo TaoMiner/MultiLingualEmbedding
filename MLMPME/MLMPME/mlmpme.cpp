@@ -942,7 +942,7 @@ void *TrainTextModelThread(void *id) {
             last_word_count = word_count;
             if ((debug_mode > 1)) {
                 now = clock();
-                sprintf(out_str, "%cAlpha: %f  Progress: %.2f%%  (epoch %lld) (", 13, alpha, word_count_actual / (real)(all_train_words + 1) * 100, mono_words->epoch);
+                sprintf(out_str, "Alpha: %f  Progress: %.2f%%  (epoch %lld) (", alpha, word_count_actual / (real)(all_train_words + 1) * 100, mono_words->epoch);
                 for (int l = 0;l <NUM_LANG;l++)
                     sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000);
                 for (int l=0;l<NUM_LANG;l++)
@@ -951,7 +951,7 @@ void *TrainTextModelThread(void *id) {
                     sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
                 sprintf(out_str, "%sWords/sec: %.2fK  ",out_str, word_count_actual / ((real)(now - start + 1) /
                                                                                       (real)CLOCKS_PER_SEC * 1000));
-                printf("%sEntities/sec: %.2fK  ", out_str,
+                printf("%c%sEntities/sec: %.2fK  ", 13, out_str,
                        entity_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
                 fflush(stdout);
