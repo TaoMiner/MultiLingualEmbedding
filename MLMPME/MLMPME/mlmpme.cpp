@@ -109,8 +109,7 @@ int SplitMention(int *split_pos, char *mention) {
                 split_pos[a] = b;
                 a++;
                 if(a>=MAX_NUM_MENTION){
-                    printf("error! anchor's mention length is larger than %d!\n", MAX_NUM_MENTION);
-                    printf("%s\n",mention);
+                    a = -1;
                     break;
                 }
             }
@@ -154,7 +153,7 @@ int ReadAnchor(char *item, FILE *fin){
         }
         item[a] = ch;
         a++;
-        if (a >= MAX_STRING - 1){printf("error! too long string:\n %s\n",item); a--;break;}
+        if (a >= MAX_STRING - 1){a--;break;}
     }
     item[a] = 0;
     return is_anchor;
@@ -195,7 +194,7 @@ int ReadMention(char *item, FILE *fin){
         }
         item[a] = ch;
         a++;
-        if (a >= MAX_STRING - 1){printf("error! too long string:\n %s\n",item); a--;break;}
+        if (a >= MAX_STRING - 1){a--;break;}
     }
     item[a] = 0;
     return is_anchor;
@@ -992,7 +991,7 @@ void *TrainTextModelThread(void *id) {
                 if (anchor_pos != -1){
                     mention_length = SplitMention(word_begin, word);
                 }
-                
+                if (mention_length<=0) continue;
                 for(b=0;b<mention_length;b++){
                     if (mention_length > 1){
                         if (b+1 < mention_length)
@@ -1743,7 +1742,7 @@ void TrainModel(){
         sprintf(out_str, "Starting training ");
         for (i=0;i<NUM_LANG-1;i++)
             sprintf(out_str, "%s%d lines using parallel file %s! ", out_str, par_line_num[i], multi_context_file[i]);
-        printf("\n%s\n", out_str);
+        printf("%s\n", out_str);
         for (a = 2 * NUM_LANG * num_threads; a < (3*NUM_LANG-1) * num_threads; a++) {
             if (debug_mode > 2) printf("Spawning mono parallel thread %ld\n", a);
             pthread_create(&pt[a], NULL, BilbowaThread, (void *)a);
