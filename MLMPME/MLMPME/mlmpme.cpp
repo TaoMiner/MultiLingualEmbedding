@@ -92,6 +92,7 @@ bool isequal(real a,real b)
     return 0;
 }
 
+
 //return the num of mention words
 //split_pos indicates word start position in mention, range from 0 to mention length -1
 int SplitMention(int *split_pos, char *mention) {
@@ -734,7 +735,11 @@ int ReadParLine(FILE *fi, long long sen[MAX_SENTENCE_LENGTH], long long entity_i
             else{
                 index = SearchVocab(word, &model[TEXT_VOCAB][cur_lang]);
                 if (index == -1) continue;
-
+                if (sample > 0) {
+                    real ran = (sqrt(model[TEXT_VOCAB][cur_lang].vocab[index].cn / (sample * model[TEXT_VOCAB][cur_lang].train_items)) + 1) * (sample * model[TEXT_VOCAB][cur_lang].train_items) / model[TEXT_VOCAB][cur_lang].vocab[index].cn;
+                    g_next_random = g_next_random * (unsigned long long)25214903917 + 11;
+                    if (ran < (g_next_random & 0xFFFF) / (real)65536) continue;
+                }
                 sen[sentence_length] = index;
                 sentence_length++;
                 if (sentence_length >= MAX_SENTENCE_LENGTH)
@@ -1648,6 +1653,7 @@ void *BilbowaThread(void *id) {
     long long fi_size;
     int line_num = 0, cur_line = 0, res = 0, lang_id[2];
     int cur_lang_id = (long long)id / num_threads-2*NUM_LANG+1, thread_id = (long long)id % num_threads;
+    
     lang_id[0] = 0;
     lang_id[1] = cur_lang_id;
     //km parameter

@@ -15,6 +15,7 @@ class evaluator():
         self.exp = ''
         self.lex = []
         self.topn = 1
+        self.it = -1
 
     def setTopN(self, topn):
         self.topn = topn
@@ -139,7 +140,7 @@ class evaluator():
         if not isinstance(log_file, type(None)):
             fout = codecs.open(log_file, 'a', encoding='UTF-8')
             fout.write('*************************************************\n')
-            fout.write('{0}, lang1:{1}, vocab size:{2}. lang2:{3}, vocab size:{4} topn:{5}, mean rank:{6}.\n'.format(self.exp,self.lang[0],self.words[0].vocab_size,self.lang[1],self.words[1].vocab_size,self.topn,float(total_rank) / actual_pairs))
+            fout.write('{0}, iter:{1}, lang1:{2}, vocab size:{3}. lang2:{4}, vocab size:{5} topn:{6}, mean rank:{7}.\n'.format(self.exp,self.it, self.lang[0],self.words[0].vocab_size,self.lang[1],self.words[1].vocab_size,self.topn,float(total_rank) / actual_pairs))
             fout.write('*************************************************\n')
             fout.close()
 
@@ -164,6 +165,7 @@ if __name__ == '__main__':
 
     evaluator = evaluator()
     evaluator.exp = exp
+    evaluator.it = it
     evaluator.setTopN(topn)
     evaluator.loadWords(w1, w2, lang1, lang2)
     evaluator.loadLex()

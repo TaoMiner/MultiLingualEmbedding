@@ -52,15 +52,16 @@ class Evaluator:
                 actual_count += 1
                 sim = self.cosSim(self.tr_word.vectors[d[1]], self.tr_word.vectors[d[2]])
                 glb.append(sim)
-        res = stats.spearmanr(self.standard, glb)
-        if isinstance(self.fout_log, type(None)):
-            self.fout_log.write('spearmanr:{0}, actual word pairs:{1}, total:{2}\n'.format(res, actual_count, len(self.standard)))
-            self.fout_log.write('*************************************************\n')
-            self.fout_log.close()
-        if isinstance(self.fout_debug, type(None)):
+        if not isinstance(self.fout_debug, type(None)):
             for i in xrange(len(self.data)):
                 self.fout_debug.write('{0}\t{1}\t{2}\t{3}\n'.format(self.data[i][1], self.data[i][2], self.standard[i], glb[i] * 10))
             self.fout_debug.close()
+        res = stats.spearmanr(self.standard, glb)
+        if not isinstance(self.fout_log, type(None)):
+            self.fout_log.write('spearmanr:{0}, actual word pairs:{1}, total:{2}\n'.format(res, actual_count, len(self.standard)))
+            self.fout_log.write('*************************************************\n')
+            self.fout_log.close()
+
 
 if __name__ == '__main__':
     exp = 'exp2'

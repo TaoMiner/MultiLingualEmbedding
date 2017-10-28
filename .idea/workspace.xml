@@ -4,6 +4,9 @@
     <list default="true" id="c95c3706-744b-4305-ae41-44f04bcf801f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" afterPath="$PROJECT_DIR$/MLMPME/MLMPME.xcodeproj/project.xcworkspace/xcuserdata/ethan.xcuserdatad/UserInterfaceState.xcuserstate" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" afterPath="$PROJECT_DIR$/MLMPME/MLMPME/mlmpme.cpp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/evalWordSim353.py" afterPath="$PROJECT_DIR$/eval/evalWordSim353.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/eval/evalWordTrans.py" afterPath="$PROJECT_DIR$/eval/evalWordTrans.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -61,7 +64,7 @@
       <file leaf-file-name="Word.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/Word.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="403">
+            <state relative-caret-position="1472">
               <caret line="67" column="52" lean-forward="false" selection-start-line="67" selection-start-column="52" selection-end-line="67" selection-end-column="52" />
               <folding />
             </state>
@@ -71,8 +74,18 @@
       <file leaf-file-name="evalWordTrans.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/evalWordTrans.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="280">
-              <caret line="29" column="43" lean-forward="false" selection-start-line="29" selection-start-column="43" selection-end-line="29" selection-end-column="43" />
+            <state relative-caret-position="3105">
+              <caret line="142" column="84" lean-forward="false" selection-start-line="142" selection-start-column="84" selection-end-line="142" selection-end-column="84" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="evalWordSim353.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="380">
+              <caret line="58" column="49" lean-forward="true" selection-start-line="58" selection-start-column="49" selection-end-line="58" selection-end-column="49" />
               <folding />
             </state>
           </provider>
@@ -102,11 +115,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="options.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="options.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/eval/options.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="518">
-              <caret line="135" column="0" lean-forward="true" selection-start-line="135" selection-start-column="0" selection-end-line="135" selection-end-column="0" />
+            <state relative-caret-position="-2334">
+              <caret line="18" column="16" lean-forward="false" selection-start-line="18" selection-start-column="16" selection-end-line="18" selection-end-column="16" />
               <folding />
             </state>
           </provider>
@@ -177,12 +190,12 @@
         <option value="$PROJECT_DIR$/eval/Sense.py" />
         <option value="$PROJECT_DIR$/eval/Entity.py" />
         <option value="$PROJECT_DIR$/eval/options.py" />
-        <option value="$PROJECT_DIR$/eval/evalWordTrans.py" />
         <option value="$PROJECT_DIR$/eval/distance.py" />
-        <option value="$PROJECT_DIR$/eval/evalWordSim353.py" />
         <option value="$PROJECT_DIR$/preprocess/parallel.py" />
         <option value="$PROJECT_DIR$/preprocess/tt.py" />
         <option value="$PROJECT_DIR$/eval/Word.py" />
+        <option value="$PROJECT_DIR$/eval/evalWordTrans.py" />
+        <option value="$PROJECT_DIR$/eval/evalWordSim353.py" />
       </list>
     </option>
   </component>
@@ -211,6 +224,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -253,8 +268,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -613,9 +626,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18820679" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2003231" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -909,20 +922,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/anaconda2/envs/tfTest/lib/python2.7/site-packages/scipy/stats/stats.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4420">
-          <caret line="3205" column="4" lean-forward="false" selection-start-line="3205" selection-start-column="4" selection-end-line="3205" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1656">
-          <caret line="72" column="22" lean-forward="true" selection-start-line="72" selection-start-column="22" selection-end-line="72" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/preprocess/tt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="460">
@@ -947,7 +946,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/Word.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="403">
+        <state relative-caret-position="1472">
           <caret line="67" column="52" lean-forward="false" selection-start-line="67" selection-start-column="52" selection-end-line="67" selection-end-column="52" />
           <folding />
         </state>
@@ -983,16 +982,31 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/evalWordTrans.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="280">
-          <caret line="29" column="43" lean-forward="false" selection-start-line="29" selection-start-column="43" selection-end-line="29" selection-end-column="43" />
+        <state relative-caret-position="3105">
+          <caret line="142" column="84" lean-forward="false" selection-start-line="142" selection-start-column="84" selection-end-line="142" selection-end-column="84" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda2/envs/tfTest/lib/python2.7/site-packages/scipy/stats/stats.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2020">
+          <caret line="3205" column="4" lean-forward="false" selection-start-line="3205" selection-start-column="4" selection-end-line="3205" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/eval/options.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="518">
-          <caret line="135" column="0" lean-forward="true" selection-start-line="135" selection-start-column="0" selection-end-line="135" selection-end-column="0" />
+        <state relative-caret-position="-2334">
+          <caret line="18" column="16" lean-forward="false" selection-start-line="18" selection-start-column="16" selection-end-line="18" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/eval/evalWordSim353.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="380">
+          <caret line="58" column="49" lean-forward="true" selection-start-line="58" selection-start-column="49" selection-end-line="58" selection-end-column="49" />
           <folding />
         </state>
       </provider>
