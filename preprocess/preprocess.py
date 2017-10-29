@@ -597,6 +597,66 @@ class cleaner():
             res += '[['+ anchor_boundry[anchor_index][2] +'|'+tmp_ment.strip()+']]'
         return res.strip()
 
+    # no anchor
+    @staticmethod
+    def removeAnchorSent(sent, lang):
+        anchor_count = 0
+        cur = 0
+        res = ''
+        openDelim = ['[[']
+        closeDelim = [']]']
+        boundary = 1
+        if lang == 'zh':
+            seg_list = jieba.cut(sent.strip(), cut_all=False)
+            # some chinese entities contain whitespace
+            seg_line = "_".join(seg_list)
+            openDelim = ['[_[']
+            closeDelim = [']_]']
+            boundary = 2
+        else:
+            seg_line = sent
+        for s, e in cleaner.findBalanced(seg_line, openDelim, closeDelim):
+            # remove postfix of an anchor
+            if lang == 'zh':
+                tmp_line = re.sub(r'_', ' ', seg_line[cur:s])
+            else:
+                tmp_line = seg_line[cur:s]
+            tmp_line = cleaner.regularize(tmp_line, lang)
+            if len(tmp_line) > 0:
+                res += tmp_line + ' '
+            tmp_anchor = seg_line[s:e]
+            # extract title and label
+            # [_[_word_word_|_word_word_]_] or [_[_word_word_]_]
+            tmp_vbar = tmp_anchor.find('|')
+            tmp_title = ''
+            tmp_label = ''
+            tmp_title_id = ''
+            if tmp_vbar > 0:
+                tmp_title = tmp_anchor[2 * boundary:tmp_vbar]
+                tmp_label = tmp_anchor[tmp_vbar + 1 * boundary:-2 * boundary]
+            else:
+                tmp_title = tmp_anchor[2 * boundary:-2 * boundary]
+                tmp_label = tmp_title
+            # map the right title
+            if lang == 'zh':
+                tmp_title = re.sub(r'_', '', tmp_title)
+                tmp_label = re.sub(r'_', ' ', tmp_label)
+            tmp_label = cleaner.regularize(tmp_label, lang)
+            # remove prefix of anchor
+            if len(tmp_label) > 0:
+                res += tmp_label + ' '
+            cur = e
+        if lang == 'zh':
+            tmp_line = re.sub(r'_', ' ', seg_line[cur:])
+        else:
+            tmp_line = seg_line[cur:]
+        tmp_line = cleaner.regularize(tmp_line, lang)
+        if len(tmp_line) > 0:
+            res += tmp_line
+        else:
+            res = res.strip()
+        return res
+
     @staticmethod
     def cleanAnchorSent(sent, lang, isReplaceId = True, entity_id = None, redirects = None, mentions = None):
         anchor_count = 0
