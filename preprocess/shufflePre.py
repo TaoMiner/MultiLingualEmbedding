@@ -126,7 +126,7 @@ class Parallel():
                     bi_sents.append(short_sents[i])
                     bi_sents.extend(long_sents[i*ratio:(i+1)*ratio])
                 if len(bi_sents)>0:
-                    fout.write('{0}\n'.format('\n'.join(bi_sents)))
+                    fout.write('%s\n' % '\n'.join(bi_sents).encode('utf8','ignore'))
 
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
@@ -134,7 +134,7 @@ class Parallel():
         with codecs.open(filename, 'w', 'utf-8') as fout:
             for item in vocab:
                 if len(item) > 0:
-                    fout.write("{0}\t{1}".format(item, vocab[item]))
+                    fout.write("%s\t%d" % (item.encode('utf8','ignore'), vocab[item]))
 
 if __name__ == '__main__':
     str_lang1 = 'en'

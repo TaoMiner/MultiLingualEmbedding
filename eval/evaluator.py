@@ -8,7 +8,7 @@ from options import Options
 class Evaluator:
     def __init__(self):
         self.log_file = ''
-        self.feature_list = ['kb_cand_size', 'kb_pem', 'kb_pe','kb_largest_pe','cur_pem', 'cur_pe', 'cur_largest_pe',\
+        self.feature_list = ['kb_cand_size', 'kb_pem', 'kb_pe','kb_largest_pe',\
                              'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5',\
                              'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
                              'esim1', 'erank1', 'esim2', 'erank2', 'esim3', 'erank3', 'esim4', 'erank4', \

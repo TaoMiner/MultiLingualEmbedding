@@ -1,6 +1,7 @@
 import codecs
 import regex as re
-import Levenshtein
+#import Levenshtein
+from pyxdameraulevenshtein import normalized_damerau_levenshtein_distance
 from Entity import Entity
 from Word import Word
 from Sense import Sense
@@ -208,7 +209,7 @@ class Features:
                 str_sim1 = str_sim2 = str_sim3 = str_sim4 = str_sim5 = 0
                 if len(tr_ment_name) > 0:
                     lower_kb_entity_label = kb_entity_label.lower()
-                    str_sim1 = Levenshtein.distance(lower_tr_ment_name, lower_kb_entity_label)
+                    str_sim1 = normalized_damerau_levenshtein_distance(lower_tr_ment_name, lower_kb_entity_label)
                     str_sim2 = 1 if lower_tr_ment_name == lower_kb_entity_label else 0
                     str_sim3 = 1 if lower_kb_entity_label.find(lower_tr_ment_name) else 0
                     str_sim4 = 1 if lower_kb_entity_label.startswith(lower_tr_ment_name) else 0
@@ -219,7 +220,7 @@ class Features:
                 str_sim1 = str_sim2 = str_sim3 = str_sim4 = str_sim5 = 0
                 if len(cur_entity_label) > 0:
                     lower_cur_entity_label = cur_entity_label.lower()
-                    str_sim1 = Levenshtein.distance(lower_ment_name, lower_cur_entity_label)
+                    str_sim1 = normalized_damerau_levenshtein_distance(lower_ment_name, lower_cur_entity_label)
                     str_sim2 = 1 if lower_ment_name == lower_cur_entity_label else 0
                     str_sim3 = 1 if lower_cur_entity_label.find(lower_ment_name) else 0
                     str_sim4 = 1 if lower_cur_entity_label.startswith(lower_ment_name) else 0
@@ -234,7 +235,7 @@ class Features:
                     if item in self.kb_word.vectors:
                         kbw_vec += self.kb_word.vectors[item]
                         kb_w_actual += 1
-                if kb_w_actual>0:
+                if kb_w_actual>1:
                     kbw_vec /= kb_w_actual
 
                 cur_w_actual = 0
@@ -324,7 +325,7 @@ class Features:
             if last_mention != row[2]:
                 last_mention = row[2]
                 cand_count = 0
-                kb_cand_size = row[5]
+                cand_size = row[5]
             kb_cand_id = row[4]
             cand_count += 1
             #update the largest pe in base features
@@ -332,6 +333,13 @@ class Features:
             df_vec.loc[row[0], 'cur_largest_pe'] = largest_cur_pe
             #update context entity features
             if len(c_entities) > 0 and kb_cand_id in self.kb_entity.vectors :
+                tmp_sim_ce = []
+                entity_vec = self.kb_entity.vectors[kb_cand_id]
+                for ent in c_entities:
+                    if ent in self.kb_entity.vectors:
+                        tmp_sim_ce.append(self.cosSim(self.kb_entity.vectors[ent], entity_vec))
+                df_vec.loc[row[0], 'csim2'] = max(tmp_sim_ce)
+                '''
                 c_ent_vec = np.zeros(self.kb_entity.layer_size, dtype=float)
                 c_ent_num = 0
                 for ent in c_entities:
@@ -342,6 +350,7 @@ class Features:
                 if c_ent_num > 0:
                     c_ent_vec /= c_ent_num
                     df_vec.loc[row[0], 'csim2'] = self.cosSim(c_ent_vec, entity_vec)
+                '''
 
             if cand_count == cand_size and cand_size > 0:
                 #compute last mention's candidate rank

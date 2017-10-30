@@ -1276,6 +1276,11 @@ void *TrainKgModelThread(void *id) {
                     }
                 }
                 else {is_read_head=1;continue;}
+                if (sample > 0) {
+                    real ran = (sqrt(mono_entities->vocab[entity_index].cn / (sample * mono_entities->train_items)) + 1) * (sample * mono_entities->train_items) / mono_entities->vocab[entity_index].cn;
+                    next_random = next_random * (unsigned long long)25214903917 + 11;
+                    if (ran < (next_random & 0xFFFF) / (real)65536) continue;
+                }
                 sen[sentence_length] = entity_index;
                 sentence_length++;
                 if (sentence_length >= MAX_SENTENCE_LENGTH) break;

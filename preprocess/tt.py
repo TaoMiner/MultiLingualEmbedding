@@ -2,10 +2,6 @@ import codecs
 import re
 
 
-a = ['a','b','c']
-
-b = ['d']
-
-b.extend(a[5:10])
-
+a = [3,4.5,6.5,1.2]
+b = max(a)
 print b

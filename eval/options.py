@@ -32,6 +32,11 @@ class Options:
         return Options.root_path + 'features/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature_' + exp
 
     @staticmethod
+    # type = {'train','testa','testb'}
+    def getConllFeatureFile(exp, type):
+        return Options.root_path + 'features/conll_'+type+'.feature_' + exp
+
+    @staticmethod
     def getNlpToolUrl(lang):
         url = ''
         if lang == Options.en:

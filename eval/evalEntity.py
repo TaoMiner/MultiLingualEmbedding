@@ -14,8 +14,6 @@ entity_dic_file = Options.getExpVocabFile(Options.en, Options.entity_type)
 entity_vec_file = Options.getExpVecFile(exp,Options.en, Options.entity_type, it)
 log_file = Options.getLogFile('log_entity')
 
-ent_id_dic = Entity.loadEntityDic(entity_dic_file)
-id_ent_dic = Entity.loadEntityIdDic(entity_dic_file)
 ent_vec = {}
 eval_query = {}
 relatedness_pair_num = 0

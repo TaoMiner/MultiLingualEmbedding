@@ -4,7 +4,7 @@ import string
 import os
 import copy
 from pycorenlp import StanfordCoreNLP
-import simplejson
+import json as simplejson
 import jieba
 from options import Options
 try:
