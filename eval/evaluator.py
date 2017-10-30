@@ -109,5 +109,6 @@ if __name__ == '__main__':
     eval.log_file = Options.getLogFile('eval1.log')
     starttime = datetime.datetime.now()
     eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp), predict_file = Options.getLogFile('eval_predict.log'+cur_lang), ans_file = Options.getLogFile('eval_ans.log'+cur_lang),n_estimators=1000, max_depth=3)
+    #eval.gbdt(Options.getConllFeatureFile(exp, 'train'), Options.getConllFeatureFile(exp,'testa'), predict_file = Options.getLogFile('eval_conll_predict.log'+cur_lang), ans_file = Options.getLogFile('eval_conll_ans.log'+cur_lang),n_estimators=1000, max_depth=3)
     endtime = datetime.datetime.now()
     print("{0}".format((endtime - starttime).seconds))

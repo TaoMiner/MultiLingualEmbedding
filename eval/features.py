@@ -249,7 +249,7 @@ class Features:
                         if item in self.cur_word.vectors:
                             curw_vec += self.cur_word.vectors[item]
                             cur_w_actual += 1
-                    if cur_w_actual > 0:
+                    if cur_w_actual > 1:
                         curw_vec /= cur_w_actual
 
                 # kb label embedding feature
@@ -271,7 +271,7 @@ class Features:
                         if item in self.cur_word.vectors:
                             curlabel_vec += self.cur_word.vectors[item]
                             curlabel_w_actual += 1
-                    if curlabel_w_actual > 0:
+                    if curlabel_w_actual > 1:
                         curlabel_vec /= curlabel_w_actual
 
                 has_kb_sense = True if self.has_kb_sense and kb_cand_id in self.kb_sense.vectors else False
@@ -378,8 +378,8 @@ class Features:
                                               'cur_pem', 'cur_pe', 'cur_largest_pe', \
                                               'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5', \
                                                 'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
-                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank5','esim5', 'erank6','esim6', 'erank6',\
-                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3','csim4', 'crank4','csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8'])
+                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4', 'esim5', 'erank5','esim6', 'erank6',\
+                                                'csim1', 'crank1', 'csim2', 'crank2','csim3', 'crank3', 'csim4', 'crank4', 'csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8'])
 
         cand_count = 0
         cand_size = 0
@@ -521,10 +521,9 @@ if __name__ == '__main__':
     has_sense = True
     exp = 'exp4'
     it = 3
-    cur_lang = Options.en
-    doc_type = Options.doc_type[2]
+    cur_lang = Options.es
+    doc_type = Options.doc_type[0]
     corpus_year = 2015
-
 
     features = Features()
     # set for current lang
@@ -604,18 +603,18 @@ if __name__ == '__main__':
     idmap = dr.loadKbidMap(Options.kbid_map_file)
     mentions15 = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, True), id_map=idmap)
     mentions15_train = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, False), id_map=idmap)
+    en_train_corpus = None
+    en_eval_corpus = None
     if doc_type!= Options.doc_type[2]:
         en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
         en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
     else:
-        nw_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[0], mentions15_train)
-        nw_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[0], mentions15)
+        en_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[0], mentions15_train)
+        en_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[0], mentions15)
 
-        df_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[1], mentions15_train)
-        df_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[1], mentions15)
+        en_train_corpus.extend(dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[1], mentions15_train))
+        en_eval_corpus.extend(dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[1], mentions15))
 
-        en_train_corpus = nw_train_corpus.extend(df_train_corpus)
-        en_eval_corpus = nw_eval_corpus.extend(df_eval_corpus)
 
     features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp))
     features.resetTotalCount()
