@@ -68,10 +68,11 @@ class Parallel():
         entity_id_dic = pre.loadEntityIdDic(op.vocab_entity_file)
         total_entity_id, total_id_entity = pre.loadWikiIndex(op.entity_index_dump)
         redirects_id = pre.loadRedirectsId(op.redirect_file, total_entity_id)
-        with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
+        with codecs.open(op.cross_corpus_file, 'rb') as fin:
             cur_title_id = ''
             tmp_sents = None
             for line in fin:
+                line = line.decode('utf-8', 'ignore')
                 line = line.strip()
                 tmp_line = ''
                 if len(line) < 1: continue
@@ -96,7 +97,7 @@ class Parallel():
                     tmp_sents.append(tmp_line)
 
     def merge(self, filename):
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w','utf8') as fout:
             for cl in self.clinks:
                 if cl not in self.corpus[0] or self.clinks[cl] not in self.corpus[1]:
                     continue
@@ -126,15 +127,15 @@ class Parallel():
                     bi_sents.append(short_sents[i])
                     bi_sents.extend(long_sents[i*ratio:(i+1)*ratio])
                 if len(bi_sents)>0:
-                    fout.write('%s\n' % '\n'.join(bi_sents).encode('utf8','ignore'))
+                    fout.write('%s\n' % '\n'.join(bi_sents))
 
         print "successfully load %d parallel contexts!" % len(self.parallel_contexts)
 
     def saveVocab(self, vocab, filename):
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w','utf8') as fout:
             for item in vocab:
                 if len(item) > 0:
-                    fout.write("%s\t%d" % (item.encode('utf8','ignore'), vocab[item]))
+                    fout.write("%s\t%d" % (item, vocab[item]))
 
 if __name__ == '__main__':
     str_lang1 = 'en'

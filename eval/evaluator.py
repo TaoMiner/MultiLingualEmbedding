@@ -11,8 +11,8 @@ class Evaluator:
         self.feature_list = ['kb_cand_size', 'kb_pem', 'kb_pe','kb_largest_pe',\
                              'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5',\
                              'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
-                             'esim1', 'erank1', 'esim2', 'erank2', 'esim3', 'erank3', 'esim4', 'erank4', \
-                             'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3']
+                             'esim1', 'erank1', 'esim2', 'erank2', 'esim3', 'erank3', 'esim4', 'erank4', 'esim5', 'erank5', 'esim6', 'erank6', \
+                             'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3','csim4', 'crank4','csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8']
 
     def loadFeatures(self, filename):
         features = pd.read_csv(filename, header = None, names = ['doc_id', 'mention_id', 'wiki_id', 'kb_cand_id',\
@@ -20,8 +20,8 @@ class Evaluator:
                                                 'cur_pem', 'cur_pe', 'cur_largest_pe', \
                                                  'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5', \
                                                 'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
-                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4',\
-                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3'])
+                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4','esim5', 'erank5','esim6', 'erank6',\
+                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3','csim4', 'crank4','csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8'])
         print('load finished!')
         features = features.fillna(0)
         label = []
@@ -96,18 +96,18 @@ class Evaluator:
                 fout.write('*******************************************************************************************\n')
                 fout.write('train feature file:{0}, test feature file:{1}, answer file:{2}, predicted file:{3}\n'.format(train_feature_file, test_feature_file, predict_file, ans_file))
                 fout.write('total {0} candidates! use features:{1} \n'.format(len(test_feature), ','.join(self.feature_list)))
-                fout.write("micro precision : {0}({1}/{2}), macro precision : {3}\n".format(micro_p, total_mention_tp, total_mention_num, macro_p))
+                fout.write("micro precision : {0}({1}/{2}), macro precision : {3}({4})\n".format(micro_p, total_mention_tp, total_mention_num, macro_p,total_doc_num))
                 fout.write("*******************************************************************************************\n")
 
 if __name__ == '__main__':
     cur_lang = Options.en
-    doc_type = Options.doc_type[0]
+    doc_type = Options.doc_type[2]
     corpus_year = 2015
-    exp = 'exp9'
+    exp = 'exp4'
 
     eval = Evaluator()
     eval.log_file = Options.getLogFile('eval1.log')
     starttime = datetime.datetime.now()
-    eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp), predict_file = Options.getLogFile('eval_predict.log'), ans_file = Options.getLogFile('eval_ans.log'))
+    eval.gbdt(Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp), Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp), predict_file = Options.getLogFile('eval_predict.log'+cur_lang), ans_file = Options.getLogFile('eval_ans.log'+cur_lang),n_estimators=1000, max_depth=3)
     endtime = datetime.datetime.now()
     print("{0}".format((endtime - starttime).seconds))

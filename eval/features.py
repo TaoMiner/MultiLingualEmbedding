@@ -161,21 +161,22 @@ class Features:
             # filter according to sense embedding
             if self.isFilter and m[2] not in self.kb_sense.vectors:
                 continue
-
+            filtered_cand_set = []
             # filter cand doesnot contain wiki_id
             has_wiki_id = False
             for cand in cand_set:
-                if cand[0] == m[2]:
+                kb_cand_id = cand[0]
+                if self.isFilter and kb_cand_id not in self.kb_sense.vectors: continue
+                if kb_cand_id not in self.kb_idwiki: continue
+                if kb_cand_id == m[2]:
                     has_wiki_id = True
+                filtered_cand_set.append(cand)
             if not has_wiki_id: continue
+            cand_size = len(filtered_cand_set)
 
-            for cand in cand_set:        #cand_id: m's candidates wiki id
+            for cand in filtered_cand_set:        #cand_id: m's candidates wiki id
                 kb_cand_id = cand[0]
                 cur_cand_id = cand[1]
-                # filter according to sense embedding
-                if self.isFilter and kb_cand_id not in self.kb_sense.vectors : continue
-
-                if kb_cand_id not in self.kb_idwiki : continue
                 kb_entity_label = self.kb_idwiki[kb_cand_id]
                 cur_entity_label = self.cur_idwiki[cur_cand_id] if cur_cand_id in self.cur_idwiki else ''
                 if isFilteredMention:
@@ -207,6 +208,7 @@ class Features:
 
                 #get kb string features
                 str_sim1 = str_sim2 = str_sim3 = str_sim4 = str_sim5 = 0
+                lower_kb_entity_label = ''
                 if len(tr_ment_name) > 0:
                     lower_kb_entity_label = kb_entity_label.lower()
                     str_sim1 = normalized_damerau_levenshtein_distance(lower_tr_ment_name, lower_kb_entity_label)
@@ -218,6 +220,7 @@ class Features:
 
                 # get cur string features
                 str_sim1 = str_sim2 = str_sim3 = str_sim4 = str_sim5 = 0
+                lower_cur_entity_label = ''
                 if len(cur_entity_label) > 0:
                     lower_cur_entity_label = cur_entity_label.lower()
                     str_sim1 = normalized_damerau_levenshtein_distance(lower_ment_name, lower_cur_entity_label)
@@ -227,7 +230,7 @@ class Features:
                     str_sim5 = 1 if lower_cur_entity_label.endswith(lower_ment_name) else 0
                 tmp_mc_vec.extend([str_sim1, str_sim2, str_sim3, str_sim4, str_sim5])
 
-                # embedding features
+                # text embedding features
                 kb_w_actual = 0
                 items = re.split(r' ', lower_tr_ment_name)
                 kbw_vec = np.zeros(self.kb_word.layer_size, dtype=float)
@@ -249,31 +252,69 @@ class Features:
                     if cur_w_actual > 0:
                         curw_vec /= cur_w_actual
 
+                # kb label embedding feature
+                kblabel_w_actual = 0
+                items = re.split(r' ', lower_kb_entity_label)
+                kblabel_vec = np.zeros(self.kb_word.layer_size, dtype=float)
+                for item in items:
+                    if item in self.kb_word.vectors:
+                        kblabel_vec += self.kb_word.vectors[item]
+                        kblabel_w_actual += 1
+                if kblabel_w_actual > 1:
+                    kblabel_vec /= kblabel_w_actual
+
+                curlabel_w_actual = 0
+                curlabel_vec = np.zeros(self.cur_word.layer_size, dtype=float)
+                if self.lang != Options.en:
+                    items = re.split(r' ', lower_cur_entity_label)
+                    for item in items:
+                        if item in self.cur_word.vectors:
+                            curlabel_vec += self.cur_word.vectors[item]
+                            curlabel_w_actual += 1
+                    if curlabel_w_actual > 0:
+                        curlabel_vec /= curlabel_w_actual
+
                 has_kb_sense = True if self.has_kb_sense and kb_cand_id in self.kb_sense.vectors else False
                 has_cur_sense = True if self.lang != Options.en and self.has_cur_sense and cur_cand_id in self.cur_sense.vectors else False
 
-                # 3 embedding similarity: esim1:(kbw,kbsense), esim2:(curw,cursense), esim3:(curw,kbw), esim4:(curw, kbsense)
+                # 3 embedding similarity: esim1:(curw,kbw)(kbw,kbsense), esim2:(curw,cursense), esim3:(curw, kbsense)
+                # esim4: (curw,kbw)(kbw,kb_label), esim5:(curw,cur_label), esim6:(curw,kb_label)
+                trans_p = 0
+                if self.lang != Options.en and cur_w_actual > 0 and kb_w_actual > 0:
+                    trans_p = self.cosSim(curw_vec, kbw_vec)
+
                 esim1 = 0
                 erank1 = 0
-                if kb_w_actual > 0 and has_kb_sense:
-                    esim1 = self.cosSim(kbw_vec,self.kb_sense.vectors[kb_cand_id])
+                if kb_w_actual > 0 and has_kb_sense and trans_p>0:
+                    esim1 = trans_p * self.cosSim(kbw_vec,self.kb_sense.vectors[kb_cand_id])
 
                 esim2 = 0
                 erank2 = 0
-                if self.lang != Options.en and has_cur_sense and cur_w_actual>0:
+                if has_cur_sense and cur_w_actual>0:
                     esim2 = self.cosSim(curw_vec, self.cur_sense.vectors[cur_cand_id])
 
                 esim3 = 0
                 erank3 = 0
-                if self.lang != Options.en and cur_w_actual>0 and kb_w_actual > 0:
-                    esim3 = self.cosSim(curw_vec, kbw_vec)
+                if self.lang != Options.en and cur_w_actual > 0 and has_kb_sense:
+                    esim3 = self.cosSim(curw_vec, self.kb_sense.vectors[kb_cand_id])
 
                 esim4 = 0
                 erank4 = 0
-                if self.lang != Options.en and cur_w_actual > 0 and has_kb_sense:
-                    esim4 = self.cosSim(curw_vec, self.kb_sense.vectors[kb_cand_id])
+                if self.lang != Options.en and trans_p>0 and kb_w_actual > 0 and kblabel_w_actual>0:
+                    esim4 = trans_p * self.cosSim(kbw_vec, kblabel_vec)
 
-                # 4 contexual similarities for align: csim1:(c(w),kb_mu), csim2:(N(kb_e),kb_e), csim3:(c(w), cur_mu)
+                esim5 = 0
+                erank5 = 0
+                if cur_w_actual > 0 and curlabel_w_actual>0:
+                    esim5 = self.cosSim(curw_vec, curlabel_vec)
+
+                esim6 = 0
+                erank6 = 0
+                if self.lang != Options.en and cur_w_actual > 0 and kblabel_w_actual>0:
+                    esim6 = self.cosSim(curw_vec, kblabel_vec)
+
+                # 4 contexual similarities for align: csim1:(c(w),kb_mu), csim2: max(N(kb_e),kb_e), csim3:(c(w), cur_mu)
+                # csim4:(c(w),kb_sense), csim5:(c(w),kblabel), csim6:(c(w),cur_sense), csim7:(c(w),cur_label), csim8: avg(N(kb_e),kb_e)
                 # context vec
                 c_w_actual = 0
                 context_vec = np.zeros(self.cur_word.layer_size, dtype=float)
@@ -302,9 +343,32 @@ class Features:
                 if c_w_actual > 0 and self.lang != Options.en and has_cur_sense:
                     csim3 = self.cosSim(context_vec, self.cur_sense.mu[cur_cand_id])
 
-                tmp_mc_vec.extend([esim1, erank1, esim2, erank2, esim3, erank3, esim4, erank4, csim1, crank1, csim2, crank2, csim3, crank3])
+                csim4 = 0
+                crank4 = 0
+                if c_w_actual > 0 and has_kb_sense:
+                    csim4 = self.cosSim(context_vec, self.kb_sense.vectors[kb_cand_id])
+
+                csim5 = 0
+                crank5 = 0
+                if c_w_actual > 0 and kblabel_w_actual>0:
+                    csim5 = self.cosSim(context_vec, kblabel_vec)
+
+                csim6 = 0
+                crank6 = 0
+                if c_w_actual > 0 and self.lang != Options.en and has_cur_sense:
+                    csim6 = self.cosSim(context_vec, self.cur_sense.vectors[cur_cand_id])
+
+                csim7 = 0
+                crank7 = 0
+                if c_w_actual > 0 and self.lang != Options.en and curlabel_w_actual>0:
+                    csim7 = self.cosSim(context_vec, curlabel_vec)
+
+                csim8 = 0
+                crank8 = 0
+
+                tmp_mc_vec.extend([esim1, erank1, esim2, erank2, esim3, erank3, esim4, erank4, esim5, erank5, esim6, erank6, csim1, crank1, csim2, crank2, csim3, crank3, csim4, crank4, csim5, crank5, csim6, crank6, csim7, crank7, csim8, crank8])
                 if len(self.debug_file) > 0:
-                    self.fout_debug.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}\n".format(esim1, esim2, esim3, esim4, csim1, csim2, csim3))
+                    self.fout_debug.write("{0:0.2f}, {1:0.2f}, {2:0.2f}, {3:0.2f}, {4:0.2f}, {5:0.2f}, {6:0.2f}, {7:0.2f}, {8:0.2f}, {9:0.2f}, {10:0.2f}, {11:0.2f}, {12:0.2f}, {13:0.2f}\n".format(esim1, esim2, esim3, esim4, esim5, esim6, csim1, csim2, csim3, csim4, csim5, csim6, csim7, csim8))
                 vec.append(tmp_mc_vec)
                 # add entities without ambiguous as truth
                 if isFirstStep and kb_pem > 0.95 :
@@ -314,8 +378,8 @@ class Features:
                                               'cur_pem', 'cur_pe', 'cur_largest_pe', \
                                               'trans_str_sim1', 'trans_str_sim2','trans_str_sim3','trans_str_sim4','trans_str_sim5', \
                                                 'cur_str_sim1', 'cur_str_sim2', 'cur_str_sim3','cur_str_sim4', 'cur_str_sim5', \
-                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4',\
-                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3'])
+                                                'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank5','esim5', 'erank6','esim6', 'erank6',\
+                                                'csim1', 'crank1','csim2', 'crank2','csim3', 'crank3','csim4', 'crank4','csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8'])
 
         cand_count = 0
         cand_size = 0
@@ -339,6 +403,8 @@ class Features:
                     if ent in self.kb_entity.vectors:
                         tmp_sim_ce.append(self.cosSim(self.kb_entity.vectors[ent], entity_vec))
                 df_vec.loc[row[0], 'csim2'] = max(tmp_sim_ce)
+                if len(tmp_sim_ce) > 0:
+                    df_vec.loc[row[0], 'csim8'] = sum(tmp_sim_ce)/len(tmp_sim_ce)
                 '''
                 c_ent_vec = np.zeros(self.kb_entity.layer_size, dtype=float)
                 c_ent_num = 0
@@ -374,6 +440,16 @@ class Features:
                 for i in ranks.index:
                     df_vec.loc[i, 'erank4'] = ranks[i]
 
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim5']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'erank5'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim6']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'erank6'] = ranks[i]
+
                 t = -df_vec.loc[ row[0]-cand_size+1:row[0], 'csim1']
                 ranks = t.rank(method = 'min')
                 for i in ranks.index:
@@ -388,6 +464,31 @@ class Features:
                 ranks = t.rank(method = 'min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank3'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim4']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'crank4'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim5']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'crank5'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim6']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'crank6'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim7']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'crank7'] = ranks[i]
+
+                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim8']
+                ranks = t.rank(method='min')
+                for i in ranks.index:
+                    df_vec.loc[i, 'crank8'] = ranks[i]
 
                 cand_size = 0
         return df_vec
@@ -418,10 +519,10 @@ class Features:
 if __name__ == '__main__':
     # kb lang is always 'eng'
     has_sense = True
-    exp = 'exp9'
-    it = 5
+    exp = 'exp4'
+    it = 3
     cur_lang = Options.en
-    doc_type = Options.doc_type[0]
+    doc_type = Options.doc_type[2]
     corpus_year = 2015
 
 
@@ -499,12 +600,35 @@ if __name__ == '__main__':
     # load doc
     dr = DataReader()
     dr.initNlpTool(Options.getNlpToolUrl(cur_lang), cur_lang)
+
     idmap = dr.loadKbidMap(Options.kbid_map_file)
     mentions15 = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, True), id_map=idmap)
     mentions15_train = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, False), id_map=idmap)
-    en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
-    en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
+    if doc_type!= Options.doc_type[2]:
+        en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
+        en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
+    else:
+        nw_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[0], mentions15_train)
+        nw_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[0], mentions15)
+
+        df_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[1], mentions15_train)
+        df_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[1], mentions15)
+
+        en_train_corpus = nw_train_corpus.extend(df_train_corpus)
+        en_eval_corpus = nw_eval_corpus.extend(df_eval_corpus)
 
     features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp))
     features.resetTotalCount()
     features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp))
+    '''
+
+    corpus = dr.readConll(Options.aida_file)
+    en_train_corpus = corpus[:947]
+    testa_corpus = corpus[947:1163]
+    testb_corpus = corpus[1163:]
+    en_eval_corpus = testa_corpus
+
+    features.extFeatures(en_train_corpus, Options.getConllFeatureFile(exp,'train'))
+    features.resetTotalCount()
+    features.extFeatures(en_eval_corpus, Options.getConllFeatureFile(exp,'testa'))
+    '''

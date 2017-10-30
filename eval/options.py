@@ -8,7 +8,7 @@ class Options:
     word_type = 'word'
     sense_type = 'sense'
 
-    doc_type = ['nw','df']
+    doc_type = ['nw','df','all']
 
     root_path = '/home/caoyx/data/'
     ppr_candidate_file = '/home/caoyx/data/conll/ppr_candidate'
