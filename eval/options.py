@@ -8,7 +8,7 @@ class Options:
     word_type = 'word'
     sense_type = 'sense'
 
-    doc_type = ['nw','df','all']
+    doc_type = ['nw','df']
 
     root_path = '/home/caoyx/data/'
     ppr_candidate_file = '/home/caoyx/data/conll/ppr_candidate'
@@ -27,8 +27,10 @@ class Options:
     wordsim353_file = root_path+'wordsim353_agreed.txt'
 
     @staticmethod
-    def getFeatureFile(year, isEval, lang, docType, exp):
+    def getFeatureFile(year, isEval, lang, docType, exp, round=0):
         tmp = 'eval' if isEval else 'training'
+        if round>0:
+            return Options.root_path + 'features/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature'+str(round) +'_' + exp
         return Options.root_path + 'features/' + str(year) + '_' + tmp + '_' + lang + '_' + docType + '.feature_' + exp
 
     @staticmethod

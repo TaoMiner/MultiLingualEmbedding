@@ -39,6 +39,7 @@ class Features:
         self.total_doc_num = 0
         self.total_mention_num = 0
         self.total_cand_num = 0
+        self.round = 0
 
     def resetTotalCount(self):
         self.total_doc_num = 0
@@ -103,9 +104,8 @@ class Features:
                     items = re.split(r',', line.strip())
                     if len(items) < 6 : continue
                     tmp_ans = self.res1[items[2]] if items[2] in self.res1 else set()
-                    if items[5] in self.kb_idwiki:
-                        tmp_ans.add(self.kb_idwiki[items[5]])
-                        self.res1[items[2]] = tmp_ans
+                    tmp_ans.add(items[5])
+                    self.res1[items[2]] = tmp_ans
 
     def cosSim(self, v1, v2):
         res = spatial.distance.cosine(v1,v2)
@@ -216,6 +216,7 @@ class Features:
                     str_sim3 = 1 if lower_kb_entity_label.find(lower_tr_ment_name) else 0
                     str_sim4 = 1 if lower_kb_entity_label.startswith(lower_tr_ment_name) else 0
                     str_sim5 = 1 if lower_kb_entity_label.endswith(lower_tr_ment_name) else 0
+                    str_sim1 = 1-str_sim1 if str_sim1 <=1 and str_sim1>=0 else 0
                 tmp_mc_vec.extend([str_sim1, str_sim2, str_sim3, str_sim4, str_sim5])
 
                 # get cur string features
@@ -228,6 +229,7 @@ class Features:
                     str_sim3 = 1 if lower_cur_entity_label.find(lower_ment_name) else 0
                     str_sim4 = 1 if lower_cur_entity_label.startswith(lower_ment_name) else 0
                     str_sim5 = 1 if lower_cur_entity_label.endswith(lower_ment_name) else 0
+                    str_sim1 = 1 - str_sim1 if str_sim1 <= 1 and str_sim1 >= 0 else 0
                 tmp_mc_vec.extend([str_sim1, str_sim2, str_sim3, str_sim4, str_sim5])
 
                 # text embedding features
@@ -381,126 +383,109 @@ class Features:
                                                 'esim1', 'erank1', 'esim2', 'erank2','esim3', 'erank3', 'esim4', 'erank4', 'esim5', 'erank5','esim6', 'erank6',\
                                                 'csim1', 'crank1', 'csim2', 'crank2','csim3', 'crank3', 'csim4', 'crank4', 'csim5', 'crank5','csim6', 'crank6','csim7', 'crank7','csim8', 'crank8'])
 
-        cand_count = 0
-        cand_size = 0
-        last_mention = -1
-        for row in df_vec.itertuples():
-            # update feature vector for contextual feature's rank and largest pe
-            if last_mention != row[2]:
-                last_mention = row[2]
-                cand_count = 0
-                cand_size = row[5]
-            kb_cand_id = row[4]
-            cand_count += 1
-            #update the largest pe in base features
-            df_vec.loc[row[0], 'kb_largest_pe'] = largest_kb_pe
-            df_vec.loc[row[0], 'cur_largest_pe'] = largest_cur_pe
-            #update context entity features
-            if len(c_entities) > 0 and kb_cand_id in self.kb_entity.vectors :
-                tmp_sim_ce = []
-                entity_vec = self.kb_entity.vectors[kb_cand_id]
-                for ent in c_entities:
-                    if ent in self.kb_entity.vectors:
-                        tmp_sim_ce.append(self.cosSim(self.kb_entity.vectors[ent], entity_vec))
-                df_vec.loc[row[0], 'csim2'] = max(tmp_sim_ce)
-                if len(tmp_sim_ce) > 0:
-                    df_vec.loc[row[0], 'csim8'] = sum(tmp_sim_ce)/len(tmp_sim_ce)
-                '''
-                c_ent_vec = np.zeros(self.kb_entity.layer_size, dtype=float)
-                c_ent_num = 0
-                for ent in c_entities:
-                    if ent in self.kb_entity.vectors:
-                        c_ent_vec += self.kb_entity.vectors[ent]
-                        c_ent_num += 1
-                entity_vec = self.kb_entity.vectors[kb_cand_id]
-                if c_ent_num > 0:
-                    c_ent_vec /= c_ent_num
-                    df_vec.loc[row[0], 'csim2'] = self.cosSim(c_ent_vec, entity_vec)
-                '''
-
-            if cand_count == cand_size and cand_size > 0:
-                #compute last mention's candidate rank
-                t = -df_vec.loc[ row[0]-cand_size+1:row[0], 'esim1']
-                ranks = t.rank(method = 'min')
+        doc_grouped = df_vec.groupby('doc_id')
+        for doc_id, doc_df in doc_grouped:
+            mention_grouped = doc_df.groupby('mention_id')
+            for mention_id, mention_df in mention_grouped:
+                for row in mention_df.itertuples():
+                    df_vec.iloc[row[0]]['kb_pe'] /= largest_kb_pe
+                    df_vec.iloc[row[0]]['kb_largest_pe'] = largest_kb_pe
+                    df_vec.iloc[row[0]]['cur_pe'] /= largest_cur_pe
+                    df_vec.iloc[row[0]]['cur_largest_pe'] = largest_cur_pe
+                    kb_cand_id = row[4]
+                    # update context entity features
+                    if len(c_entities) > 0 and kb_cand_id in self.kb_entity.vectors:
+                        tmp_sim_ce = []
+                        entity_vec = self.kb_entity.vectors[kb_cand_id]
+                        for ent in c_entities:
+                            if ent in self.kb_entity.vectors:
+                                tmp_sim_ce.append(self.cosSim(self.kb_entity.vectors[ent], entity_vec))
+                        df_vec.loc[row[0], 'csim2'] = max(tmp_sim_ce)
+                        if len(tmp_sim_ce) > 0:
+                            df_vec.loc[row[0], 'csim8'] = sum(tmp_sim_ce) / len(tmp_sim_ce)
+                # compute last mention's candidate rank
+                t = -mention_df.loc[:, 'esim1']
+                ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank1'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim2']
+                t = -mention_df.loc[:, 'esim2']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank2'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim3']
+                t = -mention_df.loc[:, 'esim3']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank3'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim4']
+                t = -mention_df.loc[:, 'esim4']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank4'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim5']
+                t = -mention_df.loc[:, 'esim5']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank5'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'esim6']
+                t = -mention_df.loc[:, 'esim6']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'erank6'] = ranks[i]
 
-                t = -df_vec.loc[ row[0]-cand_size+1:row[0], 'csim1']
-                ranks = t.rank(method = 'min')
+                t = -mention_df.loc[:, 'csim1']
+                ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank1'] = ranks[i]
 
-                t = -df_vec.loc[ row[0]-cand_size+1:row[0], 'csim2']
-                ranks = t.rank(method = 'min')
+                t = -mention_df.loc[:, 'csim2']
+                ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank2'] = ranks[i]
 
-                t = -df_vec.loc[ row[0]-cand_size+1:row[0], 'csim3']
-                ranks = t.rank(method = 'min')
+                t = -mention_df.loc[:, 'csim3']
+                ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank3'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim4']
+                t = -mention_df.loc[:, 'csim4']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank4'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim5']
+                t = -mention_df.loc[:, 'csim5']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank5'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim6']
+                t = -mention_df.loc[:, 'csim6']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank6'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim7']
+                t = -mention_df.loc[:, 'csim7']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank7'] = ranks[i]
 
-                t = -df_vec.loc[row[0] - cand_size + 1:row[0], 'csim8']
+                t = -mention_df.loc[:, 'csim8']
                 ranks = t.rank(method='min')
                 for i in ranks.index:
                     df_vec.loc[i, 'crank8'] = ranks[i]
-
-                cand_size = 0
         return df_vec
 
     def extFeatures(self, corpus, feature_file, isLowered=True):
         count = 0
         if len(self.debug_file) > 0:
-            self.fout_debug = codecs.open(self.debug_file, 'a', encoding='UTF-8')
+            self.fout_debug = codecs.open(self.debug_file, 'w', encoding='UTF-8')
             self.fout_debug.write("**************************************************\n")
             self.fout_debug.write("feature_file:{0}\n".format(feature_file))
         for doc in corpus:
-            vec = self.getFVec(doc, isLowered)
+            if self.round>0 and doc.doc_id in self.res1:
+                vec = self.getFVec(doc, isLowered, c_entities = self.res1[doc.doc_id])
+            else:
+                vec = self.getFVec(doc, isLowered)
             vec.to_csv(feature_file, mode='a', header=False, index=False)
             self.total_cand_num += len(vec)
             if len(vec) > 0: self.total_doc_num += 1
@@ -522,12 +507,15 @@ if __name__ == '__main__':
     exp = 'exp4'
     it = 3
     cur_lang = Options.es
-    doc_type = Options.doc_type[0]
+    doc_type = Options.doc_type[2]
     corpus_year = 2015
+    round = 0
 
     features = Features()
     # set for current lang
     features.setCurLang(cur_lang)
+
+    features.round = round
 
     # load kb entity, sense, and wiki_id
     kb_word = Word()
@@ -566,8 +554,8 @@ if __name__ == '__main__':
 
     features.loadCurVec(cur_idwiki_dic, cur_word, cur_entity, sense=cur_sense)
 
-    features.log_file = Options.getLogFile('log_feature')
-    features.debug_file = Options.getLogFile('debug_feature')
+    features.log_file = Options.getLogFile('log_feature'+cur_lang)
+    features.debug_file = Options.getLogFile('debug_feature'+cur_lang)
 
     # kb mention's candidate entities {apple:{wiki ids}, ...}
     # p(e)
@@ -605,20 +593,15 @@ if __name__ == '__main__':
     mentions15_train = dr.loadKbpMentions(Options.getKBPAnsFile(corpus_year, False), id_map=idmap)
     en_train_corpus = None
     en_eval_corpus = None
-    if doc_type!= Options.doc_type[2]:
-        en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
-        en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
-    else:
-        en_train_corpus = dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[0], mentions15_train)
-        en_eval_corpus = dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[0], mentions15)
+    en_train_corpus = dr.readKbp(corpus_year,False,cur_lang, doc_type, mentions15_train)
+    en_eval_corpus = dr.readKbp(corpus_year,True,cur_lang, doc_type, mentions15)
 
-        en_train_corpus.extend(dr.readKbp(corpus_year, False, cur_lang, Options.doc_type[1], mentions15_train))
-        en_eval_corpus.extend(dr.readKbp(corpus_year, True, cur_lang, Options.doc_type[1], mentions15))
-
-
-    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year,False,cur_lang, doc_type, exp))
+    if features.round>0:
+        features.loadResult(Options.getLogFile('eval_predict.log'+cur_lang))
+    features.extFeatures(en_train_corpus, Options.getFeatureFile(corpus_year, False, cur_lang, doc_type, exp, round=features.round))
     features.resetTotalCount()
-    features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year,True,cur_lang, doc_type, exp))
+    features.extFeatures(en_eval_corpus, Options.getFeatureFile(corpus_year, True, cur_lang, doc_type, exp, round=features.round))
+
     '''
 
     corpus = dr.readConll(Options.aida_file)

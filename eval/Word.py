@@ -79,10 +79,10 @@ class Word():
             print('load {0} words!'.format(self.vocab_size))
 
     def saveVector(self, filename):
-        with codecs.open(filename, 'wb') as fout:
-            fout.write("{0} {1}\n".format(self.vocab_size, self.layer_size))
+        with codecs.open(filename, 'w') as fout:
+            fout.write("{0} {1}\n".format(self.vocab_size,self.layer_size))
             for label in self.vectors:
-                fout.write("{0}\t".format(label.encode('utf-8')))
+                fout.write("{0}\t".format(label.encode('utf-8', 'ignore')))
                 for i in range(self.layer_size):
                     fout.write(struct.pack('f', self.vectors[label][i]))
                 fout.write('\n')
@@ -90,4 +90,9 @@ class Word():
 
 if __name__ == '__main__':
     w = Word()
-    word_vector_file = '/Users/ethan/Downloads/sub_words2'
+    vocab_file = '/home/caoyx/data/etc/vocab/envocab/vocab_word.txt'
+    word_vector_file = '/home/caoyx/data/etc/exp6/envec2/vectors_word1'
+    output_file = '/home/caoyx/data/etc/exp6/envec/vectors_word1'
+    vocab = w.loadVocab(vocab_file)
+    w.loadVector(word_vector_file,vocab=vocab)
+    w.saveVector(output_file)

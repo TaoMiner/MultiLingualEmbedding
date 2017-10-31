@@ -1,7 +1,11 @@
 import codecs
 import re
+import struct
+import pandas as pd
 
+vec = [2,1,4,0,1]
 
-a = [3,4.5,6.5]
-b = sum(a)/len(a)
-print b
+a = -pd.Series(vec)
+
+ranks = a.rank(method='min')
+print ranks
