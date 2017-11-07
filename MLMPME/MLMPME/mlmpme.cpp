@@ -74,11 +74,11 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1,has_kg_att = 1, has_w_att = 1, rho=0;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1,has_kg_att = 1, has_w_att = 1;
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
-real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, XLING_LAMBDA = 1;
+real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, rho = 0.01;
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
@@ -1478,7 +1478,7 @@ real FpropSent(long long sen[MAX_SENTENCE_LENGTH], real attention[MAX_SENTENCE_L
 
 
 /* BilBOWA bag-of-words sentence update */
-void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[2][MAX_SENTENCE_LENGTH], int lang_id[2], real *deltas, real xling_balancer) {
+void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[2][MAX_SENTENCE_LENGTH], int lang_id[2], real *deltas) {
     int a,i;
     real grad_norm;
     int len[2];
@@ -1496,7 +1496,7 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_SENTENCE_LENGTH],real attention[
     FpropSent(sen[0], attention[0], deltas, model[TEXT_VOCAB][lang_id[0]].syn0, +1);
     grad_norm = FpropSent(sen[1], attention[1], deltas, model[TEXT_VOCAB][lang_id[1]].syn0, -1);
     bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
-    UpdateSquaredError(sen, len, lang_id, deltas, XLING_LAMBDA * xling_balancer*cross_model_weight);
+    UpdateSquaredError(sen, len, lang_id, deltas, cross_model_weight);
     
 }
 
@@ -1574,7 +1574,7 @@ real km_match(struct KM_var *km_var)
 
 void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index[4], real attention[2][MAX_SENTENCE_LENGTH], int lang_id[2]){
     long i,j;
-    real sum = rho, tmp_sim;
+    real sum = 0.01, tmp_sim;
     int len[2];
     real rel_vec[2][layer_size];
     int VOCAB = KG_VOCAB;
@@ -1582,8 +1582,8 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
     
     for (i = 0; i<2; i++)
         for (j=0;j<layer_size;j++){
-            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
-            //rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j];
+            //rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j] - model[VOCAB][lang_id[i]].syn0[entity_index[i*2+1]*layer_size+j];
+            rel_vec[i][j] = model[VOCAB][lang_id[i]].syn0[entity_index[i*2]*layer_size+j];
         }
     
     for (i=0;i<2;i++){
@@ -1604,13 +1604,13 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
                 attention[i][j] /= sum;
         }
         
-        sum = rho;
+        sum = 0.01;
     }
 }
 
 void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_SENTENCE_LENGTH], struct KM_var *km_var, int lang_id[2]){
     long i,j;
-    real sum = 0.0;
+    real sum = 0.01;
     int len[2], m,n;
     
     for (i=0;i<2;i++){
@@ -1633,7 +1633,7 @@ void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_
             km_var->matrix[i*km_var->n+j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
         }
     }
-    sum = km_match(km_var)+rho;
+    sum = km_match(km_var)+0.01;
     if (!isequal(sum, 0)){
         for (j=0;j<len[m];j++)
             if (km_var->match1[j] == -1)
@@ -1667,7 +1667,7 @@ void *BilbowaThread(void *id) {
     lang_id[1] = cur_lang_id;
     //km parameter
     struct KM_var km_var;
-    real sum = 0;
+    real sum = rho;
     real deltas[layer_size], xling_balancer;
     bool valid_entity = true;
     //seek for the position of the current thread
@@ -1696,7 +1696,6 @@ void *BilbowaThread(void *id) {
                 par_epoch[lang_id[1]-1]++;
             }
         }
-        xling_balancer = 1.0;
         
         valid_entity = true;
         for (int i=0;i<4;i++)
@@ -1731,13 +1730,13 @@ void *BilbowaThread(void *id) {
                 if (!isequal(sum, 0))
                     for (int j=0;j<MAX_SENTENCE_LENGTH;j++){
                         if (isequal(attention[i][j], -1)) break;
-                        attention[i][j]/=sum;
+                        attention[i][j] = (attention[i][j]+rho)/sum;
                     }
-                sum = 0;
+                sum = rho;
             }
          }
         
-        BilBOWASentenceUpdate(par_sen, attention, lang_id, deltas, xling_balancer);
+        BilBOWASentenceUpdate(par_sen, attention, lang_id, deltas);
     } // while training loop
     fclose(fi_par);
     pthread_exit(NULL);
@@ -1889,7 +1888,6 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-early-stop", argc, argv)) > 0) EARLY_STOP = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) NUM_EPOCHS = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-adagrad", argc, argv)) > 0) adagrad = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-xling-lambda", argc, argv)) > 0) XLING_LAMBDA = atof(argv[i + 1]);
     if ((i = ArgPos((char *)"-dump-every", argc, argv)) > 0) dump_every = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-share_syn", argc, argv)) > 0) shareSyn0 = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);

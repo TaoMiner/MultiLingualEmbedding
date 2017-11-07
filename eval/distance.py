@@ -59,17 +59,19 @@ class Distance():
         return res
 
     def findNeighbors(self):
-        out = 'OK! your input: {0}\n\
-              '.format(self.input_str)
+        out = 'OK! your input: {0}\n'.format(self.input_str.strip())
+        self.output(out)
+        tmp_out_list = []
         for i in range(len(self.lang)):
             if isinstance(self.words[i], type(None)):
-                out += '{0}: no word model for {1} language!\n'.format(2*i, self.lang[i])
+                tmp_out_list.append('{0}: no word model for {1} language!\n'.format(2*i, self.lang[i]))
             else:
-                out += '{0}: nearest {1} words!\n'.format(2*i, self.lang[i])
+                tmp_out_list.append('{0}: nearest {1} words!\n'.format(2*i, self.lang[i]))
             if isinstance(self.entities[i], type(None)):
-                out += '{0}: no entity model for {1} language!\n'.format(2*i+1, self.lang[i])
+                tmp_out_list.append('{0}: no entity model for {1} language!\n'.format(2*i+1, self.lang[i]))
             else:
-                out += '{0}: nearest {1} entities!\n'.format(2*i+1, self.lang[i])
+                tmp_out_list.append('{0}: nearest {1} entities!\n'.format(2*i+1, self.lang[i]))
+        out += ''.join(tmp_out_list)
         out += '{0}: EXIT.\nYour choice:'.format(2*len(self.lang))
         while (1):
             choose_str = input(out)
@@ -84,9 +86,9 @@ class Distance():
             if mode_index==2*len(self.lang) :
                 self.setInput(self.layer_size)
                 break
-            self.output(" {0}\n".format(mode_index))
-            tmp_model = self.words if mode_index % len(self.lang)==0 else self.entities
-            tmp_lang_index = mode_index / len(self.lang)
+            self.output(" {0}:{1}\n".format(mode_index,tmp_out_list[mode_index]))
+            tmp_model = self.words if mode_index%2==0 else self.entities
+            tmp_lang_index = int(mode_index/2)
             if isinstance(tmp_model[tmp_lang_index], type(None)):
                 print("Empty model, please choose again!\n")
                 continue
@@ -125,12 +127,12 @@ class Distance():
         id = ''
         if item_type == Options.word_type and not isinstance(self.words[lang_index], type(None)) and item in self.words[lang_index].vectors:
             vec = self.words[lang_index].vectors[item]
-            self.output("success find {0} word {1}!\n".format(self.lang[lang_index], item))
+            print("success find {0} word {1}!\n".format(self.lang[lang_index], item))
         if item_type == Options.entity_type and not isinstance(self.entities[lang_index], type(None)) and not isinstance(self.entities[lang_index].entity_id, type(None)) and item in self.entities[lang_index].entity_id:
                 id = self.entities[lang_index].entity_id[item]
                 if id in self.entities[lang_index].vectors:
                     vec = self.entities[lang_index].vectors[id]
-                    self.output("success find {0} entity {1}:{2}!\n".format(self.lang[lang_index], id, item))
+                    print("success find {0} entity {1}:{2}!\n".format(self.lang[lang_index], id, item))
         return vec
 
     def process(self):
@@ -140,6 +142,7 @@ class Distance():
             if str == 'FINISH':
                 if self.input_vec[0] == 0 : continue
                 self.findNeighbors()
+                continue
             m = inputRE.match(str)
             if not m:
                 print("Error format! Please input again! Format:\"[+|-][w|e]:[en|zh|es]:item\"\nFor example, -w:en:apple\n")
@@ -191,7 +194,7 @@ if __name__ == '__main__':
     e2.loadVector(Options.getExpVecFile(exp, lang[1], Options.entity_type, it))
 
     dis = Distance()
-    dis.setLogFile(log_file)
+    dis.setLogFile(log_file, exp=exp)
     dis.loadModels(w1, e1, lang[0])
     dis.loadModels(w2, e2, lang[1])
     dis.process()
