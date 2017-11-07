@@ -74,7 +74,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1,has_kg_att = 1, has_w_att = 1;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, adagrad=0, has_sense=1,has_kg_att = 1, has_w_att = 1, rho=0;
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
@@ -82,7 +82,7 @@ real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_w
 real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
-int par_line_num[NUM_LANG-1], max_num_clink=0, MONO_DONE_TRAINING = 0;
+int par_line_num[NUM_LANG-1], par_actual_line[NUM_LANG-1], par_epoch[NUM_LANG-1], max_num_clink=0, MONO_DONE_TRAINING = 0;
 unsigned long long g_next_random = 0;
 
 bool isequal(real a,real b)
@@ -859,8 +859,10 @@ void InitMultiModel(){
         lang_id[1] = i+1;
         if(cross_link_file[i][0]!=0)
             readCrossLinks(cross_link_file[i], lang_id);
-        if(multi_context_file[i][0]!=0)
+        if(multi_context_file[i][0]!=0){
             par_line_num[i] = readContextLines(multi_context_file[i], lang_id);
+            par_actual_line[i] = 0;
+        }
     }
     for (int i=0;i<NUM_LANG;i++)
         cross_links[i] = (int *)realloc(cross_links[i], max_num_clink * sizeof(int));
@@ -879,7 +881,7 @@ void UpdateEmbeddings(real *embeddings, real *grads, int offset, int num_updates
             step = alpha * deltas[a];
         }
         if (step != step) {
-            fprintf(stderr, "ERROR: step == NaN\n");
+            fprintf(stderr, "ERROR: step == NaN");
         }
         step = step * weight;
         if (CLIP_UPDATES != 0) {
@@ -947,17 +949,15 @@ void *TrainTextModelThread(void *id) {
             last_word_count = word_count;
             if ((debug_mode > 1)) {
                 now = clock();
-                sprintf(out_str, "Alpha: %f  Progress: %.2f%%  (epoch %lld) (", alpha, word_count_actual / (real)(all_train_words + 1) * 100, mono_words->epoch);
+                sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", alpha, word_count_actual / (real)(all_train_words + 1) * 100);
                 for (int l = 0;l <NUM_LANG;l++)
-                    sprintf(out_str, "%sKG%d: %.2fM, ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sKG%d: %.2fM (%lld), ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000, model[KG_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG;l++)
-                    sprintf(out_str, "%sL%d: %.2fM, ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000);
+                    sprintf(out_str, "%sL%d: %.2fM (%lld), ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000, model[TEXT_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%dgrad: %.4f ", out_str,l+2,bilbowa_grad);
-                sprintf(out_str, "%sWords/sec: %.2fK  ",out_str, word_count_actual / ((real)(now - start + 1) /
-                                                                                      (real)CLOCKS_PER_SEC * 1000));
-                printf("%c%sEntities/sec: %.2fK  ", 13, out_str,
-                       entity_count_actual / ((real)(now - start + 1) /
+                    sprintf(out_str, "%sL1L%d: %.2fM (%d), grad: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], bilbowa_grad);
+                printf("%c%sWords/sec: %.2fK  ", 13, out_str,
+                       word_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
                 fflush(stdout);
             }
@@ -1013,6 +1013,13 @@ void *TrainTextModelThread(void *id) {
                     word_count++;
                     
                     mono_words->lang_updates ++;
+                    
+                    if (mono_words->lang_updates > 0 &&
+                        mono_words->lang_updates % mono_words->train_items == 0) {
+                        mono_words->epoch++;
+                        resetSenseCluster(lang_id);
+                    }
+                    
                     if (dump_every > 0)
                         if (mono_words->lang_updates % dump_every == 0){
                             SaveVector(mono_words,mono_words->dump_iters++);
@@ -1047,11 +1054,6 @@ void *TrainTextModelThread(void *id) {
             sentence_position = 0;
         }
         if (mono_words->lang_updates > all_train_words/ NUM_LANG) break;
-        if (mono_words->lang_updates > 0 &&
-            mono_words->lang_updates % max_train_words == 0) {
-            mono_words->epoch++;
-            resetSenseCluster(lang_id);
-        }
         if (feof(fi) || (word_count > mono_words->train_items / num_threads)) {
             word_count_actual += word_count - last_word_count;
             word_count = 0;
@@ -1158,14 +1160,14 @@ void *TrainTextModelThread(void *id) {
                                 }
                                 l2 = target * layer_size;
                                 f = 0;
-                                for (c = 0; c < layer_size; c++) f += mono_words->syn0[c + l1] * mono_entities->syn1neg[c + l2];
+                                for (c = 0; c < layer_size; c++) f += mono_words->syn0[c + l1] * mono_entities->syn0[c + l2];
                                 if (f > MAX_EXP) g = (label - 1);
                                 else if (f < -MAX_EXP) g = (label - 0);
                                 else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]);
-                                for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn1neg[c + l2];
+                                for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn0[c + l2];
                                 // for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
                                 for (c = 0; c < layer_size; c++) syn1negDelta[c] = g * mono_words->syn0[c + l1];
-                                UpdateEmbeddings(mono_entities->syn1neg, mono_entities->syn1negGrad, l2, layer_size,syn1negDelta, +1);
+                                UpdateEmbeddings(mono_entities->syn0, mono_entities->syn0Grad, l2, layer_size,syn1negDelta, +1);
                             }
                             // Learn weights input -> hidden
                             //for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
@@ -1258,6 +1260,12 @@ void *TrainKgModelThread(void *id) {
                 if (!strcmp(entity, "</t>")) continue;
                 entity_count ++;
                 mono_entities->lang_updates ++;
+                
+                if (mono_entities->lang_updates > 0 &&
+                    mono_entities->lang_updates % mono_entities->train_items == 0) {
+                    mono_entities->epoch++;
+                }
+                
                 line_entity_count++;
                 if(is_read_head==1){
                     head_entity_index = SearchVocab(entity, mono_entities);
@@ -1289,10 +1297,6 @@ void *TrainKgModelThread(void *id) {
         }
         // kg training is almost 6 times faster than text
         // if (mono_entities->lang_updates/6 > all_train_items/(NUM_MODEL-1) / NUM_LANG) break;
-        if (mono_entities->lang_updates > 0 &&
-            mono_entities->lang_updates % max_train_words == 0) {
-            mono_entities->epoch++;
-        }
         if (feof(fi) || (entity_count > mono_entities->train_items / num_threads)) {
             entity_count_actual += entity_count - last_entity_count;
             fseek(fi, mono_entities->file_size / (long long)num_threads * (long long)thread_id, SEEK_SET);
@@ -1342,7 +1346,7 @@ void *TrainKgModelThread(void *id) {
         }
         //train cross lingual links
         cross_index = mono_entities->vocab[head_entity_index].index;
-        if (NUM_LANG >=2 && cross_index>=0){
+        if (NUM_LANG >=2 && cross_model_weight>0 && cross_index>=0){
             for (c = 0; c < layer_size; c++) neu1e[c] = 0;
             for (int k=0;k<NUM_LANG;k++){
                 if (k==lang_id) continue;
@@ -1570,7 +1574,7 @@ real km_match(struct KM_var *km_var)
 
 void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index[4], real attention[2][MAX_SENTENCE_LENGTH], int lang_id[2]){
     long i,j;
-    real sum = 0.0, tmp_sim;
+    real sum = rho, tmp_sim;
     int len[2];
     real rel_vec[2][layer_size];
     int VOCAB = KG_VOCAB;
@@ -1600,7 +1604,7 @@ void SetKGAttention(long long sen[2][MAX_SENTENCE_LENGTH],long long entity_index
                 attention[i][j] /= sum;
         }
         
-        sum = 0.0;
+        sum = rho;
     }
 }
 
@@ -1629,7 +1633,7 @@ void SetWAttention(long long sen[2][MAX_SENTENCE_LENGTH], real attention[2][MAX_
             km_var->matrix[i*km_var->n+j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
         }
     }
-    sum = km_match(km_var);
+    sum = km_match(km_var)+rho;
     if (!isequal(sum, 0)){
         for (j=0;j<len[m];j++)
             if (km_var->match1[j] == -1)
@@ -1685,6 +1689,13 @@ void *BilbowaThread(void *id) {
         }
         if (res <= 0) continue;
         cur_line += res;
+        for (int i=0;i<res;i++){
+            par_actual_line[lang_id[1]-1] ++;
+            if (par_actual_line[lang_id[1]-1] > 0 &&
+                par_actual_line[lang_id[1]-1] % par_line_num[lang_id[1]-1] == 0) {
+                par_epoch[lang_id[1]-1]++;
+            }
+        }
         xling_balancer = 1.0;
         
         valid_entity = true;
@@ -1733,11 +1744,13 @@ void *BilbowaThread(void *id) {
 }
 
 void TrainModel(){
-    long long i;
+    long long i, num_m = 0;
     long a;
     char out_str[MAX_STRING];
     starting_alpha = alpha;
-    pthread_t *pt = (pthread_t *)malloc((3*NUM_LANG - 1)* num_threads * sizeof(pthread_t));
+    if (cross_model_weight>0) num_m = 3*NUM_LANG - 1;
+    else num_m = 2*NUM_LANG;
+    pthread_t *pt = (pthread_t *)malloc(num_m* num_threads * sizeof(pthread_t));
     start = clock();
     printf("Start training.\n");
     for (a = 0; a < NUM_LANG * num_threads; a++) {
@@ -1760,7 +1773,7 @@ void TrainModel(){
         }
     }
     
-    for (a = 0; a < (2*NUM_LANG + 1) * num_threads; a++) pthread_join(pt[a], NULL);
+    for (a = 0; a < num_m * num_threads; a++) pthread_join(pt[a], NULL);
     
     for (i=0;i<NUM_LANG;i++)
         resetSenseCluster(i);
@@ -1832,6 +1845,8 @@ int main(int argc, char **argv) {
         printf("\t\tuse bilingual words alignment as attention\n");
         printf("\t-is_normal <int>\n");
         printf("\t\tif batch normalization\n");
+        printf("\t-rho <int>\n");
+        printf("\t\tthe effect of attention\n");
         printf("\nExamples:\n");
         printf("./mlmpme -mono_anchor1 en_anchor.txt -mono_anchor2 zh_anchor.txt -mono_kg1 en_kg.txt -mono_kg2 zh_kg.txt -multi_context multi_context.txt -output1 ./en_vec/ -output2 ./zh_vec/ -save_mono_vocab1 ./en_vocab/ -save_mono_vocab2 ./zh_vocab/ -read_cross_link cross_links.txt -size 200 -window 5 -sample 1e-4 -negative 5 -threads 63  -save_iter 1 -iter 3\n\n");
         return 0;
@@ -1883,6 +1898,7 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-is_normal", argc, argv)) > 0) is_normal = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) has_sense = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-cross_model_weight", argc, argv)) > 0) cross_model_weight = atof(argv[i + 1]);
+    if ((i = ArgPos((char *)"-rho", argc, argv)) > 0) rho = atoi(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i < EXP_TABLE_SIZE; i++) {

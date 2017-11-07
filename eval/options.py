@@ -8,7 +8,7 @@ class Options:
     word_type = 'word'
     sense_type = 'sense'
 
-    doc_type = ['nw','df']
+    doc_type = ['nw','df','all']
 
     root_path = '/home/caoyx/data/'
     ppr_candidate_file = '/home/caoyx/data/conll/ppr_candidate'
@@ -95,6 +95,17 @@ class Options:
             tmp_lang = 'es'
         elif lang == 'cmn':
             tmp_lang = 'zh'
+        return tmp_lang
+
+    @staticmethod
+    def getLangName(lang):
+        tmp_lang = ''
+        if lang == Options.en:
+            tmp_lang = 'English'
+        elif lang == Options.es:
+            tmp_lang = 'Spanish'
+        elif lang == Options.zh:
+            tmp_lang = 'Chinese'
         return tmp_lang
 
     @staticmethod

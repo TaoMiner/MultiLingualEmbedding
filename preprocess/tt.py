@@ -3,9 +3,12 @@ import re
 import struct
 import pandas as pd
 
-vec = [2,1,4,0,1]
+RE = re.compile(r'^([+-])(.*):(en|zh|es)$')
 
-a = -pd.Series(vec)
+s = '+w:ew2'
 
-ranks = a.rank(method='min')
-print ranks
+m = RE.match(s)
+if m:
+    print m.group(1)
+    print m.group(2)
+    print m.group(3)

@@ -388,10 +388,12 @@ class Features:
             mention_grouped = doc_df.groupby('mention_id')
             for mention_id, mention_df in mention_grouped:
                 for row in mention_df.itertuples():
-                    df_vec.iloc[row[0]]['kb_pe'] /= largest_kb_pe
-                    df_vec.iloc[row[0]]['kb_largest_pe'] = largest_kb_pe
-                    df_vec.iloc[row[0]]['cur_pe'] /= largest_cur_pe
-                    df_vec.iloc[row[0]]['cur_largest_pe'] = largest_cur_pe
+                    if largest_kb_pe > 0:
+                        df_vec.loc[row[0],'kb_pe'] /= largest_kb_pe
+                    df_vec.loc[row[0],'kb_largest_pe'] = largest_kb_pe
+                    if largest_cur_pe > 0:
+                        df_vec.loc[row[0],'cur_pe'] /= largest_cur_pe
+                    df_vec.loc[row[0],'cur_largest_pe'] = largest_cur_pe
                     kb_cand_id = row[4]
                     # update context entity features
                     if len(c_entities) > 0 and kb_cand_id in self.kb_entity.vectors:
