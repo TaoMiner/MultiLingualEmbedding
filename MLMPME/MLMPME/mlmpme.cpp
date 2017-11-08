@@ -1668,7 +1668,7 @@ void *BilbowaThread(void *id) {
     //km parameter
     struct KM_var km_var;
     real sum = rho;
-    real deltas[layer_size], xling_balancer;
+    real deltas[layer_size];
     bool valid_entity = true;
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file[lang_id[1]-1], "rb");

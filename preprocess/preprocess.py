@@ -420,6 +420,34 @@ class cleaner():
                 for line in fin:
                     fout.write(line)
 
+    def replaceId(self, sent , entity_id = None, redirects = None):
+        cur = 0
+        sent_cl = ''
+        for s, e in cleaner.findBalanced(sent):
+            sent_cl += sent[cur:s]
+            tmp_anchor = sent[s:e]
+            # extract title and label
+            tmp_vbar = tmp_anchor.find('|')
+            tmp_ent = ''
+            tmp_ment = ''
+            tmp_title_id = ''
+            if tmp_vbar > 0:
+                tmp_ent = tmp_anchor[2:tmp_vbar]
+                tmp_ment = tmp_anchor[tmp_vbar + 1:-2]
+            else:
+                tmp_ent = tmp_anchor[2:-2]
+                tmp_ment = tmp_ent
+
+            if len(tmp_ent) > 0:
+                if not isinstance(redirects, type(None)) and tmp_ent in redirects:
+                    tmp_ent = redirects[tmp_ent]
+                if not isinstance(entity_id, type(None)) and tmp_ent in entity_id:
+                    tmp_title_id = entity_id[tmp_ent]
+            sent_cl += '[['+tmp_title_id+'|'+tmp_ment+']]' if len(tmp_title_id) > 0 else tmp_ment
+            cur = e
+        sent_cl += sent[cur:]
+        return sent_cl
+
     def formatZhDoc(self, filename, outputfile):
         with codecs.open(filename, 'r', 'utf-8') as fin:
             with codecs.open(outputfile, 'w', 'utf-8') as fout:
@@ -428,7 +456,7 @@ class cleaner():
                     if m:
                         fout.write("{0}\n".format(line.strip()))
                     else:
-                        tmp_line = cleaner.cleanAnchorSent(line, op.lang, isReplaceId=True, entity_id=self.entity_id, redirects=self.redirects)
+                        tmp_line = self.replaceId(line, entity_id=self.entity_id, redirects=self.redirects)
                         fout.write("{0}\n".format(tmp_line))
 
     @staticmethod
