@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 import re
 import codecs
-from itertools import izip
-import string
 import preprocess
 
 options = preprocess.options
@@ -17,7 +14,7 @@ class Parallel():
     def __init__(self, lang1, lang2):
         # title:[[sent],...]
         if lang1 == lang2:
-            print 'error:same languages!'
+            print('error:same languages!')
             exit()
         self.lang1 = lang1
         self.lang2 = lang2
@@ -55,12 +52,12 @@ class Parallel():
                 if len(items) != len(languages): continue
                 if len(items[self.lang1]) > 0 and len(items[self.lang2]) > 0:
                     self.clinks[items[self.lang1]] = items[self.lang2]
-        print 'successfully load %d clinks from %s to %s!' % (len(self.clinks), languages[self.lang1], languages[self.lang2])
+        print('successfully load {0} clinks from {1} to {2}!'.format(len(self.clinks), languages[self.lang1], languages[self.lang2]))
 
     def readDoc(self):
-        for i in xrange(2):
+        for i in range(2):
             self.readMonoDoc(i)
-            print "successfully load %d doc for %s language!" % (len(self.corpus[i]), self.ops[i].lang)
+            print("successfully load {0} doc for {1} language!".format(len(self.corpus[i]), self.ops[i].lang))
 
     def readMonoDoc(self, i):
         op = self.ops[i]
@@ -70,7 +67,7 @@ class Parallel():
         total_entity_id, total_id_entity = pre.loadWikiIndex(op.entity_index_dump)
         redirects = pre.loadRedirects(op.redirect_file)
         redirects_id = pre.loadRedirectsId(op.redirect_file, total_entity_id)
-        with codecs.open(op.cross_corpus_file, 'rb', 'utf-8') as fin:
+        with codecs.open(op.cross_corpus_file, 'r') as fin:
             cur_title_id = ''
             tmp_sents = None
             for line in fin:
@@ -93,8 +90,12 @@ class Parallel():
                 elif not isinstance(tmp_sents, type(None)) and len(cur_title_id) > 0:
                     seg_sents = re.split(r'[\.!?！？｡。]', line.strip('\r\n\t .?!！？｡。'))
                     for tmp_line in seg_sents:
+                        tmp_line = tmp_line.strip()
                         if len(tmp_line) > 0:
-                            tmp_line = cleaner.cleanAnchorSent(tmp_line.strip(), op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
+                            if op.lang == 'zh':
+                                tmp_line = cleaner.cleanAnchorSent(tmp_line, op.lang, isReplaceId=False)
+                            else:
+                                tmp_line = cleaner.cleanAnchorSent(tmp_line, op.lang, isReplaceId=True, entity_id=entity_dic, redirects=redirects)
                             if len(tmp_line) > 0:
                                 tmp_sents.append(tmp_line)
 
@@ -149,7 +150,7 @@ class Parallel():
                 tmp_contexts = []
                 begin = anc[1]-self.window if anc[1]-self.window > 0 else 0
                 end = anc[1] + anc[2] + self.window + 1 if anc[1] + anc[2] + self.window +1 < len(sent_words) else len(sent_words)
-                for i in xrange(begin, end):
+                for i in range(begin, end):
                     # if i >= anc[1] and i < anc[1]+anc[2]: continue
                     if len(sent_words[i]) > 0:
                         tmp_contexts.append(sent_words[i])
@@ -197,7 +198,7 @@ class Parallel():
                 tmp_contexts = []
                 begin = anc[2]-self.window if anc[2]-self.window > 0 else 0
                 end = anc[2] + anc[3] + self.window + 1 if anc[2] + anc[3] + self.window +1 < len(sent_words) else len(sent_words)
-                for i in xrange(begin, end):
+                for i in range(begin, end):
                     if i >= anc[2] and i < anc[2]+anc[3]:
                         if not has_anchor:
                             if isinstance(entity_dic, type(None)):
@@ -241,12 +242,12 @@ class Parallel():
         print("successfully load {0} parallel contexts!".format(len(self.parallel_contexts)))
 
     def saveParaData(self, filename):
-        with codecs.open(filename, 'w', 'utf-8') as fout:
+        with codecs.open(filename, 'w') as fout:
             for context in self.parallel_contexts:
                 if len(context) != 6: continue
                 if len(context[0]) <1 or len(context[1])<1 or len(context[2])<1 or len(context[3])<1 or len(context[4])<1 or len(context[5])<1: continue
-                fout.write("1\t%s\t%s\t%s\n" % (context[0], context[1], "\t".join(" ".join(x) for x in context[2])))
-                fout.write("2\t%s\t%s\t%s\n" % (context[3], context[4], "\t".join(" ".join(x) for x in context[5])))
+                fout.write("1\t{0}\t{1}\t{2}\n".format(context[0], context[1], "\t".join(" ".join(x) for x in context[2]).decode('utf8','ignore') ))
+                fout.write("2\t{0}\t{1}\t{2}\n".format(context[3], context[4], "\t".join(" ".join(x) for x in context[5]).decode('utf8','ignore') ))
                 #fout.write("%s\t%s\t%s\t%s\n" % (context[0], context[1], ' '.join(context[2]), ' '.join(context[3])))
 
 if __name__ == '__main__':

@@ -733,7 +733,7 @@ class cleaner():
             if len(tmp_label) > 0 :
                 if redirects and tmp_title in redirects:
                     tmp_title = redirects[tmp_title]
-                if not entity_id:
+                if isinstance(entity_id, type(None)):
                     tmp_anchor = '[[' + tmp_title + '|' + tmp_label + ']]'
                 elif tmp_title in entity_id:
                     if isReplaceId:
