@@ -246,8 +246,8 @@ class Parallel():
             for context in self.parallel_contexts:
                 if len(context) != 6: continue
                 if len(context[0]) <1 or len(context[1])<1 or len(context[2])<1 or len(context[3])<1 or len(context[4])<1 or len(context[5])<1: continue
-                fout.write("1\t{0}\t{1}\t{2}\n".format(context[0], context[1], "\t".join(" ".join(x) for x in context[2]).decode('utf8','ignore') ))
-                fout.write("2\t{0}\t{1}\t{2}\n".format(context[3], context[4], "\t".join(" ".join(x) for x in context[5]).decode('utf8','ignore') ))
+                fout.write("1\t{0}\t{1}\t{2}\n".format(context[0], context[1], "\t".join(" ".join(x) for x in context[2]) ))
+                fout.write("2\t{0}\t{1}\t{2}\n".format(context[3], context[4], "\t".join(" ".join(x) for x in context[5]) ))
                 #fout.write("%s\t%s\t%s\t%s\n" % (context[0], context[1], ' '.join(context[2]), ' '.join(context[3])))
 
 if __name__ == '__main__':
