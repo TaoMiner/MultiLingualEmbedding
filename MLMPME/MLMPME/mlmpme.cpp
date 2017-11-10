@@ -26,7 +26,7 @@
 #define SENSE_VOCAB 2
 #define MAX_NUM_MENTION 135
 #define MAX_SENTENCE_LENGTH 1000
-#define MAX_PAR_SENT 10
+#define MAX_PAR_SENT 20
 #define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
@@ -898,16 +898,16 @@ void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int of
         if (adadelta) {
             // Use Adadelta for automatic learning rate selection
             rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * deltas[a] * deltas[a];
-            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * deltas[a];
+            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * deltas[a] * weight;
             rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
         } else {
             // Regular SGD
-            step = alpha * deltas[a];
+            step = alpha * deltas[a] * weight;
         }
         if (step != step) {
             printf("ERROR: step == NaN");
         }
-        step = step * weight;
+        // step = step * weight;
         if (CLIP_UPDATES != 0) {
             if (step > CLIP_UPDATES) step = CLIP_UPDATES;
             if (step < -CLIP_UPDATES) step = -CLIP_UPDATES;
@@ -1783,8 +1783,8 @@ void *BilbowaThread(void *id) {
                     attention[i][j] = -1;
                     break;
                 }
-                kg_attention[i][j] = 1/sen_count[i];
-                w_attention[i][j] = 1/w_count[i];
+                kg_attention[i][j] = 1.0/sen_count[i];
+                w_attention[i][j] = 1.0/w_count[i];
                 
                 attention[i][j] = 0;
             }
