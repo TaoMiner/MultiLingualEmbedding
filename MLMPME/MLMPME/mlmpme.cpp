@@ -34,10 +34,10 @@ typedef float real;                    // Precision of float numbers
 struct KM_var {
     int m,n;
     real *matrix;
-    int match1[MAX_SENTENCE_LENGTH], match2[MAX_SENTENCE_LENGTH];
-    int s[MAX_SENTENCE_LENGTH], t[MAX_SENTENCE_LENGTH];
-    real l1[MAX_SENTENCE_LENGTH];
-    real l2[MAX_SENTENCE_LENGTH];
+    int match1[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], match2[MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
+    int s[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], t[MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
+    real l1[MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
+    real l2[MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
 };
 
 struct anchor_item {
@@ -1532,11 +1532,11 @@ real km_match(struct KM_var *km_var)
     
     for(i=0;i<n;i++)
         l2[i]=0;
-    _clr(km_var->match1, MAX_SENTENCE_LENGTH);
-    _clr(km_var->match2, MAX_SENTENCE_LENGTH);
+    _clr(km_var->match1, MAX_PAR_SENT*MAX_SENTENCE_LENGTH);
+    _clr(km_var->match2, MAX_PAR_SENT*MAX_SENTENCE_LENGTH);
     for(i=0;i<m;i++)
     {
-        _clr(t, MAX_SENTENCE_LENGTH);
+        _clr(t, MAX_PAR_SENT*MAX_SENTENCE_LENGTH);
         p=0;q=0;
         for(s[0]=i;p<=q&&km_var->match1[i]<0;p++)
         {
@@ -1712,7 +1712,6 @@ void *BilbowaThread(void *id) {
     struct KM_var km_var;
     real sum = rho;
     real deltas[layer_size];
-    bool valid_entity = true;
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file[lang_id[1]-1], "rb");
     fseek(fi_par, 0, SEEK_END);
