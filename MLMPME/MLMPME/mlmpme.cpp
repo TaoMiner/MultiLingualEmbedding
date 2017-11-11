@@ -80,11 +80,12 @@ int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, 
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
-real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, rho = 1.0, xling=0.9;
+real starting_alpha, alpha = 0.025, sample = 1e-3, ada_alpha=0, cross_model_weight = 1, rho = 1.0, xling=0.9;
 real *expTable, *expSimTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
 int par_line_num[NUM_LANG-1], par_actual_line[NUM_LANG-1], par_epoch[NUM_LANG-1], max_num_clink=0, MONO_DONE_TRAINING = 0;
+real par_err[NUM_LANG-1];
 unsigned long long g_next_random = 0;
 
 bool isequal(real a,real b)
@@ -893,13 +894,15 @@ void InitMultiModel(){
 
 void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int offset, int num_updates, real *deltas, real weight) {
     int a;
-    real step, epsilon = 1e-6, tmp_delta;
+    real step, epsilon = 1e-6, tmp_delta, tmp_alpha;
     for (a = 0; a < num_updates; a++) {
         if (adadelta) {
             tmp_delta = weight * deltas[a];
             // Use Adadelta for automatic learning rate selection
             rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
-            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
+            tmp_alpha = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a]));
+            ada_alpha = tmp_alpha;
+            step = tmp_alpha * tmp_delta;
             rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
         } else {
             // Regular SGD
@@ -974,13 +977,16 @@ void *TrainTextModelThread(void *id) {
             last_word_count = word_count;
             if ((debug_mode > 1)) {
                 now = clock();
-                sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", alpha, word_count_actual / (real)(all_train_words + 1) * 100);
+                if (adadelta)
+                    sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", ada_alpha, word_count_actual / (real)(all_train_words + 1) * 100);
+                else
+                    sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", alpha, word_count_actual / (real)(all_train_words + 1) * 100);
                 for (int l = 0;l <NUM_LANG;l++)
                     sprintf(out_str, "%sKG%d: %.2fM (%lld), ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000, model[KG_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM (%lld), ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000, model[TEXT_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%d: %.2fM (%d), grad: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], bilbowa_grad);
+                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.2f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]);
                 printf("%c%sWords/sec: %.2fK  ", 13, out_str,
                        word_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
@@ -1476,27 +1482,30 @@ real similarity(real *vec1, real *vec2){
     return dist;
 }
 
-void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],int len[2], int lang_id[2], real *delta, real weight) {
-    int d, offset, w_count[2];
+void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],int w_count[2], int lang_id[2], real *delta, real weight) {
+    int d, offset;
+    
     // To minimize squared error:
     // delta = d .5*|| e - f ||^2 = ±(e - f)
     // d/den = +delta
-    for (d = 0; d < len[0]; d++) {
+    for (d = 0; d < MAX_PAR_SENT*MAX_SENTENCE_LENGTH; d++) {
+        if (sen[0][d]==-1) break;
         if (sen[0][d]==0) continue;
         offset = layer_size * sen[0][d];
         // update in -d/den = -delta direction
         if (attention[0][0] < 0)
-            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -weight);
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -weight/(real)w_count[0]);
         else
             UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -attention[0][d]*weight);
     }
     // d/df = -delta
-    for (d = 0; d < len[1]; d++) {
+    for (d = 0; d < MAX_PAR_SENT*MAX_SENTENCE_LENGTH; d++) {
+        if (sen[1][d]==-1) break;
         if (sen[1][d]==0) continue;
         offset = layer_size * sen[1][d];
         // update in -d/df = +delta direction
         if (attention[1][0] < 0)
-            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, weight);
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, weight/(real)w_count[0]);
         else
             UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, attention[1][d]*weight);
     }
@@ -1505,16 +1514,19 @@ void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real 
 real FpropSent(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real attention[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real *deltas, real *syn, real sign) {
     real sumSquares = 0;
     long long c, d, offset;
-    int len = 0;
-    for (len = 0;len<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;len++)
+    int len = 0, w_count = 0;
+    for (len = 0;len<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;len++){
         if (sen[len] == -1) break;
+        if (sen[len] == 0) continue;
+        w_count ++;
+    }
     for (d = 0; d < len; d++) {
         if (sen[d]==0) continue;
         offset = layer_size * sen[d];
         for (c = 0; c < layer_size; c++) {
             // We compute the attentive sentence vector
             if (attention[0] < 0)
-                deltas[c] += sign * syn[offset + c] / (real)len;
+                deltas[c] += sign * syn[offset + c] / (real)w_count;
             else
                 deltas[c] += sign * attention[d] * syn[offset + c];
             if (d == len - 1) sumSquares += deltas[c] * deltas[c];
@@ -1527,24 +1539,22 @@ real FpropSent(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real attention[M
 /* BilBOWA bag-of-words sentence update */
 void BilBOWASentenceUpdate(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH], int lang_id[2], real *deltas) {
     int a,i;
-    real grad_norm;
-    int len[2];
+    int w_count[2];
     // FPROP
     // length of sen
-    for (i=0;i<2;i++)
-        for(a=0;a<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;a++)
-            if (sen[i][a]==-1){
-                len[i] = a;
-                if (a==0) return;       // disgard those have empty sents
-                break;
-            }
+    for (i=0;i<2;i++){
+        w_count[i] = 0;
+        for(a=0;a<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;a++){
+            if (sen[i][a]==-1) break;
+            if (sen[i][a]==0) continue;
+            w_count[i]++;
+        }
+    }
     for (a = 0; a < layer_size; a++) deltas[a] = 0;
     // ACCUMULATE L2 LOSS DELTA for each pair of languages, which should be improved
     FpropSent(sen[0], attention[0], deltas, model[TEXT_VOCAB][lang_id[0]].syn0, +1);
-    grad_norm = FpropSent(sen[1], attention[1], deltas, model[TEXT_VOCAB][lang_id[1]].syn0, -1);
-    bilbowa_grad = 0.9*bilbowa_grad + 0.1*grad_norm;
-    UpdateSquaredError(sen, attention, len, lang_id, deltas, cross_model_weight);
-    
+    par_err[lang_id[1]-1] = FpropSent(sen[1], attention[1], deltas, model[TEXT_VOCAB][lang_id[1]].syn0, -1);
+    UpdateSquaredError(sen, attention, w_count, lang_id, deltas, cross_model_weight);
 }
 
 real km_match(struct KM_var *km_var)
@@ -1738,7 +1748,7 @@ void *BilbowaThread(void *id) {
     real w_attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
     real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH];
     long long fi_size;
-    int line_num = 0, cur_line = 0, res = 0, lang_id[2], sen_count[2], w_count[2];
+    int line_num = 0, cur_line = 0, res = 0, lang_id[2], sen_count[2];
     int cur_lang_id = (long long)id / num_threads-2*NUM_LANG+1, thread_id = (long long)id % num_threads;
     
     lang_id[0] = 0;
@@ -1777,18 +1787,9 @@ void *BilbowaThread(void *id) {
             }
         }
         if (has_w_att || has_kg_att){
-            // word count in all sentences
+            //init attention
             for (int i=0;i<2;i++){
                 sen_count[i] = 1;
-                w_count[i] = 0;
-                for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-                    if (par_sen[i][j] == -1) break;
-                    if (par_sen[i][j] == 0) {sen_count[i]++;continue;}
-                    w_count[i] ++;
-                }
-            }
-            //init attention
-            for (int i=0;i<2;i++)
                 for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                     if (par_sen[i][j] == -1) {
                         kg_attention[i][j] = -1;
@@ -1797,6 +1798,7 @@ void *BilbowaThread(void *id) {
                         break;
                     }
                     if (par_sen[i][j] == 0) {
+                        sen_count[i] ++;
                         kg_attention[i][j] = 0;
                         w_attention[i][j] = 0;
                         attention[i][j] = 0;
@@ -1807,10 +1809,11 @@ void *BilbowaThread(void *id) {
                     
                     attention[i][j] = 1.0;
                 }
+            }
             //compute attention
             if (has_kg_att){
                 for (int i=0;i<2;i++)
-                    if (par_entity[2*i]>0 && par_entity[2*i+1]>0 && sen_count[i]>1)
+                    if (par_entity[2*i]>0 && par_entity[2*i+1]>0 && sen_count[i] > 1)
                         SetKGAttention(par_sen[i], &par_entity[2*i], kg_attention[i], lang_id[i]);
             }
             
@@ -1825,7 +1828,7 @@ void *BilbowaThread(void *id) {
                         attention[i][j] = kg_attention[i][j];
                     }   // end for j
                 }
-                else if (!isequal(kg_attention[i][0], -1) && !isequal(w_attention[i][0], -1)){
+                else if (isequal(kg_attention[i][0], -1) && !isequal(w_attention[i][0], -1)){
                     for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                         if (isequal(attention[i][j], -1)) break;
                         attention[i][j] = w_attention[i][j];
