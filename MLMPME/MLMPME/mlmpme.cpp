@@ -80,8 +80,8 @@ int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, 
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
-real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, rho = 0, xling=0.9;
-real *expTable;
+real starting_alpha, alpha = 0.025, sample = 1e-3, bilbowa_grad=0, cross_model_weight = 1, rho = 1.0, xling=0.9;
+real *expTable, *expSimTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
 int par_line_num[NUM_LANG-1], par_actual_line[NUM_LANG-1], par_epoch[NUM_LANG-1], max_num_clink=0, MONO_DONE_TRAINING = 0;
@@ -893,12 +893,13 @@ void InitMultiModel(){
 
 void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int offset, int num_updates, real *deltas, real weight) {
     int a;
-    real step, epsilon = 1e-6;
+    real step, epsilon = 1e-6, tmp_delta;
     for (a = 0; a < num_updates; a++) {
         if (adadelta) {
+            tmp_delta = weight * deltas[a];
             // Use Adadelta for automatic learning rate selection
-            rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * deltas[a] * deltas[a];
-            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * deltas[a] * weight;
+            rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
+            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
             rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
         } else {
             // Regular SGD
@@ -1446,9 +1447,18 @@ void normalize(){
     }
 }
 
-// compute cosine similarity
+// compute similarity
 real similarity(real *vec1, real *vec2){
-    real dist = 0.0, len_v1 = 0, len_v2 = 0, len_v = 0;
+    real dist = 0.0;
+    for (int a = 0; a < layer_size; a++)
+        dist += vec1[a] * vec2[a];
+    dist *= rho;
+    if (dist>MAX_EXP) dist = MAX_EXP;
+    if (dist<-MAX_EXP) dist = -MAX_EXP;
+    dist = expSimTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
+    
+    /* cosine similarity
+    real len_v1 = 0, len_v2 = 0, len_v = 0;
     long a;
     for (a = 0; a < layer_size; a++){
         len_v1 += vec1[a] * vec1[a];
@@ -1462,20 +1472,12 @@ real similarity(real *vec1, real *vec2){
             dist += vec1[a] * vec2[a] / len_v;
         dist = (dist+1)/2;      // (-1,1) --> (0,1)
     }
+     */
     return dist;
 }
 
 void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],int len[2], int lang_id[2], real *delta, real weight) {
     int d, offset, w_count[2];
-    // word count in all sentences
-    for (int i=0;i<2;i++){
-        w_count[i] = 0;
-        for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-            if (sen[i][j] == -1) break;
-            if (sen[i][j] == 0) continue;
-            w_count[i] ++;
-        }
-    }
     // To minimize squared error:
     // delta = d .5*|| e - f ||^2 = ±(e - f)
     // d/den = +delta
@@ -1483,14 +1485,20 @@ void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real 
         if (sen[0][d]==0) continue;
         offset = layer_size * sen[0][d];
         // update in -d/den = -delta direction
-        UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -attention[0][d]*w_count[0]*weight);
+        if (attention[0][0] < 0)
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -weight);
+        else
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -attention[0][d]*weight);
     }
     // d/df = -delta
     for (d = 0; d < len[1]; d++) {
         if (sen[1][d]==0) continue;
         offset = layer_size * sen[1][d];
         // update in -d/df = +delta direction
-        UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, attention[1][d]*w_count[1]*weight);
+        if (attention[1][0] < 0)
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, weight);
+        else
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, attention[1][d]*weight);
     }
 }
 
@@ -1505,7 +1513,10 @@ real FpropSent(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real attention[M
         offset = layer_size * sen[d];
         for (c = 0; c < layer_size; c++) {
             // We compute the attentive sentence vector
-            deltas[c] += sign * attention[d] * syn[offset + c];
+            if (attention[0] < 0)
+                deltas[c] += sign * syn[offset + c] / (real)len;
+            else
+                deltas[c] += sign * attention[d] * syn[offset + c];
             if (d == len - 1) sumSquares += deltas[c] * deltas[c];
         }
     }
@@ -1522,7 +1533,7 @@ void BilBOWASentenceUpdate(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],re
     // length of sen
     for (i=0;i<2;i++)
         for(a=0;a<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;a++)
-            if (sen[i][a]==-1 || isequal(attention[i][a], -1)){
+            if (sen[i][a]==-1){
                 len[i] = a;
                 if (a==0) return;       // disgard those have empty sents
                 break;
@@ -1610,7 +1621,7 @@ real km_match(struct KM_var *km_var)
 
 void SetKGAttention(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH],long long entity_index[2], real attention[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], int lang_id){
     long j,k,tmp_pos=0;
-    real sum = 0, tmp_sim;
+    real sum = 0.0, tmp_sim;
     real rel_vec[layer_size];
     real sent_vec[layer_size];
     int VOCAB = KG_VOCAB;
@@ -1629,11 +1640,7 @@ void SetKGAttention(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH],long long en
             for (k=0;k<layer_size;k++) sent_vec[k] = 0;
             sum += tmp_sim;
             for (k=tmp_pos;k<j;k++) attention[k] = tmp_sim;
-            if (sen[j]==-1){
-                attention[j] = -1;
-                break;
-            }
-            attention[j] = 0;
+            if (sen[j]==-1) break;
             tmp_pos = j+1;
             continue;
         }
@@ -1642,27 +1649,23 @@ void SetKGAttention(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH],long long en
     }
     if (sum>0){
         for (j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-            if (attention[j] == 0) continue;
             if (attention[j] == -1) break;
             attention[j] /= sum;
         }
     }
+    else
+        attention[0] = -1;
     
 }
 
 void SetWAttention(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real attention[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH], struct KM_var *km_var, int lang_id[2]){
     long i,j;
-    real sum = 0;
+    real sum = 0.0;
     int len[2], m,n;
     
     for (i=0;i<2;i++){
         for (j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-            if (sen[i][j] == 0){
-                attention[i][j] = 0;
-                continue;
-            }
             if (sen[i][j] == -1){
-                attention[i][j] = -1;
                 len[i] = j;
                 break;
             }
@@ -1677,7 +1680,7 @@ void SetWAttention(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real atte
     for (i=0;i<km_var->m;i++){
         for (j=0;j<km_var->n;j++){
             if (sen[m][i]==0 || sen[n][j]==0)
-                km_var->matrix[i*km_var->n+j] = 0;
+                km_var->matrix[i*km_var->n+j] = 0.0;
             else
                 km_var->matrix[i*km_var->n+j] = similarity(&model[TEXT_VOCAB][lang_id[m]].syn0[sen[m][i]*layer_size], &model[TEXT_VOCAB][lang_id[n]].syn0[sen[n][j]*layer_size]);
         }
@@ -1708,13 +1711,19 @@ void SetWAttention(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH], real atte
         
         // average
         for (i=0;i<2;i++){
-            sum = 0;
+            sum = 0.0;
             for (j=0;j<len[i];j++)
                 sum += attention[i][j];
             if (sum > 0)
                 for (j=0;j<len[i];j++)
                     attention[i][j] /= sum;
+            else
+                attention[i][0] = -1;
         }
+    }
+    else{
+        attention[0][0] = -1;
+        attention[1][0] = -1;
     }
     free(km_var->matrix);
 }
@@ -1736,7 +1745,7 @@ void *BilbowaThread(void *id) {
     lang_id[1] = cur_lang_id;
     //km parameter
     struct KM_var km_var;
-    real sum = rho;
+    real sum = 0;
     real deltas[layer_size];
     //seek for the position of the current thread
     FILE *fi_par = fopen(multi_context_file[lang_id[1]-1], "rb");
@@ -1746,7 +1755,10 @@ void *BilbowaThread(void *id) {
     line_num = par_line_num[lang_id[1]-1] / (long long)num_threads;
     
     while (MONO_DONE_TRAINING < NUM_LANG * num_threads) {
-        for(int i=0;i<2;i++) par_sen[i][0] = -1;
+        for(int i=0;i<2;i++) {
+            par_sen[i][0] = -1;
+            attention[i][0] = -1;
+        }
         for(int i=0;i<4;i++) par_entity[i] = -1;
         
         res = ReadSent(fi_par, par_sen, par_entity, lang_id);
@@ -1764,73 +1776,90 @@ void *BilbowaThread(void *id) {
                 par_epoch[lang_id[1]-1]++;
             }
         }
-        // word count in all sentences
-        for (int i=0;i<2;i++){
-            sen_count[i] = 1;
-            w_count[i] = 0;
-            for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-                if (par_sen[i][j] == -1) break;
-                if (par_sen[i][j] == 0) {sen_count[i]++;continue;}
-                w_count[i] ++;
-            }
-        }
-        //init attention
-        for (int i=0;i<2;i++)
-            for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-                if (par_sen[i][j] == -1) {
-                    kg_attention[i][j] = -1;
-                    w_attention[i][j] = -1;
-                    attention[i][j] = -1;
-                    break;
+        if (has_w_att || has_kg_att){
+            // word count in all sentences
+            for (int i=0;i<2;i++){
+                sen_count[i] = 1;
+                w_count[i] = 0;
+                for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
+                    if (par_sen[i][j] == -1) break;
+                    if (par_sen[i][j] == 0) {sen_count[i]++;continue;}
+                    w_count[i] ++;
                 }
-                kg_attention[i][j] = 1.0/sen_count[i];
-                w_attention[i][j] = 1.0/w_count[i];
-                
-                attention[i][j] = 0;
             }
-        //compute attention
-        if (has_kg_att){
+            //init attention
             for (int i=0;i<2;i++)
-                if (par_entity[2*i]>0 && par_entity[2*i+1]>0 && sen_count[i]>1)
-                    SetKGAttention(par_sen[i], &par_entity[2*i], kg_attention[i], lang_id[i]);
-        }
-        
-        if (has_w_att) SetWAttention(par_sen, w_attention, &km_var, lang_id);
-        
-        if (has_kg_att && !has_w_att){
+                for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
+                    if (par_sen[i][j] == -1) {
+                        kg_attention[i][j] = -1;
+                        w_attention[i][j] = -1;
+                        attention[i][j] = -1;
+                        break;
+                    }
+                    if (par_sen[i][j] == 0) {
+                        kg_attention[i][j] = 0;
+                        w_attention[i][j] = 0;
+                        attention[i][j] = 0;
+                        continue;
+                    }
+                    kg_attention[i][j] = 1.0;
+                    w_attention[i][j] = 1.0;
+                    
+                    attention[i][j] = 1.0;
+                }
+            //compute attention
+            if (has_kg_att){
+                for (int i=0;i<2;i++)
+                    if (par_entity[2*i]>0 && par_entity[2*i+1]>0 && sen_count[i]>1)
+                        SetKGAttention(par_sen[i], &par_entity[2*i], kg_attention[i], lang_id[i]);
+            }
+            
+            if (has_w_att) SetWAttention(par_sen, w_attention, &km_var, lang_id);
+            
             for (int i=0;i<2;i++){
-                sum = rho;
+                if (isequal(kg_attention[i][0], -1) && isequal(w_attention[i][0], -1))
+                    attention[i][0] = -1;
+                else if (!isequal(kg_attention[i][0], -1) && isequal(w_attention[i][0], -1)){
+                    for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
+                        if (isequal(attention[i][j], -1)) break;
+                        attention[i][j] = kg_attention[i][j];
+                    }   // end for j
+                }
+                else if (!isequal(kg_attention[i][0], -1) && !isequal(w_attention[i][0], -1)){
+                    for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
+                        if (isequal(attention[i][j], -1)) break;
+                        attention[i][j] = w_attention[i][j];
+                    }   // end for j
+                }
+                else{
+                    for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
+                        if (isequal(attention[i][j], -1)) break;
+                        attention[i][j] = w_attention[i][j] * kg_attention[i][j];
+                    }   // end for j
+                }
+            }          // end for i
+            // softmax
+            for (int i=0;i<2;i++){
+                sum = 0.0;
                 for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                     if (isequal(attention[i][j], -1)) break;
-                    attention[i][j] = kg_attention[i][j];
                     sum += attention[i][j];
                 }
                 if (sum>0)
                     for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                         if (isequal(attention[i][j], -1)) break;
-                        attention[i][j] = (attention[i][j]+rho)/sum;
+                        attention[i][j] /= sum;
                     }
-            }   // end for i
-        }
-        else{
-            for (int i=0;i<2;i++){
-                sum = rho;
-                for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-                    if (isequal(attention[i][j], -1)) break;
-                    attention[i][j] = w_attention[i][j];
-                    if (has_kg_att) attention[i][j] *= kg_attention[i][j];
-                    sum += attention[i][j];
-                }
-                if (sum>0)
-                    for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
-                        if (isequal(attention[i][j], -1)) break;
-                        attention[i][j] = (attention[i][j]+rho)/sum;
-                    }
-            }// end for i
+                else
+                    attention[i][0] = -1;
+            }
         }
         /*
         for(int i=0;i<2;i++){
-            printf("%d\t%s\t%s\t", i, model[KG_VOCAB][lang_id[i]].vocab[par_entity[2*i]].item, model[KG_VOCAB][lang_id[i]].vocab[par_entity[2*i+1]].item);
+            if (par_entity[2*i]>0 && par_entity[2*i+1]>0)
+                printf("%d\t%s\t%s\t", i, model[KG_VOCAB][lang_id[i]].vocab[par_entity[2*i]].item, model[KG_VOCAB][lang_id[i]].vocab[par_entity[2*i+1]].item);
+            else
+                printf("%d\t%lld\t%lld\t", i, par_entity[2*i], par_entity[2*i+1]);
             for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                 if (par_sen[i][j]==-1){printf("\n");break;}
                 if (par_sen[i][j]==0) {printf("\t");continue;}
@@ -1947,7 +1976,7 @@ int main(int argc, char **argv) {
         printf("\t-is_normal <int>\n");
         printf("\t\tif batch normalization\n");
         printf("\t-rho <int>\n");
-        printf("\t\tthe effect of attention\n");
+        printf("\t\tsmooth attention (0-1), defautl is 1, \n");
         printf("\t-adadelta <int>\n");
         printf("\t\tif adadelta for optimization\n");
         printf("\t-xling <int>\n");
@@ -2006,8 +2035,10 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-xling", argc, argv)) > 0) xling = atof(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
-    for (i = 0; i < EXP_TABLE_SIZE; i++) {
+    expSimTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
+    for (i = 0; i <= EXP_TABLE_SIZE; i++) {
         expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
+        expSimTable[i] = expTable[i];
         expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
     }
     max_train_words = 0;
