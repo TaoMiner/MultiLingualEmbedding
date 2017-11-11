@@ -80,7 +80,7 @@ int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, 
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
-real starting_alpha, alpha = 0.025, sample = 1e-3, ada_alpha=0, cross_model_weight = 1, rho = 1.0, xling=0.9;
+real starting_alpha, alpha = 0.025, sample = 1e-3, cross_model_weight = 1, rho = 1.0, xling=0.9;
 real *expTable, *expSimTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
@@ -894,15 +894,13 @@ void InitMultiModel(){
 
 void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int offset, int num_updates, real *deltas, real weight) {
     int a;
-    real step, epsilon = 1e-6, tmp_delta, tmp_alpha;
+    real step, epsilon = 1e-6, tmp_delta;
     for (a = 0; a < num_updates; a++) {
         if (adadelta) {
             tmp_delta = weight * deltas[a];
             // Use Adadelta for automatic learning rate selection
             rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
-            tmp_alpha = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a]));
-            ada_alpha = tmp_alpha;
-            step = tmp_alpha * tmp_delta;
+            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
             rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
         } else {
             // Regular SGD
@@ -977,16 +975,13 @@ void *TrainTextModelThread(void *id) {
             last_word_count = word_count;
             if ((debug_mode > 1)) {
                 now = clock();
-                if (adadelta)
-                    sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", ada_alpha, word_count_actual / (real)(all_train_words + 1) * 100);
-                else
-                    sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", alpha, word_count_actual / (real)(all_train_words + 1) * 100);
+                sprintf(out_str, "Alpha: %f  Progress: %.2f%% (", alpha, word_count_actual / (real)(all_train_words + 1) * 100);
                 for (int l = 0;l <NUM_LANG;l++)
                     sprintf(out_str, "%sKG%d: %.2fM (%lld), ", out_str, l+1, model[KG_VOCAB][l].lang_updates / (real)1000000, model[KG_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM (%lld), ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000, model[TEXT_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]);
+                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]);
                 printf("%c%sWords/sec: %.2fK  ", 13, out_str,
                        word_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
