@@ -897,7 +897,7 @@ void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int of
     real step, epsilon = 1e-6, tmp_delta;
     for (a = 0; a < num_updates; a++) {
         if (adadelta) {
-            tmp_delta = weight * deltas[a];
+            tmp_delta = deltas[a];
             // Use Adadelta for automatic learning rate selection
             rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
             step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
@@ -909,7 +909,7 @@ void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int of
         if (step != step) {
             printf("ERROR: step == NaN");
         }
-        // step = step * weight;
+        step = step * weight;
         if (CLIP_UPDATES != 0) {
             if (step > CLIP_UPDATES) step = CLIP_UPDATES;
             if (step < -CLIP_UPDATES) step = -CLIP_UPDATES;
@@ -981,7 +981,7 @@ void *TrainTextModelThread(void *id) {
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM (%lld), ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000, model[TEXT_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]);
+                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]*1000);
                 printf("%c%sWords/sec: %.2fK  ", 13, out_str,
                        word_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
@@ -1451,14 +1451,15 @@ void normalize(){
 // compute similarity
 real similarity(real *vec1, real *vec2){
     real dist = 0.0;
+    /* exp(x) as simialrity
     for (int a = 0; a < layer_size; a++)
         dist += vec1[a] * vec2[a];
     dist *= rho;
     if (dist>MAX_EXP) dist = MAX_EXP;
     if (dist<-MAX_EXP) dist = -MAX_EXP;
     dist = expSimTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
+    */
     
-    /* cosine similarity
     real len_v1 = 0, len_v2 = 0, len_v = 0;
     long a;
     for (a = 0; a < layer_size; a++){
@@ -1471,9 +1472,9 @@ real similarity(real *vec1, real *vec2){
     if (len_v > 0) {
         for (a = 0; a < layer_size; a++)
             dist += vec1[a] * vec2[a] / len_v;
-        dist = (dist+1)/2;      // (-1,1) --> (0,1)
+        dist = (dist*rho+1)/2;      // (-1,1) --> (0,1), rho for smooth
     }
-     */
+    
     return dist;
 }
 
@@ -1491,7 +1492,7 @@ void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real 
         if (attention[0][0] < 0)
             UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -weight);
         else
-            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -(real)w_count[0]*attention[0][d]*weight);
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[0]].syn0, model[TEXT_VOCAB][lang_id[0]].syn0Grad, model[TEXT_VOCAB][lang_id[0]].syn0Delta, offset, layer_size, delta, -attention[0][d]*weight);
     }
     // d/df = -delta
     for (d = 0; d < MAX_PAR_SENT*MAX_SENTENCE_LENGTH; d++) {
@@ -1502,7 +1503,7 @@ void UpdateSquaredError(long long sen[2][MAX_PAR_SENT*MAX_SENTENCE_LENGTH],real 
         if (attention[1][0] < 0)
             UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, weight);
         else
-            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, (real)w_count[1]*attention[1][d]*weight);
+            UpdateEmbeddings(model[TEXT_VOCAB][lang_id[1]].syn0,model[TEXT_VOCAB][lang_id[1]].syn0Grad, model[TEXT_VOCAB][lang_id[1]].syn0Delta, offset, layer_size, delta, attention[1][d]*weight);
     }
 }
 
@@ -1974,7 +1975,7 @@ int main(int argc, char **argv) {
         printf("\t-is_normal <int>\n");
         printf("\t\tif batch normalization\n");
         printf("\t-rho <int>\n");
-        printf("\t\tsmooth attention (0-1), defautl is 1, \n");
+        printf("\t\tsmooth attention (0-1), defautl is 1, 0 means attentions are the same \n");
         printf("\t-adadelta <int>\n");
         printf("\t\tif adadelta for optimization\n");
         printf("\t-xling <int>\n");
