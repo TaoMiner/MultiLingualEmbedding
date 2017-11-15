@@ -76,7 +76,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, sgd_mode=0, has_sense=1,has_kg_att = 1, has_w_att = 1;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, sgd_mode=0, has_sense=1,has_kg_att = 1, has_w_att = 1, sim_mode = 0;
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
@@ -647,7 +647,7 @@ void InitNet(struct vocab *mono_vocab) {
         if (syn1negGrad == NULL) {printf("Memory allocation failed\n"); exit(1);}
         else mono_vocab->syn1negGrad= syn1negGrad;
     }
-    if (sgd_mode==2){
+    if (sgd_mode>2){
         a = posix_memalign((void **)&syn0delta, 128, (long long)mono_vocab->vocab_size *
                            layer_size * sizeof(real));
         if (syn0delta == NULL) {printf("Memory allocation failed\n"); exit(1);}
@@ -663,7 +663,7 @@ void InitNet(struct vocab *mono_vocab) {
         for (a = 0; a < mono_vocab->vocab_size; a++) for (b = 0; b < layer_size; b++){
             mono_vocab->syn1neg[a * layer_size + b] = 0;
             if (sgd_mode>0) mono_vocab->syn1negGrad[a * layer_size + b] = 0;
-            if (sgd_mode==2) mono_vocab->syn1negDelta[a * layer_size + b] = 0;
+            if (sgd_mode>2) mono_vocab->syn1negDelta[a * layer_size + b] = 0;
         }
     }
     if (shareSyn0!=1 || mono_vocab->vocab_type!=SENSE_VOCAB){
@@ -671,7 +671,7 @@ void InitNet(struct vocab *mono_vocab) {
             next_random = next_random * (unsigned long long)25214903917 + 11;
             mono_vocab->syn0[a * layer_size + b] = (((next_random & 0xFFFF) / (real)65536) - 0.5) / layer_size;
             if (sgd_mode>0) mono_vocab->syn0Grad[a * layer_size + b] = 0;
-            if (sgd_mode==2) mono_vocab->syn0Delta[a * layer_size + b] = 0;
+            if (sgd_mode>2) mono_vocab->syn0Delta[a * layer_size + b] = 0;
         }
     }
 }
@@ -893,13 +893,19 @@ void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int of
     int a;
     real step, epsilon = 1e-6, tmp_delta;
     for (a = 0; a < num_updates; a++) {
-        // sgd_mode: 0:sgd; 1:adagrad; 2:adadelta
-        if (sgd_mode==2) {
+        // sgd_mode: 0:sgd; 1:adagrad; 2:rmsprop; 3:adadelta;
+        if (sgd_mode>1) {
             tmp_delta = deltas[a];
-            // Use Adadelta for automatic learning rate selection
+            
             rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
-            step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
-            rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
+            // Use Adadelta for automatic learning rate selection
+            if (sgd_mode==2)
+                //rms prop
+                step = (alpha / fmax(epsilon, sqrt(rms_grads[offset + a]))) * tmp_delta;
+            else{
+                step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
+                rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
+            }
         }
         else if (sgd_mode==1){
             // Use Adagrad for automatic learning rate selection
@@ -985,7 +991,7 @@ void *TrainTextModelThread(void *id) {
                 for (int l=0;l<NUM_LANG;l++)
                     sprintf(out_str, "%sL%d: %.2fM (%lld), ",out_str, l+1, model[TEXT_VOCAB][l].lang_updates / (real)1000000, model[TEXT_VOCAB][l].epoch);
                 for (int l=0;l<NUM_LANG-1;l++)
-                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]*100);
+                    sprintf(out_str, "%sL1L%d: %.2fM (%d) err: %.4f ", out_str,l+2, par_actual_line[l] / (real)1000000, par_epoch[l], par_err[l]);
                 printf("%c%sWords/sec: %.2fK  ", 13, out_str,
                        word_count_actual / ((real)(now - start + 1) /
                                             (real)CLOCKS_PER_SEC * 1000));
@@ -1455,30 +1461,32 @@ void normalize(){
 // compute similarity
 real similarity(real *vec1, real *vec2){
     real dist = 0.0;
-    /* exp(x) as simialrity
-    for (int a = 0; a < layer_size; a++)
-        dist += vec1[a] * vec2[a];
-    dist *= rho;
-    if (dist>MAX_EXP) dist = MAX_EXP;
-    if (dist<-MAX_EXP) dist = -MAX_EXP;
-    dist = expSimTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
-    */
-    
     real len_v1 = 0, len_v2 = 0, len_v = 0;
     long a;
-    for (a = 0; a < layer_size; a++){
-        len_v1 += vec1[a] * vec1[a];
-        len_v2 += vec2[a] * vec2[a];
+    // cosine similarity
+    if (sim_mode==0){
+        for (a = 0; a < layer_size; a++){
+            len_v1 += vec1[a] * vec1[a];
+            len_v2 += vec2[a] * vec2[a];
+        }
+        len_v1 = sqrt(len_v1);
+        len_v2 = sqrt(len_v2);
+        len_v = len_v1 * len_v2;
+        if (len_v > 0) {
+            for (a = 0; a < layer_size; a++)
+                dist += vec1[a] * vec2[a] / len_v;
+            dist = (dist*rho+1)/2;      // (-1,1) --> (0,1), rho for smooth
+        }
     }
-    len_v1 = sqrt(len_v1);
-    len_v2 = sqrt(len_v2);
-    len_v = len_v1 * len_v2;
-    if (len_v > 0) {
-        for (a = 0; a < layer_size; a++)
-            dist += vec1[a] * vec2[a] / len_v;
-        dist = (dist*rho+1)/2;      // (-1,1) --> (0,1), rho for smooth
+    else{
+        // inner product similarity
+        for (int a = 0; a < layer_size; a++)
+            dist += vec1[a] * vec2[a];
+        dist *= rho;
+        if (dist>MAX_EXP) dist = MAX_EXP;
+        if (dist<-MAX_EXP) dist = -MAX_EXP;
+        dist = expSimTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
     }
-    
     return dist;
 }
 
@@ -1980,12 +1988,14 @@ int main(int argc, char **argv) {
         printf("\t\tif batch normalization\n");
         printf("\t-rho <int>\n");
         printf("\t\tsmooth attention (0-1), defautl is 1, 0 means attentions are the same \n");
-        printf("\t-adadelta <int>\n");
-        printf("\t\tif adadelta for optimization\n");
+        printf("\t-sgd_mode <int>\n");
+        printf("\t\tdefault 0 is for sgd, 1 for adagrad, 2 for rms_prop, 3 for adadelta \n");
+        printf("\t-sim_mode <int>\n");
+        printf("\t\tsimilarity measurment, default 0 is for cosine, 1 for inner product \n");
         printf("\t-xling <int>\n");
         printf("\t\tthe decay parameter for adadelta\n");
         printf("\nExamples:\n");
-        printf("./mlmpme -mono_anchor1 en_anchor.txt -mono_anchor2 zh_anchor.txt -mono_kg1 en_kg.txt -mono_kg2 zh_kg.txt -multi_context multi_context.txt -output1 ./en_vec/ -output2 ./zh_vec/ -save_mono_vocab1 ./en_vocab/ -save_mono_vocab2 ./zh_vocab/ -read_cross_link cross_links.txt -size 200 -window 5 -sample 1e-4 -negative 5 -threads 63  -save_iter 1 -iter 3\n\n");
+        printf("./mlmpme -mono_anchor1 /enwiki/anchor_text_cl.dat -mono_anchor2 /eswiki/anchor_text_cl.dat -mono_kg1 /enwiki/mono_kg_id.dat -mono_kg2 /eswiki/mono_kg_id.dat -multi_context1 /paradata/para_contexts.en-es -output1 /data/etc/envec/ -output2 /data/etc/esvec/ -save_mono_vocab1 /data/envocab/ -save_mono_vocab2 /data/esvocab/ -read_cross_link1 /paradata/cross_links.en_es -size 200 -has_sense 1 -window 5 -sample 1e-4 -negative 5 -threads 50 -has_kg_att 1 -has_w_att 1 -cross_model_weight 1 -share_syn 1 -is_normal 0 -sgd_mode 1 -xling 0.9 -rho 1 -epochs 1 -sim_mode 0\n\n");
         return 0;
     }
     
@@ -2026,6 +2036,7 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-early-stop", argc, argv)) > 0) EARLY_STOP = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) NUM_EPOCHS = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-sgd_mode", argc, argv)) > 0) sgd_mode = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-sim_mode", argc, argv)) > 0) sim_mode = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-dump-every", argc, argv)) > 0) dump_every = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-share_syn", argc, argv)) > 0) shareSyn0 = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-min_count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
@@ -2038,10 +2049,10 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-xling", argc, argv)) > 0) xling = atof(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
-    expSimTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
+    if (sim_mode==1) expSimTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i <= EXP_TABLE_SIZE; i++) {
         expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
-        expSimTable[i] = expTable[i];
+        if (sim_mode==1) expSimTable[i] = expTable[i];
         expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
     }
     max_train_words = 0;
