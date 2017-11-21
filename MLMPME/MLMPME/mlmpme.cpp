@@ -26,7 +26,7 @@
 #define SENSE_VOCAB 2
 #define MAX_NUM_MENTION 135
 #define MAX_SENTENCE_LENGTH 1000
-#define MAX_PAR_SENT 10
+#define MAX_PAR_SENT 20
 #define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
@@ -81,7 +81,7 @@ long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_cou
 
 const int table_size = 1e8;
 real starting_alpha, alpha = 0.025, sample = 1e-3, cross_model_weight = 1, rho = 1.0, xling=0.9;
-real *expTable, *expSimTable;
+real *expTable;
 char multi_context_file[NUM_LANG-1][MAX_STRING], output_path[NUM_LANG][MAX_STRING], read_mono_vocab_path[NUM_LANG][MAX_STRING], save_mono_vocab_path[NUM_LANG][MAX_STRING], cross_link_file[NUM_LANG-1][MAX_STRING];
 clock_t start;
 long long par_actual_line[NUM_LANG-1];
@@ -891,19 +891,23 @@ void InitMultiModel(){
 
 void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int offset, int num_updates, real *deltas, real weight) {
     int a;
-    real step, epsilon = 1e-6, tmp_delta;
+    real step, epsilon = 1e-6, xling2 = 0.999;
     for (a = 0; a < num_updates; a++) {
-        // sgd_mode: 0:sgd; 1:adagrad; 2:rmsprop; 3:adadelta;
-        if (sgd_mode>1) {
-            tmp_delta = deltas[a];
-            
-            rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * tmp_delta * tmp_delta;
+        // sgd_mode: 0:sgd; 1:adagrad; 2:rmsprop; 3:adadelta; 4: adam
+        
+        if (sgd_mode==4){
+            rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * deltas[a];
+            rms_delta[offset + a] = xling2 * rms_delta[offset + a] + (1-xling2) * deltas[a] * deltas[a];
+            step = (alpha / fmax(epsilon, sqrt(rms_delta[offset + a]))) * rms_grads[offset + a];
+        }
+        else if (sgd_mode==2 || sgd_mode == 3) {
+            rms_grads[offset + a] = xling * rms_grads[offset + a] + (1-xling) * deltas[a] * deltas[a];
             // Use Adadelta for automatic learning rate selection
             if (sgd_mode==2)
                 //rms prop
-                step = (alpha / fmax(epsilon, sqrt(rms_grads[offset + a]))) * tmp_delta;
+                step = (alpha / fmax(epsilon, sqrt(rms_grads[offset + a]))) * deltas[a];
             else{
-                step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * tmp_delta;
+                step = fmax(epsilon, rms_delta[offset + a])/fmax(epsilon, sqrt(rms_grads[offset + a])) * deltas[a];
                 rms_delta[offset + a] = xling * rms_delta[offset + a] + (1-xling) * step * step;
             }
         }
@@ -914,7 +918,7 @@ void UpdateEmbeddings(real *embeddings, real *rms_grads, real *rms_delta, int of
         }
         else {
             // Regular SGD
-            step = alpha * deltas[a] * weight;
+            step = alpha * deltas[a];
         }
         if (step != step) {
             printf("ERROR: step == NaN");
@@ -1485,7 +1489,7 @@ real similarity(real *vec1, real *vec2){
         dist *= rho;
         if (dist>MAX_EXP) dist = MAX_EXP;
         if (dist<-MAX_EXP) dist = -MAX_EXP;
-        dist = expSimTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
+        dist = expTable[(int)((dist + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
     }
     return dist;
 }
@@ -1795,10 +1799,8 @@ void *BilbowaThread(void *id) {
             }
         }
         if (has_w_att || has_kg_att){
-            if (has_kg_att)
-                for (int i=0;i<2;i++)
-                    if (par_entity[2*i]<=0 || par_entity[2*i+1]<=0)
-                        continue;
+                if (has_kg_att && (par_entity[0]<=0 || par_entity[1]<=0 || par_entity[2]<=0 || par_entity[3]<=0))
+                    continue;
             //init attention
             for (int i=0;i<2;i++){
                 sen_count[i] = 1;
@@ -1882,6 +1884,8 @@ void *BilbowaThread(void *id) {
             }
         }
         */
+        if ( (has_w_att || has_kg_att) && (attention[0][1] < 0 || attention[1][1] < 0) )
+            continue;
         BilBOWASentenceUpdate(par_sen, attention, lang_id, deltas);
     } // while training loop
     fclose(fi_par);
@@ -2053,10 +2057,8 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-xling", argc, argv)) > 0) xling = atof(argv[i + 1]);
     
     expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
-    if (sim_mode==1) expSimTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
     for (i = 0; i <= EXP_TABLE_SIZE; i++) {
         expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
-        if (sim_mode==1) expSimTable[i] = expTable[i];
         expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
     }
     max_train_words = 0;
