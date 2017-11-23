@@ -107,11 +107,10 @@ def getWordAtt(par_sents, word_models):
                             tmp_c += 1
                 c += 1
         sim_sum = sum([ sum([w_att for w_att in s_att]) for s_att in att[0]])
-        if sim_sum > 0:
-            att[0] = [ [w_att/sim_sum for w_att in s_att] for s_att in att[0]]
+        att[0] = [ [w_att/sim_sum if sim_sum > 0 else 1 for w_att in s_att] for s_att in att[0]]
+
         sim_sum = sum([sum([w_att for w_att in s_att]) for s_att in att[1]])
-        if sim_sum > 0:
-            att[1] = [[w_att / sim_sum for w_att in s_att] for s_att in att[1]]
+        att[1] = [[w_att/sim_sum if sim_sum > 0 else 1 for w_att in s_att] for s_att in att[1]]
     return att
 
 
@@ -161,12 +160,25 @@ with open(par_context_file) as fin:
                         kg_att.append(getKGatt(par_sents[i], word_models[i], e_vec))
                     # compute word attention
                     word_att = getWordAtt(par_sents,word_models)
+                    # combine
+                    att = []
+                    sum_att = [0.0, 0.0]
+                    for i in range(2):
+                        tmp_par_att = []
+                        for j in range(len(par_sents[i])):
+                            tmp_sent_att = []
+                            for k in range(len(par_sents[i][j])):
+                                tmp_att = kg_att[i][j] * word_att[i][j][k]
+                                sum_att[i] += tmp_att
+                                tmp_sent_att.append(tmp_att)
+                            tmp_par_att.append(tmp_sent_att)
+                        att.append(tmp_par_att)
+
                     for i in range(2):
                         out_str = "{0}\t{1}\t{2}\t".format(i, par_entities[i], par_entities[i+2])
                         for j in range(len(par_sents[i])):
                             for k in range(len(par_sents[i][j])):
-                                tmp_att = kg_att[i][j] * word_att[i][j][k]
-                                out_str += "{0}({1}\{2}\{3}) ".format(par_sents[i][j][k], kg_att[i][j], word_att[i][j][k], tmp_att)
+                                out_str += "{0}({1}\{2}\{3}) ".format(par_sents[i][j][k], kg_att[i][j], word_att[i][j][k], att[i][j][k]/sum_att[i])
                             out_str = out_str.strip() + '\t'
                         fout.write("{0}\n".format(out_str))
                 del tmp_lines[:]

@@ -108,10 +108,15 @@ class Features:
                     self.res1[items[2]] = tmp_ans
 
     def cosSim(self, v1, v2):
-        res = spatial.distance.cosine(v1,v2)
-        if math.isnan(res) or math.isinf(res) or res >1 or res <-1:
-            res = 1
-        return 1-res
+        res = 0
+        len_v1 = math.sqrt(np.dot(v1, v1))
+        len_v2 = math.sqrt(np.dot(v2, v2))
+        if len_v1 > 0.000001 and len_v2 > 0.000001:
+            res = np.dot(v1, v2) / len_v1 / len_v2
+            res = (res + 1) / 2
+        if math.isnan(res) or math.isinf(res) or res > 1 or res < 0:
+            res = 0
+        return res
 
     def maprule(self, str):
         # possessive case 's
