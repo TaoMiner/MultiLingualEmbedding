@@ -26,7 +26,7 @@
 #define SENSE_VOCAB 2
 #define MAX_NUM_MENTION 135
 #define MAX_SENTENCE_LENGTH 1000
-#define MAX_PAR_SENT 20
+#define MAX_PAR_SENT 10
 #define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
@@ -1870,6 +1870,8 @@ void *BilbowaThread(void *id) {
                 else
                     attention[i][0] = -1;
             }
+            if ( attention[0][1] < 0 || attention[1][1] < 0)
+                continue;
         }
         /*
         for(int i=0;i<2;i++){
@@ -1884,8 +1886,7 @@ void *BilbowaThread(void *id) {
             }
         }
         */
-        if ( (has_w_att || has_kg_att) && (attention[0][1] < 0 || attention[1][1] < 0) )
-            continue;
+        
         BilBOWASentenceUpdate(par_sen, attention, lang_id, deltas);
     } // while training loop
     fclose(fi_par);

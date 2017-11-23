@@ -35,6 +35,11 @@ class Options:
 
     @staticmethod
     # type = {'train','testa','testb'}
+    def getParFile(lang):
+        return Options.root_path + 'paradata/para_contexts.en-' + Options.getLangStr(lang)
+
+    @staticmethod
+    # type = {'train','testa','testb'}
     def getConllFeatureFile(exp, type):
         return Options.root_path + 'features/conll_'+type+'.feature_' + exp
 
