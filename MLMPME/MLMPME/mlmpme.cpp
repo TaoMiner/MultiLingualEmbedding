@@ -26,7 +26,7 @@
 #define SENSE_VOCAB 2
 #define MAX_NUM_MENTION 135
 #define MAX_SENTENCE_LENGTH 1000
-#define MAX_PAR_SENT 10
+#define MAX_PAR_SENT 20
 #define CLIP_UPDATES 0.1               // biggest update per parameter per step
 
 typedef float real;                    // Precision of float numbers
@@ -1780,6 +1780,8 @@ void *BilbowaThread(void *id) {
         for(int i=0;i<2;i++) {
             par_sen[i][0] = -1;
             attention[i][0] = -1;
+            kg_attention[i][0] = -1;
+            w_attention[i][0] = -1;
         }
         for(int i=0;i<4;i++) par_entity[i] = -1;
         
@@ -1799,27 +1801,25 @@ void *BilbowaThread(void *id) {
             }
         }
         if (has_w_att || has_kg_att){
-                if (has_kg_att && (par_entity[0]<=0 || par_entity[1]<=0 || par_entity[2]<=0 || par_entity[3]<=0))
-                    continue;
             //init attention
             for (int i=0;i<2;i++){
                 sen_count[i] = 1;
                 for (int j=0;j<MAX_PAR_SENT*MAX_SENTENCE_LENGTH;j++){
                     if (par_sen[i][j] == -1) {
-                        kg_attention[i][j] = -1;
-                        w_attention[i][j] = -1;
+                        if (has_kg_att) kg_attention[i][j] = -1;
+                        if (has_w_att) w_attention[i][j] = -1;
                         attention[i][j] = -1;
                         break;
                     }
                     if (par_sen[i][j] == 0) {
                         sen_count[i] ++;
-                        kg_attention[i][j] = 0;
-                        w_attention[i][j] = 0;
+                        if (has_kg_att) kg_attention[i][j] = 0;
+                        if (has_w_att) w_attention[i][j] = 0;
                         attention[i][j] = 0;
                         continue;
                     }
-                    kg_attention[i][j] = 1.0;
-                    w_attention[i][j] = 1.0;
+                    if (has_kg_att) kg_attention[i][j] = 1.0;
+                    if (has_w_att) w_attention[i][j] = 1.0;
                     
                     attention[i][j] = 1.0;
                 }

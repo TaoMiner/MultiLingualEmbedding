@@ -35,15 +35,8 @@ bool isequal(float a,float b)
     return 0;
 }
 
-float km_match(struct KM_var *km_var)
+extern "C" float km_match(struct KM_var *km_var)
 {
-    for (int i=0;i<km_var->m;i++){
-        for (int j=0;j<km_var->n;j++){
-            km_var->matrix[i*km_var->n + j] = i*km_var->n + j;
-            printf("%d,",i*km_var->n + j);
-        }
-        printf("\n");
-    }
     int p,q,i,j,k;
     int m = km_var->m;
     int n = km_var->n;
@@ -111,11 +104,9 @@ float km_match(struct KM_var *km_var)
     }
     for(i=0;i<m;i++)
         res+=km_var->matrix[i*n+km_var->match1[i]];
-    for (int i=0;i<km_var->m;i++)
-        printf("%d--%d:%f\n",i,km_var->match1[i], km_var->matrix[i*km_var->n+km_var->match1[i]]);
-    printf("res:%f\n",res);
     return res;
 }
+
 
 /*
 int main(int argc, char **argv) {

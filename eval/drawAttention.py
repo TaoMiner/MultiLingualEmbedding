@@ -32,10 +32,15 @@ km_var.l1 = f_array()
 km_var.l2 = f_array()
 
 def cosSim(v1, v2):
-    res = spatial.distance.cosine(v1, v2)
-    if math.isnan(res) or math.isinf(res) or res > 1 or res < -1:
-        res = 1
-    return 1 - res
+    res = 0
+    len_v1 = math.sqrt(np.dot(v1, v1))
+    len_v2 = math.sqrt(np.dot(v2, v2))
+    if len_v1 > 0.000001 and len_v2 > 0.000001:
+        res = np.dot(v1, v2) / len_v1 / len_v2
+        res = (res + 1) / 2
+    if math.isnan(res) or math.isinf(res) or res > 1 or res < 0:
+        res = 0
+    return res
 
 def getKGatt(sents, word_model, e_vec):
     if len(sents) == 1:
@@ -49,7 +54,7 @@ def getKGatt(sents, word_model, e_vec):
             if len(sents[i]) > 1:
                 sent_vec /= len(sents[i])
             if not isinstance(e_vec, type(None)):
-                att[i] = (cosSim(sent_vec,e_vec))
+                att[i] = cosSim(sent_vec,e_vec)
             else:
                 att[i] = 1.0
         sim_total = sum(att)
@@ -69,9 +74,17 @@ def getWordAtt(par_sents, word_models):
     m_idx = 0 if sent_len[0] < sent_len[1] else 1
     n_idx = 1 if sent_len[0] < sent_len[1] else 0
     sim_matrix = setKMVar(sent_len[m_idx], sent_len[n_idx])
-    for i in range(sent_len[m_idx]):
-        for j in range(sent_len[n_idx]):
-            sim_matrix[i*sent_len[n_idx] + j] = cosSim(word_models[m_idx].vectors[par_sents[m_idx][i]], word_models[n_idx].vectors[par_sents[n_idx][j]])
+    c1 = 0
+    c2 = 0
+    for i1 in range(len(par_sents[m_idx])):
+        for j1 in range(len(par_sents[m_idx][i1])):
+            for i2 in range(len(par_sents[n_idx])):
+                for j2 in range(len(par_sents[n_idx][i2])):
+                    sim_matrix[c1*sent_len[n_idx]+c2] = cosSim(word_models[m_idx].vectors[par_sents[m_idx][i1][j1]],\
+                                                               word_models[n_idx].vectors[par_sents[n_idx][i2][j2]])
+                    c2 += 1
+            c1 += 1
+            c2 = 0
     res = km.km_match(byref(km_var))
     att = [[ [0.0 for x in sent] for sent in par_sent] for par_sent in par_sents]
     if res>0:
@@ -92,11 +105,13 @@ def getWordAtt(par_sents, word_models):
                             if par_sents[n_idx][ii][jj] == par_sents[n_idx][i][j] and km_var.match2[tmp_c] == -1:
                                 att[n_idx][ii][jj] = att[n_idx][i][j]
                             tmp_c += 1
-                    c += 1
+                c += 1
         sim_sum = sum([ sum([w_att for w_att in s_att]) for s_att in att[0]])
-        att[0] /= sim_sum
+        if sim_sum > 0:
+            att[0] = [ [w_att/sim_sum for w_att in s_att] for s_att in att[0]]
         sim_sum = sum([sum([w_att for w_att in s_att]) for s_att in att[1]])
-        att[1] /= sim_sum
+        if sim_sum > 0:
+            att[1] = [[w_att / sim_sum for w_att in s_att] for s_att in att[1]]
     return att
 
 
@@ -121,9 +136,9 @@ with open(par_context_file) as fin:
         for line in fin:
             tmp_lines.append(line.strip())
             if len(tmp_lines) == 2:
-                splited_lines = [[re.split(r'\t', x)] for x in tmp_lines]
+                splited_lines = [re.split(r'\t', x) for x in tmp_lines]
                 if splited_lines[0][0] == '1' and splited_lines[1][0] == '2':
-                    tmp_par_sents = [[[re.split(r' ', x)] for x in sents[3:]] for sents in splited_lines]
+                    tmp_par_sents = [[re.split(r' ', x) for x in sents[3:]] for sents in splited_lines]
                     par_sents = []
                     par_entities = [splited_lines[0][1], splited_lines[1][1], splited_lines[0][2], splited_lines[1][2]]
                     for i in range(2):
