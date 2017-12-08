@@ -947,7 +947,7 @@ void resetSenseCluster(int lang_id){
 
 void *TrainTextModelThread(void *id) {
     long long a, b, d, cw, word_index=-1, last_word_index, sentence_length = 0, sentence_position = 0;
-    long long word_count = 0, anchor_count = 0, anchor_position=0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1], all_train_words;
+    long long word_count = 0, anchor_count = 0, anchor_position=0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1], all_train_words, tmp_updates = 0;
     long long l1, l2, c, target, label = 0;
     int lang_id = (long long)id / num_threads-NUM_LANG, thread_id = (long long)id % num_threads;
     unsigned long long next_random = (long long)thread_id;
@@ -1053,18 +1053,17 @@ void *TrainTextModelThread(void *id) {
                     word_count++;
                     
                     mono_words->lang_updates ++;
-                    
-                    if (mono_words->lang_updates > 0 &&
-                        mono_words->lang_updates % mono_words->train_items == 0) {
+                    tmp_updates = mono_words->lang_updates;
+                    if (tmp_updates > 0 &&
+                        tmp_updates % mono_words->train_items == 0) {
                         mono_words->epoch++;
                         resetSenseCluster(lang_id);
                     }
                     
-                    if (dump_every > 0)
-                        if (mono_words->lang_updates % dump_every == 0){
-                            SaveVector(mono_words,mono_words->dump_iters++);
-                            SaveVector(mono_senses,mono_senses->dump_iters++);
-                            SaveVector(mono_entities,mono_entities->dump_iters++);
+                    if (lang_id == 0 && dump_every > 0)
+                        if (tmp_updates % dump_every == 0){
+                            for (int i=0;i<NUM_MODEL;i++) for (int j=0;j<NUM_LANG;j++)
+                                    SaveVector(&model[i][j], model[i][j].dump_iters++);
                         }
                     if (word_index == 0) break;
                     
