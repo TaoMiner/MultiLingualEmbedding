@@ -4,6 +4,9 @@ import regex as re
 import math
 import numpy as np
 
+TASK1 = 'task1-monolingual'
+TASK2 = 'task2-crosslingual'
+
 class similarity:
     def __init__(self):
         self.words = None
@@ -64,17 +67,27 @@ class similarity:
             fout.write("\n".join([str(x) for x in self.wp_sim]))
 
 if __name__ == '__main__':
-    word_pair_file = ''
+    base_path = '/home/caoyx/'
     exp = 'exp2'
     it = 5
+    lang_pair = [Options.en, Options.es]
+
+
+    task = TASK1 if lang_pair[0] == lang_pair[1] else TASK2
+    lang_str = Options.getLangStr(lang_pair[0])
+    if task == TASK2:
+        lang_str += '-' + Options.getLangStr(lang_pair[1])
+    word_pair_file = '{0}/data/SemEval17-Task2/test/sub{1}/data/{2}.test.data.txt'.format(base_path, task, lang_str)
+    output_file = '{0}/data/SemEval17-Task2/output/{1}.output.txt'.format(base_path, lang_str)
 
     w1 = Word()
-    w1.loadVector(Options.getExpVecFile(exp, Options.en, Options.word_type, it))
+    w1.loadVector(Options.getExpVecFile(exp, lang_pair[0], Options.word_type, it))
 
     w2 = Word()
-    w2.loadVector(Options.getExpVecFile(exp, Options.es, Options.word_type, it))
+    w2.loadVector(Options.getExpVecFile(exp, lang_pair[1], Options.word_type, it))
 
     sim = similarity()
     sim.loadWords(w1, w2)
     sim.loadData(word_pair_file)
     sim.compute()
+    sim.output(output_file)
