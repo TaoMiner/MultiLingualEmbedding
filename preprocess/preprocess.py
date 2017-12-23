@@ -20,7 +20,7 @@ class options():
         if lang >= len(languages) or lang < 0 :
             print("invalid lang id!")
             exit()
-        self.dump_path = '/home/caoyx/data/dump20170401/'
+        self.dump_path = '/home/caoyx/data/dump20171120/'
         self.lang = languages[lang]
         self.lang_wiki = self.lang+ 'wiki'
         self.redirect_dump = self.dump_path + self.lang_wiki + '/' + self.lang_wiki + '-20170401-redirect.sql'
@@ -1018,8 +1018,8 @@ if __name__ == '__main__':
     # fead zhwiki.xml into WikiExtractor, output <wiki_anchor_text> and <wiki_ariticle_title>
     # specify language 'eswiki', 'enwiki' or 'zhwiki'
     lang_index = languages.index('zh')
-    # mkb = MonoKGBuilder(lang_index)
-    # mkb.process()
+    mkb = MonoKGBuilder(lang_index)
+    mkb.process()
     # when processed all the languge monokg, merge each cross lingual links into one
     # merge()
     # clean wiki anchor text, for chinese, better using opencc to convert to simplied chinese
