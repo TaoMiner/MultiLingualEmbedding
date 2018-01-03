@@ -76,7 +76,7 @@ struct vocab model[NUM_MODEL][NUM_LANG];
 // cross links dictionary
 int *cross_links[NUM_LANG];
 
-int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, sgd_mode=0, has_sense=1,has_kg_att = 1, has_w_att = 1, sim_mode = 0;
+int local_iter=0, debug_mode = 2, window = 5, num_threads = 12, min_reduce = 1, negative = 5, binary=1, shareSyn0 = 1, min_count = 5, is_normal = 0, sgd_mode=0, has_kg_att = 1, has_w_att = 1, sim_mode = 0;
 long long layer_size = 100, max_train_words = 0, entity_count_actual=0, word_count_actual=0, NUM_EPOCHS = 1, EARLY_STOP = 0, dump_every=0;
 
 const int table_size = 1e8;
@@ -632,46 +632,64 @@ void InitNet(struct vocab *mono_vocab) {
     long long a, b;
     unsigned long long next_random = 1;
     real *syn0grad, *syn1negGrad, *syn0delta, *syn1negdelta;
-    if (shareSyn0==1 && mono_vocab->vocab_type==SENSE_VOCAB)
+    // new
+    if (shareSyn0==1 && mono_vocab->vocab_type==SENSE_VOCAB){
         mono_vocab->syn0 = model[KG_VOCAB][mono_vocab->lang].syn0;
-    else
-        a = posix_memalign((void **)&(mono_vocab->syn0), 128, (long long)mono_vocab->vocab_size * layer_size * sizeof(real));
-    if (mono_vocab->syn0 == NULL) {printf("Memory allocation failed\n"); exit(1);}
-    if (sgd_mode>0) {
-        a = posix_memalign((void **)&syn0grad, 128, (long long)mono_vocab->vocab_size *
-                           layer_size * sizeof(real));
-        if (syn0grad == NULL) {printf("Memory allocation failed\n"); exit(1);}
-        else mono_vocab->syn0Grad = syn0grad;
-        a = posix_memalign((void **)&syn1negGrad, 128, (long long)mono_vocab->vocab_size *
-                           layer_size * sizeof(real));
-        if (syn1negGrad == NULL) {printf("Memory allocation failed\n"); exit(1);}
-        else mono_vocab->syn1negGrad= syn1negGrad;
-    }
-    if (sgd_mode>2){
-        a = posix_memalign((void **)&syn0delta, 128, (long long)mono_vocab->vocab_size *
-                           layer_size * sizeof(real));
-        if (syn0delta == NULL) {printf("Memory allocation failed\n"); exit(1);}
-        else mono_vocab->syn0Delta = syn0delta;
-        a = posix_memalign((void **)&syn1negdelta, 128, (long long)mono_vocab->vocab_size *
-                           layer_size * sizeof(real));
-        if (syn1negdelta == NULL) {printf("Memory allocation failed\n"); exit(1);}
-        else mono_vocab->syn1negDelta= syn1negdelta;
-    }
-    if (negative>0) {
-        a = posix_memalign((void **)&(mono_vocab->syn1neg), 128, (long long)mono_vocab->vocab_size * layer_size * sizeof(real));
-        if (mono_vocab->syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
-        for (a = 0; a < mono_vocab->vocab_size; a++) for (b = 0; b < layer_size; b++){
-            mono_vocab->syn1neg[a * layer_size + b] = 0;
-            if (sgd_mode>0) mono_vocab->syn1negGrad[a * layer_size + b] = 0;
-            if (sgd_mode>2) mono_vocab->syn1negDelta[a * layer_size + b] = 0;
+        // initialization cluster center
+        if (negative>0) {
+            a = posix_memalign((void **)&(mono_vocab->syn1neg), 128, (long long)mono_vocab->vocab_size * layer_size * sizeof(real));
+            if (mono_vocab->syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            for (a = 0; a < mono_vocab->vocab_size; a++) for (b = 0; b < layer_size; b++){
+                mono_vocab->syn1neg[a * layer_size + b] = 0;
+            }
+        }
+        if (sgd_mode>0) {
+            mono_vocab->syn0Grad = model[KG_VOCAB][mono_vocab->lang].syn0Grad;
+            mono_vocab->syn1negGrad = model[KG_VOCAB][mono_vocab->lang].syn1negGrad;
+        }
+        if (sgd_mode>2){
+            mono_vocab->syn0Delta = model[KG_VOCAB][mono_vocab->lang].syn0Delta;
+            mono_vocab->syn1negDelta = model[KG_VOCAB][mono_vocab->lang].syn1negDelta;
         }
     }
-    if (shareSyn0!=1 || mono_vocab->vocab_type!=SENSE_VOCAB){
+    else{
+        a = posix_memalign((void **)&(mono_vocab->syn0), 128, (long long)mono_vocab->vocab_size * layer_size * sizeof(real));
+        if (mono_vocab->syn0 == NULL) {printf("Memory allocation failed\n"); exit(1);}
+        if (sgd_mode>0) {
+            a = posix_memalign((void **)&syn0grad, 128, (long long)mono_vocab->vocab_size *
+                               layer_size * sizeof(real));
+            if (syn0grad == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            else mono_vocab->syn0Grad = syn0grad;
+            a = posix_memalign((void **)&syn1negGrad, 128, (long long)mono_vocab->vocab_size *
+                               layer_size * sizeof(real));
+            if (syn1negGrad == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            else mono_vocab->syn1negGrad= syn1negGrad;
+        }
+        if (sgd_mode>2){
+            a = posix_memalign((void **)&syn0delta, 128, (long long)mono_vocab->vocab_size *
+                               layer_size * sizeof(real));
+            if (syn0delta == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            else mono_vocab->syn0Delta = syn0delta;
+            a = posix_memalign((void **)&syn1negdelta, 128, (long long)mono_vocab->vocab_size *
+                               layer_size * sizeof(real));
+            if (syn1negdelta == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            else mono_vocab->syn1negDelta= syn1negdelta;
+        }
+        // initialization
+        if (negative>0) {
+            a = posix_memalign((void **)&(mono_vocab->syn1neg), 128, (long long)mono_vocab->vocab_size * layer_size * sizeof(real));
+            if (mono_vocab->syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+            for (a = 0; a < mono_vocab->vocab_size; a++) for (b = 0; b < layer_size; b++){
+                mono_vocab->syn1neg[a * layer_size + b] = 0;
+                if (sgd_mode>0) mono_vocab->syn1negGrad[a * layer_size + b] = 0;
+                if (sgd_mode>2) mono_vocab->syn1negDelta[a * layer_size + b] = 0;
+            }
+        }
         for (a = 0; a < mono_vocab->vocab_size; a++) for (b = 0; b < layer_size; b++) {
-            next_random = next_random * (unsigned long long)25214903917 + 11;
-            mono_vocab->syn0[a * layer_size + b] = (((next_random & 0xFFFF) / (real)65536) - 0.5) / layer_size;
-            if (sgd_mode>0) mono_vocab->syn0Grad[a * layer_size + b] = 0;
-            if (sgd_mode>2) mono_vocab->syn0Delta[a * layer_size + b] = 0;
+                next_random = next_random * (unsigned long long)25214903917 + 11;
+                mono_vocab->syn0[a * layer_size + b] = (((next_random & 0xFFFF) / (real)65536) - 0.5) / layer_size;
+                if (sgd_mode>0) mono_vocab->syn0Grad[a * layer_size + b] = 0;
+                if (sgd_mode>2) mono_vocab->syn0Delta[a * layer_size + b] = 0;
         }
     }
 }
@@ -726,8 +744,8 @@ int ReadParLine(FILE *fi, long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH], long 
     long long index = -1;
     char word[MAX_STRING];
     int sentence_length = 0, cur_lang=-1, par_lang = -1, item_count=0;
-    int VOCAB = KG_VOCAB;
-    if (shareSyn0!=1) VOCAB = SENSE_VOCAB;
+    int VOCAB = SENSE_VOCAB;
+    if (shareSyn0==1) VOCAB = KG_VOCAB;
     while (1) {
         ReadItem(word, fi);
         if (feof(fi) || !strcmp(word, "</s>")){
@@ -870,7 +888,7 @@ int readContextLines(char *multi_context_file, int lang_id[2]){
 }
 
 void InitMultiModel(){
-    int max_num = 1500000, lang_id[2];            // 1m, max num clinks
+    int max_num = 1500000, lang_id[2];            // 1.5m, max num clinks
     for(int i = 0; i < NUM_LANG; i++){
         cross_links[i] = (int *)malloc(max_num * sizeof(int));
         _clr(cross_links[i],max_num);
@@ -1156,20 +1174,24 @@ void *TrainTextModelThread(void *id) {
             
         if (sentence_position >= sentence_length) {
             // train word embedding finished! start train mention sense embedding ...
-            if (anchor_count > 0 && has_sense){
+            if (anchor_count > 0){
                 for(anchor_position=0;anchor_position<anchor_count;anchor_position++){
                     //reset context vec
                     for (c = 0; c < layer_size; c++) tmp_context_vec[c] = 0;
                     cw = 0;
                     
-                    // use context words and mention sense to predict entity
+                    // use mention sense to predict context words
                     for (c = 0; c < layer_size; c++) neu1[c] = 0;
                     for (c = 0; c < layer_size; c++) neu1e[c] = 0;
                     next_random = next_random * (unsigned long long)25214903917 + 11;
                     b = next_random % window;
                     sentence_position = anchors[anchor_position].start_pos;
-                    word_index = anchors[anchor_position].entity_index;
+                    word_index = anchors[anchor_position].sense_index;
                     if (word_index == -1) continue;
+                    if (shareSyn0 == 1) {
+                        word_index = mono_senses->vocab[word_index].entity_index;
+                        if (word_index == -1) continue;
+                    }
                     
                     //train skip-gram
                     for (a = b; a < window * 2 + 1 - b; a++)
@@ -1192,63 +1214,34 @@ void *TrainTextModelThread(void *id) {
                                     label = 1;
                                 } else {
                                     next_random = next_random * (unsigned long long)25214903917 + 11;
-                                    target = mono_entities->table[(next_random >> 16) % table_size];
-                                    if (target == 0) target = next_random % (mono_entities->vocab_size - 1) + 1;
+                                    target = mono_senses->table[(next_random >> 16) % table_size];
+                                    if (target == 0) target = next_random % (mono_senses->vocab_size - 1) + 1;
+                                    if (shareSyn0==1) target = mono_senses->vocab[target].entity_index;
                                     if (target == word_index) continue;
                                     label = 0;
                                 }
                                 l2 = target * layer_size;
                                 f = 0;
-                                for (c = 0; c < layer_size; c++) f += mono_words->syn0[c + l1] * mono_entities->syn0[c + l2];
+                                for (c = 0; c < layer_size; c++) f += mono_words->syn0[c + l1] * mono_senses->syn0[c + l2];
                                 if (f > MAX_EXP) g = (label - 1);
                                 else if (f < -MAX_EXP) g = (label - 0);
                                 else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]);
-                                for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn0[c + l2];
+                                for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_senses->syn0[c + l2];
                                 // for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_words->syn0[c + l1];
                                 for (c = 0; c < layer_size; c++) syn1negDelta[c] = g * mono_words->syn0[c + l1];
-                                UpdateEmbeddings(mono_entities->syn0, mono_entities->syn0Grad, mono_entities->syn0Delta, l2, layer_size,syn1negDelta, +1);
+                                UpdateEmbeddings(mono_senses->syn0, mono_senses->syn0Grad, mono_senses->syn0Delta, l2, layer_size,syn1negDelta, +1);
                             }
                             // Learn weights input -> hidden
                             //for (c = 0; c < layer_size; c++) mono_words->syn0[c + l1] += neu1e[c];
                             UpdateEmbeddings(mono_words->syn0, mono_words->syn0Grad, mono_words->syn0Delta, l1, layer_size, neu1e, +1);
                         }
-                    //also use sense embedding to predict the entity
+                    //update cluster center mu and cluster size
                     last_word_index = anchors[anchor_position].sense_index;
                     if (last_word_index == -1) continue;
-                    //update cluster center mu and cluster size
+                    
                     if(cw>0){
                         for (c = 0; c < layer_size; c++) mono_senses->syn1neg[last_word_index * layer_size + c] += (tmp_context_vec[c]/cw);
                         mono_senses->vocab[last_word_index].index += 1;
-                    }
-                    if (shareSyn0 != 1){
-                        l1 = last_word_index * layer_size;
-                        for (c = 0; c < layer_size; c++) neu1e[c] = 0;
-                        // NEGATIVE SAMPLING
-                        if (negative > 0) for (d = 0; d < negative + 1; d++) {
-                            if (d == 0) {
-                                target = word_index;
-                                label = 1;
-                            } else {
-                                next_random = next_random * (unsigned long long)25214903917 + 11;
-                                target = mono_entities->table[(next_random >> 16) % table_size];
-                                if (target == 0) target = next_random % (mono_entities->vocab_size - 1) + 1;
-                                if (target == word_index) continue;
-                                label = 0;
-                            }
-                            l2 = target * layer_size;
-                            f = 0;
-                            for (c = 0; c < layer_size; c++) f += mono_senses->syn0[c + l1] * mono_entities->syn1neg[c + l2];
-                            if (f > MAX_EXP) g = (label - 1);
-                            else if (f < -MAX_EXP) g = (label - 0);
-                            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]);
-                            for (c = 0; c < layer_size; c++) neu1e[c] += g * mono_entities->syn1neg[c + l2];
-                            //for (c = 0; c < layer_size; c++) mono_entities->syn1neg[c + l2] += g * mono_senses->syn0[c + l1];
-                            for (c = 0; c < layer_size; c++) syn1negDelta[c] = g * mono_senses->syn0[c + l1];
-                            UpdateEmbeddings(mono_entities->syn1neg, mono_entities->syn1negGrad, mono_entities->syn1negDelta, l2, layer_size,syn1negDelta, +1);
-                        }
-                        // Learn weights input -> hidden
-                        // for (c = 0; c < layer_size; c++) mono_senses->syn0[c + l1] += neu1e[c];
-                        UpdateEmbeddings(mono_senses->syn0, mono_senses->syn0Grad, mono_senses->syn0Delta, l1, layer_size, neu1e, +1);
                     }
                     
                 }
@@ -1645,12 +1638,10 @@ void SetKGAttention(long long sen[MAX_PAR_SENT*MAX_SENTENCE_LENGTH],long long en
     real sum = 0.0, tmp_sim;
     real rel_vec[layer_size];
     real sent_vec[layer_size];
-    int VOCAB = KG_VOCAB;
-    if (shareSyn0!=1) VOCAB = SENSE_VOCAB;
     
     for (j=0;j<layer_size;j++){
-        //rel_vec[j] = model[VOCAB][lang_id].syn0[entity_index[0]*layer_size+j] - model[VOCAB][lang_id].syn0[entity_index[1]*layer_size+j];
-        rel_vec[j] = model[VOCAB][lang_id].syn0[entity_index[0]*layer_size+j];
+        //rel_vec[j] = model[SENSE_VOCAB][lang_id].syn0[entity_index[0]*layer_size+j] - model[SENSE_VOCAB][lang_id].syn0[entity_index[1]*layer_size+j];
+        rel_vec[j] = model[SENSE_VOCAB][lang_id].syn0[entity_index[0]*layer_size+j];
     }
     
     for (k=0;k<layer_size;k++) sent_vec[k] = 0;
@@ -2003,7 +1994,7 @@ int main(int argc, char **argv) {
         printf("\t-xling <int>\n");
         printf("\t\tthe decay parameter for adadelta\n");
         printf("\nExamples:\n");
-        printf("./mlmpme -mono_anchor1 /enwiki/anchor_text_cl.dat -mono_anchor2 /eswiki/anchor_text_cl.dat -mono_kg1 /enwiki/mono_kg_id.dat -mono_kg2 /eswiki/mono_kg_id.dat -multi_context1 /paradata/para_contexts.en-es -output1 /data/etc/envec/ -output2 /data/etc/esvec/ -save_mono_vocab1 /data/envocab/ -save_mono_vocab2 /data/esvocab/ -read_cross_link1 /paradata/cross_links.en_es -size 200 -has_sense 1 -window 5 -sample 1e-4 -negative 5 -threads 50 -has_kg_att 1 -has_w_att 1 -cross_model_weight 1 -share_syn 1 -is_normal 0 -sgd_mode 1 -xling 0.9 -rho 1 -epochs 1 -sim_mode 0\n\n");
+        printf("./mlmpme -mono_anchor1 /enwiki/anchor_text_cl.dat -mono_anchor2 /eswiki/anchor_text_cl.dat -mono_kg1 /enwiki/mono_kg_id.dat -mono_kg2 /eswiki/mono_kg_id.dat -multi_context1 /paradata/para_contexts.en-es -output1 /data/etc/envec/ -output2 /data/etc/esvec/ -save_mono_vocab1 /data/envocab/ -save_mono_vocab2 /data/esvocab/ -read_cross_link1 /paradata/cross_links.en_es -size 200 -window 5 -sample 1e-4 -negative 5 -threads 50 -has_kg_att 1 -has_w_att 1 -cross_model_weight 1 -share_syn 1 -is_normal 0 -sgd_mode 1 -xling 0.9 -rho 1 -epochs 1 -sim_mode 0\n\n");
         return 0;
     }
     
@@ -2051,7 +2042,6 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-has_kg_att", argc, argv)) > 0) has_kg_att = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-has_w_att", argc, argv)) > 0) has_w_att = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-is_normal", argc, argv)) > 0) is_normal = atoi(argv[i + 1]);
-    if ((i = ArgPos((char *)"-has_sense", argc, argv)) > 0) has_sense = atoi(argv[i + 1]);
     if ((i = ArgPos((char *)"-cross_model_weight", argc, argv)) > 0) cross_model_weight = atof(argv[i + 1]);
     if ((i = ArgPos((char *)"-rho", argc, argv)) > 0) rho = atof(argv[i + 1]);
     if ((i = ArgPos((char *)"-xling", argc, argv)) > 0) xling = atof(argv[i + 1]);

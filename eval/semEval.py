@@ -43,15 +43,15 @@ class similarity:
         for ws in self.word_pair:
             vec_pair = [None, None]
             for i in range(2):
-                vec_pair[i] = self.words[i][ws[i]] if ws[i] in self.words[i] else None
+                vec_pair[i] = self.words[i].vectors[ws[i]] if ws[i] in self.words[i].vectors else None
                 if isinstance(vec_pair[i], type(None)) and isComp:
                     tmp_items = re.split(r' ', ws[i])
                     if len(tmp_items) > 1:
                         tmp_vec = np.zeros(self.words[i].layer_size)
                         actual_word_count = 0
                         for item in tmp_items:
-                            if item in self.words[i]:
-                                tmp_vec += self.words[i][item]
+                            if item in self.words[i].vectors:
+                                tmp_vec += self.words[i].vectors[item]
                                 actual_word_count += 1
                         if actual_word_count >= 1:
                             vec_pair[i] = tmp_vec/actual_word_count
@@ -82,9 +82,11 @@ if __name__ == '__main__':
 
     w1 = Word()
     w1.loadVector(Options.getExpVecFile(exp, lang_pair[0], Options.word_type, it))
-
-    w2 = Word()
-    w2.loadVector(Options.getExpVecFile(exp, lang_pair[1], Options.word_type, it))
+    if task == TASK1:
+        w2 = w1
+    else:
+        w2 = Word()
+        w2.loadVector(Options.getExpVecFile(exp, lang_pair[1], Options.word_type, it))
 
     sim = similarity()
     sim.loadWords(w1, w2)
