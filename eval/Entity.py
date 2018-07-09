@@ -67,9 +67,10 @@ class Entity():
                 self.vocab_dic[items[0]] = int(items[1])
         print('load vocab of {0} entities!'.format(len(self.vocab_dic)))
 
-    def loadVector(self, filename, vocab = None):
+    def loadVector(self, filename, vocab = None, topn=0):
         if isinstance(self.vectors, type(None)):
             self.vectors = {}
+        count = 0
         with codecs.open(filename, 'rb') as fin_vec:
             # read file head: vocab size and layer size
             char_set = []
@@ -97,6 +98,9 @@ class Entity():
                 tmp_vec = np.array(struct.unpack(p_struct_fmt, fin_vec.read(4*self.layer_size)), dtype=float)
                 if isinstance(vocab, type(None)) or (not isinstance(vocab, type(None)) and label in vocab):
                     self.vectors[label] = tmp_vec
+                    count += 1
+                    if topn > 0 and count == topn:
+                        break
                 fin_vec.read(1)     #\n
             self.vocab_size = len(self.vectors)
             print('load {0} entities!'.format(self.vocab_size))

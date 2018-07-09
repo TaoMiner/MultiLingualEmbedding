@@ -160,9 +160,9 @@ class Options:
     @staticmethod
     def getBiLexFile(lang):
         if lang == Options.zh:
-            return Options.root_path + 'ldc_cedict.gb.v3'
+            return Options.root_path + 'wordTranslation/all.zh-en.lex'
         elif lang == Options.es:
-            return Options.root_path + 'all.es-en.lex'
+            return Options.root_path + 'wordTranslation/all.es-en.lex'
         return ''
 if __name__ == '__main__':
     print(Options.getKBPAnsFile(2015,False))

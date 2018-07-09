@@ -984,7 +984,6 @@ void *TrainTextModelThread(void *id) {
     struct anchor_item *anchors = (struct anchor_item *)calloc(MAX_SENTENCE_LENGTH, sizeof(struct anchor_item));
     
     struct vocab *mono_words = &model[TEXT_VOCAB][lang_id];
-    struct vocab *mono_entities = &model[KG_VOCAB][lang_id];
     struct vocab *mono_senses = &model[SENSE_VOCAB][lang_id];
     
     FILE *fi = fopen(mono_words->train_file, "rb");
